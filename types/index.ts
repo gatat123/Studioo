@@ -72,10 +72,12 @@ export interface ProjectParticipant {
 export interface Scene {
   id: string;
   projectId: string;
-  sceneNumber: number;
+  sceneNumber?: number;
+  index?: number;
+  title?: string;
   description?: string | null;
   notes?: string | null;
-  createdBy: string;
+  createdBy?: string;
   createdAt: string | Date;
   updatedAt: string | Date;
   project?: Project;

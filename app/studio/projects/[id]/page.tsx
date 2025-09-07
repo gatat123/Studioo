@@ -43,7 +43,7 @@ import { projectsAPI, ProjectWithParticipants } from '@/lib/api/projects'
 import { scenesAPI } from '@/lib/api/scenes'
 import { commentsAPI } from '@/lib/api/comments'
 import { useToast } from '@/hooks/use-toast'
-import { Scene, Comment } from '@/types'
+import { Scene, Comment, Image } from '@/types'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,17 +52,13 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 
-// Image type definition
-interface ProjectImage {
-  id: string
-  sceneId: string
-  projectId: string
+// Extended Image type for project
+interface ProjectImage extends Omit<Image, 'type'> {
   kind: 'line' | 'art'
-  version: number
-  url: string
+  version?: number
+  url?: string
   thumbnailUrl?: string
-  createdAt: string
-  uploadedBy: {
+  uploadedBy?: {
     id: string
     username: string
     nickname?: string
@@ -71,7 +67,6 @@ interface ProjectImage {
 
 // Scene with images
 interface SceneWithImages extends Scene {
-  images: ProjectImage[]
   lineArtImages?: ProjectImage[]
   artImages?: ProjectImage[]
 }
