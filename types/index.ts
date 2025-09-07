@@ -135,12 +135,13 @@ export interface Comment {
   content: string;
   createdAt: string;
   updatedAt: string;
-  isEdited: boolean;
-  isDeleted: boolean;
+  isEdited?: boolean;
+  isDeleted?: boolean;
   project?: Project;
   scene?: Scene;
   parentComment?: Comment;
   user?: User;
+  author?: User;  // Some APIs return author instead of user
   replies?: Comment[];
 }
 

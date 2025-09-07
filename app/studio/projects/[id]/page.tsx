@@ -53,12 +53,19 @@ import {
 import { cn } from '@/lib/utils'
 
 // Extended Image type for project
-interface ProjectImage extends Omit<Image, 'type'> {
+interface ProjectImage {
+  id: string
+  sceneId: string
+  projectId?: string
   kind: 'line' | 'art'
   version?: number
+  fileUrl: string
   url?: string
   thumbnailUrl?: string
-  uploadedBy?: {
+  createdAt: string | Date
+  uploadedAt?: string | Date
+  uploadedBy: string
+  uploader?: {
     id: string
     username: string
     nickname?: string
@@ -114,8 +121,8 @@ export default function ProjectDetailPage() {
       // Process scenes to separate line art and art images
       const processedScenes = scenesData.map((scene: any) => ({
         ...scene,
-        lineArtImages: scene.images?.filter((img: ProjectImage) => img.kind === 'line') || [],
-        artImages: scene.images?.filter((img: ProjectImage) => img.kind === 'art') || []
+        lineArtImages: scene.images?.filter((img: any) => img.kind === 'line' || img.type === 'lineart') || [],
+        artImages: scene.images?.filter((img: any) => img.kind === 'art' || img.type === 'art') || []
       }))
       
       setProject(projectData)
@@ -293,9 +300,7 @@ export default function ProjectDetailPage() {
     try {
       const comment = await commentsAPI.createComment({
         projectId,
-        content: newComment,
-        targetType: 'project',
-        targetId: projectId
+        content: newComment
       })
       setComments([comment, ...comments])
       setNewComment('')
@@ -419,14 +424,14 @@ export default function ProjectDetailPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="border-2 border-dashed rounded-lg p-4 min-h-[200px] flex items-center justify-center">
                 {compareImages[0] ? (
-                  <img src={compareImages[0].url} alt="Compare 1" className="max-w-full h-auto" />
+                  <img src={compareImages[0].url || compareImages[0].fileUrl} alt="Compare 1" className="max-w-full h-auto" />
                 ) : (
                   <p className="text-muted-foreground">첫 번째 이미지 선택</p>
                 )}
               </div>
               <div className="border-2 border-dashed rounded-lg p-4 min-h-[200px] flex items-center justify-center">
                 {compareImages[1] ? (
-                  <img src={compareImages[1].url} alt="Compare 2" className="max-w-full h-auto" />
+                  <img src={compareImages[1].url || compareImages[1].fileUrl} alt="Compare 2" className="max-w-full h-auto" />
                 ) : (
                   <p className="text-muted-foreground">두 번째 이미지 선택</p>
                 )}
@@ -724,7 +729,7 @@ export default function ProjectDetailPage() {
                                       {new Date(img.createdAt).toLocaleString()}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                      업로드: {img.uploadedBy.nickname || img.uploadedBy.username}
+                                      업로드: {img.uploader?.nickname || img.uploader?.username || 'Unknown'}
                                     </p>
                                   </div>
                                   <Button size="sm" variant="ghost">
@@ -760,7 +765,7 @@ export default function ProjectDetailPage() {
                                       {new Date(img.createdAt).toLocaleString()}
                                     </p>
                                     <p className="text-xs text-muted-foreground">
-                                      업로드: {img.uploadedBy.nickname || img.uploadedBy.username}
+                                      업로드: {img.uploader?.nickname || img.uploader?.username || 'Unknown'}
                                     </p>
                                   </div>
                                   <Button size="sm" variant="ghost">
@@ -854,7 +859,7 @@ export default function ProjectDetailPage() {
         >
           <div className="relative max-w-[90vw] max-h-[90vh]">
             <img 
-              src={selectedImage.url} 
+              src={selectedImage.url || selectedImage.fileUrl} 
               alt="Image viewer"
               className="max-w-full max-h-full object-contain"
               onClick={(e) => e.stopPropagation()}
@@ -903,7 +908,7 @@ export default function ProjectDetailPage() {
                 {selectedImage.kind === 'line' ? '선화' : '아트'} - 버전 {selectedImage.version}
               </p>
               <p className="text-xs text-muted-foreground">
-                업로드: {selectedImage.uploadedBy.nickname || selectedImage.uploadedBy.username}
+                업로드: {selectedImage.uploader?.nickname || selectedImage.uploader?.username || 'Unknown'}
               </p>
             </div>
           </div>
