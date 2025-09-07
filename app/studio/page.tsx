@@ -5,6 +5,7 @@ import { Plus, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProjectGrid } from '@/components/projects/ProjectGrid';
 import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProjectStore } from '@/store/useProjectStore';
 
@@ -32,14 +33,7 @@ export default function StudioPage() {
               
               <div className="flex items-center gap-3">
                 {/* Notifications */}
-                {projectsWithUpdates > 0 && (
-                  <Button variant="ghost" size="icon" className="relative">
-                    <Bell className="h-5 w-5" />
-                    <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                      {projectsWithUpdates}
-                    </span>
-                  </Button>
-                )}
+                <NotificationCenter userId={user?.id} />
                 
                 {/* Create Project Button */}
                 <Button onClick={() => setShowCreateModal(true)}>
