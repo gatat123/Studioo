@@ -122,7 +122,9 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
         throw new Error('Failed to create project')
       }
 
-      const newProject = await response.json()
+      const responseData = await response.json()
+      // Backend returns { success: true, data: project }
+      const newProject = responseData.data || responseData
       setCreatedProjectId(newProject.id)
       
       // Generate invite code for the created project

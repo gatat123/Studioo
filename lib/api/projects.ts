@@ -35,7 +35,10 @@ export const projectsAPI = {
    * Get all projects for current user
    */
   async getProjects(): Promise<Project[]> {
-    return api.get('/api/projects');
+    const response = await api.get('/api/projects');
+    // Backend returns { success: true, data: { projects: [...], pagination: {...} } }
+    // Extract just the projects array
+    return response.data?.projects || response.projects || [];
   },
 
   /**
