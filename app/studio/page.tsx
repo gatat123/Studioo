@@ -13,12 +13,18 @@ import { useProjectStore } from '@/store/useProjectStore';
 export default function StudioPage() {
   const router = useRouter();
   const { user, isAuthenticated, isLoading, checkAuth } = useAuthStore();
-  const { projects } = useProjectStore();
+  const { projects, fetchProjects } = useProjectStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
   
   useEffect(() => {
     checkAuth();
   }, []);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchProjects();
+    }
+  }, [isAuthenticated]);
   
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {

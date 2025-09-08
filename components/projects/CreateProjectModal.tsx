@@ -135,6 +135,10 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
       
       // Show success state
       setShowSuccess(true)
+      
+      // Refresh projects list
+      const fetchProjects = useProjectStore.getState().fetchProjects;
+      await fetchProjects();
     } catch (error) {
       console.error('Failed to create project:', error)
       // TODO: Show error notification
