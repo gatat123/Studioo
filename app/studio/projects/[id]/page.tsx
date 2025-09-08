@@ -368,15 +368,27 @@ export default function ProjectDetailPage() {
         (progress) => setUploadProgress(progress)
       )
       
+      // Convert Image to ProjectImage type
+      const projectImage: ProjectImage = {
+        id: newImage.id,
+        sceneId: newImage.sceneId,
+        type: newImage.type,
+        fileUrl: newImage.fileUrl,
+        createdAt: newImage.uploadedAt || new Date().toISOString(),
+        uploadedAt: newImage.uploadedAt,
+        uploadedBy: newImage.uploadedBy,
+        uploader: newImage.uploader
+      }
+      
       // Update scenes with new image
       setScenes(prevScenes => 
         prevScenes.map(scene => {
           if (scene.id === selectedScene.id) {
             const updatedScene = { ...scene }
             if (type === 'lineart') {
-              updatedScene.lineArtImages = [...(scene.lineArtImages || []), newImage]
+              updatedScene.lineArtImages = [...(scene.lineArtImages || []), projectImage]
             } else {
-              updatedScene.artImages = [...(scene.artImages || []), newImage]
+              updatedScene.artImages = [...(scene.artImages || []), projectImage]
             }
             setSelectedScene(updatedScene)
             return updatedScene
