@@ -46,6 +46,7 @@ import { commentsAPI } from '@/lib/api/comments'
 import { socketClient } from '@/lib/socket/client'
 import { useToast } from '@/hooks/use-toast'
 import { Scene, Comment, Image } from '@/types'
+import { useUIStore } from '@/store/useUIStore'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -90,6 +91,7 @@ export default function ProjectDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
+  const { setSidebarOpen } = useUIStore()
   const projectId = params.id as string
   const [project, setProject] = useState<ProjectWithParticipants | null>(null)
   const [scenes, setScenes] = useState<SceneWithImages[]>([])
@@ -116,6 +118,9 @@ export default function ProjectDetailPage() {
   const [isAddingScene, setIsAddingScene] = useState(false)
 
   useEffect(() => {
+    // Minimize sidebar when entering project page
+    setSidebarOpen(false)
+    
     fetchProjectDetails()
     
     // Connect to Socket.io and join project room
