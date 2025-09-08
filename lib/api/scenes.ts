@@ -46,7 +46,9 @@ export const scenesAPI = {
    * Create a new scene
    */
   async createScene(projectId: string, data: CreateSceneDto): Promise<Scene> {
-    return api.post(`/api/projects/${projectId}/scenes`, data);
+    const response = await api.post(`/api/projects/${projectId}/scenes`, data);
+    // Backend returns { message: "...", scene: {...} }
+    return response.scene || response;
   },
 
   /**
