@@ -101,10 +101,13 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
       
       // Create project through API
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+      const token = localStorage.getItem('token');
+      
       const response = await fetch(`${backendUrl}/api/projects`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` })
         },
         credentials: 'include',
         body: JSON.stringify({
