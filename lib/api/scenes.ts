@@ -30,7 +30,9 @@ export const scenesAPI = {
    * Get all scenes for a project
    */
   async getScenes(projectId: string): Promise<Scene[]> {
-    return api.get(`/api/projects/${projectId}/scenes`);
+    const response = await api.get(`/api/projects/${projectId}/scenes`);
+    // Backend returns { scenes: [...] }
+    return response.scenes || [];
   },
 
   /**

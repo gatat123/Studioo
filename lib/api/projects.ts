@@ -45,7 +45,9 @@ export const projectsAPI = {
    * Get project by ID with full details
    */
   async getProject(id: string): Promise<ProjectWithParticipants> {
-    return api.get(`/api/projects/${id}`);
+    const response = await api.get(`/api/projects/${id}`);
+    // Backend returns { project: {...} }
+    return response.project || response;
   },
 
   /**

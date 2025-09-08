@@ -23,7 +23,9 @@ export const commentsAPI = {
    */
   async getProjectComments(projectId: string): Promise<Comment[]> {
     try {
-      return await api.get(`/api/comments?projectId=${projectId}`);
+      const response = await api.get(`/api/comments?projectId=${projectId}`);
+      // Backend returns { success: true, data: { comments: [...] } }
+      return response.data?.comments || response.comments || [];
     } catch (error) {
       console.error('Failed to get project comments:', error);
       return [];
@@ -41,7 +43,9 @@ export const commentsAPI = {
    * Create comment
    */
   async createComment(data: CreateCommentDto): Promise<Comment> {
-    return api.post(`/api/comments`, data);
+    const response = await api.post(`/api/comments`, data);
+    // Backend returns { success: true, data: { comment: {...} } }
+    return response.data?.comment || response.comment || response;
   },
 
   /**
