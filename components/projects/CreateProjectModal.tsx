@@ -100,7 +100,7 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
       setIsLoading(true)
       
       // Create project through API
-      const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
       const response = await fetch(`${backendUrl}/api/projects`, {
         method: 'POST',
         headers: {
