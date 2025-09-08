@@ -64,15 +64,20 @@ class APIClient {
       ...fetchOptions
     } = options;
 
-    // Get authentication token from cookies
+    // Get authentication token from localStorage or cookies
     let authToken = token;
     if (!authToken && typeof window !== 'undefined') {
-      // Try to get token from cookie
-      const cookieToken = document.cookie
-        .split('; ')
-        .find(row => row.startsWith('token='))
-        ?.split('=')[1];
-      authToken = cookieToken || undefined;
+      // First try localStorage
+      authToken = localStorage.getItem('token') || undefined;
+      
+      // Fallback to cookie if no token in localStorage
+      if (!authToken) {
+        const cookieToken = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('token='))
+          ?.split('=')[1];
+        authToken = cookieToken || undefined;
+      }
     }
 
     // Prepare headers
