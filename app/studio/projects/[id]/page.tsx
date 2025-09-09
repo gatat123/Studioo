@@ -151,10 +151,11 @@ export default function ProjectDetailPage() {
           prevScenes.map(scene => {
             if (scene.id === data.sceneId) {
               const updatedScene = { ...scene }
+              const imageWithUrl = { ...data.image, url: data.image.url || data.image.fileUrl }
               if (data.image.type === 'lineart') {
-                updatedScene.lineArtImages = [...(scene.lineArtImages || []), data.image]
+                updatedScene.lineArtImages = [...(scene.lineArtImages || []), imageWithUrl]
               } else {
-                updatedScene.artImages = [...(scene.artImages || []), data.image]
+                updatedScene.artImages = [...(scene.artImages || []), imageWithUrl]
               }
               return updatedScene
             }
@@ -205,8 +206,10 @@ export default function ProjectDetailPage() {
       // Process scenes to separate line art and art images
       const processedScenes = scenesData.map((scene: any) => ({
         ...scene,
-        lineArtImages: scene.images?.filter((img: any) => img.type === 'lineart') || [],
-        artImages: scene.images?.filter((img: any) => img.type === 'art' || img.type === 'storyboard') || []
+        lineArtImages: scene.images?.filter((img: any) => img.type === 'lineart')
+          .map((img: any) => ({ ...img, url: img.url || img.fileUrl })) || [],
+        artImages: scene.images?.filter((img: any) => img.type === 'art' || img.type === 'storyboard')
+          .map((img: any) => ({ ...img, url: img.url || img.fileUrl })) || []
       }))
       
       console.log('Frontend: Processed scenes:', processedScenes);
@@ -393,11 +396,19 @@ export default function ProjectDetailPage() {
         sceneId: newImage.sceneId,
         type: newImage.type,
         fileUrl: newImage.fileUrl,
+        url: newImage.fileUrl, // Set url same as fileUrl for consistency
         createdAt: newImage.uploadedAt || new Date().toISOString(),
         uploadedAt: newImage.uploadedAt,
         uploadedBy: newImage.uploadedBy,
         uploader: newImage.uploader
       }
+      
+      console.log('Uploaded image:', {
+        id: projectImage.id,
+        fileUrl: projectImage.fileUrl,
+        url: projectImage.url,
+        type: projectImage.type
+      })
       
       // Update scenes with new image
       setScenes(prevScenes => 
