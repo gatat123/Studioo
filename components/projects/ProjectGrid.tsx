@@ -303,7 +303,7 @@ export function ProjectGrid() {
                   )}
                   
                   <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-t-lg overflow-hidden">
-                  {project.thumbnail ? (
+                    {project.thumbnail ? (
                     <img
                       src={project.thumbnail}
                       alt={project.name}
@@ -314,7 +314,7 @@ export function ProjectGrid() {
                       <Grid3X3 className="h-12 w-12 text-gray-300" />
                     </div>
                   )}
-                </div>
+                  </div>
                 
                 <div className="p-4">
                   <h3 className="font-semibold text-gray-900 truncate mb-1">
@@ -342,6 +342,7 @@ export function ProjectGrid() {
                       </Badge>
                     )}
                   </div>
+                </div>
                 </div>
               </TiltedCard>
             ) : (

@@ -678,13 +678,14 @@ export default function ProjectDetailPage() {
                         variant="outline"
                         onClick={() => {
                           // Get current displayed image
+                          const images = selectedScene.images?.filter((img: any) => img.type === imageViewMode) || [];
                           const currentImage = imageViewMode === 'lineart' 
                             ? (selectedLineartVersion 
-                                ? selectedScene.lineArtImages?.find(img => img.version === selectedLineartVersion)
-                                : selectedScene.lineArtImages?.[selectedScene.lineArtImages.length - 1])
+                                ? images.find((img: any) => img.version === selectedLineartVersion)
+                                : images.find((img: any) => img.isCurrent) || images[images.length - 1])
                             : (selectedArtVersion
-                                ? selectedScene.artImages?.find(img => img.version === selectedArtVersion)
-                                : selectedScene.artImages?.[selectedScene.artImages.length - 1])
+                                ? images.find((img: any) => img.version === selectedArtVersion)
+                                : images.find((img: any) => img.isCurrent) || images[images.length - 1])
                           
                           if (currentImage) {
                             setAnnotationImage(currentImage)
@@ -761,20 +762,22 @@ export default function ProjectDetailPage() {
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, 'lineart')}
                       >
-                        {selectedScene.lineArtImages && selectedScene.lineArtImages.length > 0 ? (
+                        {selectedScene.images && selectedScene.images.filter((img: any) => img.type === 'lineart').length > 0 ? (
                           <div className="space-y-3">
                             {(() => {
+                              // Get lineart images from the images array
+                              const lineartImages = selectedScene.images.filter((img: any) => img.type === 'lineart');
                               // Show only the current version image
                               const currentImage = selectedLineartVersion ? 
-                                selectedScene.lineArtImages.find(img => img.version === selectedLineartVersion) :
-                                selectedScene.lineArtImages[selectedScene.lineArtImages.length - 1]; // Latest version
+                                lineartImages.find((img: any) => img.version === selectedLineartVersion) :
+                                lineartImages.find((img: any) => img.isCurrent) || lineartImages[lineartImages.length - 1]; // Current or Latest version
                               
                               if (!currentImage) return null;
                               
                               return (
                                 <div key={currentImage.id} className="relative group">
                                   <img 
-                                    src={currentImage.url || currentImage.fileUrl} 
+                                    src={(currentImage as any).url || (currentImage as any).fileUrl} 
                                     alt="Line art"
                                     className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all"
                                     onClick={() => setSelectedImage(currentImage)}
@@ -803,8 +806,8 @@ export default function ProjectDetailPage() {
                                       onClick={() => {
                                         // Download functionality
                                         const link = document.createElement('a')
-                                        link.href = currentImage.url || currentImage.fileUrl
-                                        link.download = `lineart-v${currentImage.version}.png`
+                                        link.href = (currentImage as any).url || (currentImage as any).fileUrl
+                                        link.download = `lineart-v${(currentImage as any).version}.png`
                                         link.click()
                                       }}
                                     >
@@ -866,20 +869,22 @@ export default function ProjectDetailPage() {
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, 'art')}
                       >
-                        {selectedScene.artImages && selectedScene.artImages.length > 0 ? (
+                        {selectedScene.images && selectedScene.images.filter((img: any) => img.type === 'art').length > 0 ? (
                           <div className="space-y-3">
                             {(() => {
+                              // Get art images from the images array
+                              const artImages = selectedScene.images.filter((img: any) => img.type === 'art');
                               // Show only the current version image
                               const currentImage = selectedArtVersion ? 
-                                selectedScene.artImages.find(img => img.version === selectedArtVersion) :
-                                selectedScene.artImages[selectedScene.artImages.length - 1]; // Latest version
+                                artImages.find((img: any) => img.version === selectedArtVersion) :
+                                artImages.find((img: any) => img.isCurrent) || artImages[artImages.length - 1]; // Current or Latest version
                               
                               if (!currentImage) return null;
                               
                               return (
                                 <div key={currentImage.id} className="relative group">
                                   <img 
-                                    src={currentImage.url || currentImage.fileUrl} 
+                                    src={(currentImage as any).url || (currentImage as any).fileUrl} 
                                     alt="Art"
                                     className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all"
                                     onClick={() => setSelectedImage(currentImage)}
@@ -908,8 +913,8 @@ export default function ProjectDetailPage() {
                                       onClick={() => {
                                         // Download functionality
                                         const link = document.createElement('a')
-                                        link.href = currentImage.url || currentImage.fileUrl
-                                        link.download = `art-v${currentImage.version}.png`
+                                        link.href = (currentImage as any).url || (currentImage as any).fileUrl
+                                        link.download = `art-v${(currentImage as any).version}.png`
                                         link.click()
                                       }}
                                     >

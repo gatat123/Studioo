@@ -81,7 +81,7 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
                 <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
                   {image ? (
                     <img
-                      src={image.url || image.fileUrl}
+                      src={(image as any).url || (image as any).fileUrl}
                       alt={`Scene ${scene.sceneNumber}`}
                       className="w-full h-full object-contain"
                     />
