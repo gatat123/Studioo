@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, Download, ZoomIn, ZoomOut } from 'lucide-react';
+import { X, Download, ZoomIn, ZoomOut, Move } from 'lucide-react';
 import Image from 'next/image';
 
 interface AnnotationViewModalProps {
@@ -24,11 +24,16 @@ interface AnnotationViewModalProps {
 
 export function AnnotationViewModal({ open, onOpenChange, annotation }: AnnotationViewModalProps) {
   const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Reset scale when modal opens
+    // Reset scale and position when modal opens
     if (open) {
       setScale(1);
+      setPosition({ x: 0, y: 0 });
     }
   }, [open]);
 
@@ -47,6 +52,38 @@ export function AnnotationViewModal({ open, onOpenChange, annotation }: Annotati
       link.download = `annotation-${Date.now()}.png`;
       link.click();
     }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (scale > 1) {
+      setIsDragging(true);
+      setDragStart({
+        x: e.clientX - position.x,
+        y: e.clientY - position.y
+      });
+      e.preventDefault();
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && scale > 1) {
+      setPosition({
+        x: e.clientX - dragStart.x,
+        y: e.clientY - dragStart.y
+      });
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+  };
+
+  const resetPosition = () => {
+    setPosition({ x: 0, y: 0 });
   };
 
   if (!annotation) return null;
@@ -77,6 +114,16 @@ export function AnnotationViewModal({ open, onOpenChange, annotation }: Annotati
               >
                 <ZoomIn className="h-4 w-4" />
               </Button>
+              {scale > 1 && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={resetPosition}
+                  title="위치 초기화"
+                >
+                  <Move className="h-4 w-4" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -108,19 +155,34 @@ export function AnnotationViewModal({ open, onOpenChange, annotation }: Annotati
           )}
           
           {annotation.image && (
-            <div className="overflow-auto max-h-[60vh] flex items-center justify-center bg-muted/20 rounded-lg">
+            <div 
+              ref={containerRef}
+              className="overflow-auto max-h-[60vh] flex items-center justify-center bg-muted/20 rounded-lg relative"
+              style={{ 
+                cursor: scale > 1 ? (isDragging ? 'grabbing' : 'grab') : 'default',
+                userSelect: 'none'
+              }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseLeave}
+            >
               <div 
                 style={{ 
-                  transform: `scale(${scale})`,
+                  transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
                   transformOrigin: 'center',
-                  transition: 'transform 0.2s ease-in-out'
+                  transition: isDragging ? 'none' : 'transform 0.2s ease-in-out'
                 }}
               >
                 <img
                   src={annotation.image}
                   alt="Annotation"
                   className="max-w-full h-auto"
-                  style={{ imageRendering: scale > 1.5 ? 'pixelated' : 'auto' }}
+                  style={{ 
+                    imageRendering: scale > 1.5 ? 'pixelated' : 'auto',
+                    pointerEvents: 'none'
+                  }}
+                  draggable={false}
                 />
               </div>
             </div>
