@@ -1112,10 +1112,9 @@ export default function ProjectDetailPage() {
           </div>
         </div>
       )}
-    </div>
-    
-    {/* History Modal */}
-    {showHistory && (
+      
+      {/* History Modal */}
+      {showHistory && (
       <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
         <div className="bg-background rounded-lg shadow-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
           <div className="p-4 border-b flex items-center justify-between">
@@ -1160,10 +1159,10 @@ export default function ProjectDetailPage() {
           </ScrollArea>
         </div>
       </div>
-    )}
-    
-    {/* Compare Modal */}
-    {showCompare && compareImages && (
+      )}
+      
+      {/* Compare Modal */}
+      {showCompare && compareImages && (
       <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
         <div className="bg-background rounded-lg shadow-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
           <div className="p-4 border-b flex items-center justify-between">
@@ -1203,6 +1202,7 @@ export default function ProjectDetailPage() {
           </div>
         </div>
       </div>
-    )}
+      )}
+    </div>
   )
 }
