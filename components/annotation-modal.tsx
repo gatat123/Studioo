@@ -31,31 +31,64 @@ export default function AnnotationModal({ image, onClose, onSave }: AnnotationMo
   const [textPosition, setTextPosition] = useState<{ x: number; y: number } | null>(null);
   const [textInput, setTextInput] = useState('');
   const imageRef = useRef<HTMLImageElement | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [canvasScale, setCanvasScale] = useState(1);
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!canvas || !container) return;
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
+    const updateCanvasSize = () => {
+      if (!imageRef.current || !container) return;
+      
+      // Calculate scale to fit container
+      const containerRect = container.getBoundingClientRect();
+      const maxWidth = containerRect.width - 32; // padding
+      const maxHeight = containerRect.height - 32; // padding
+      
+      const scaleX = maxWidth / imageRef.current.width;
+      const scaleY = maxHeight / imageRef.current.height;
+      const scale = Math.min(scaleX, scaleY, 1); // Don't scale up, only down
+      
+      setCanvasScale(scale);
+      
+      // Apply scale to canvas display size
+      if (canvas) {
+        canvas.style.width = `${imageRef.current.width * scale}px`;
+        canvas.style.height = `${imageRef.current.height * scale}px`;
+      }
+    };
+
     // Load and draw the original image
     const img = new Image();
     img.onload = () => {
+      // Set canvas to original image size
       canvas.width = img.width;
       canvas.height = img.height;
+      
       ctx.drawImage(img, 0, 0);
       imageRef.current = img;
+      
+      // Initial size calculation
+      updateCanvasSize();
     };
     img.src = image.url || image.fileUrl;
+
+    // Update on window resize
+    window.addEventListener('resize', updateCanvasSize);
+    return () => window.removeEventListener('resize', updateCanvasSize);
   }, [image]);
 
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (tool === 'text') {
       const rect = canvasRef.current?.getBoundingClientRect();
       if (rect) {
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+        const x = (e.clientX - rect.left) / canvasScale;
+        const y = (e.clientY - rect.top) / canvasScale;
         setTextPosition({ x, y });
         setTextMode(true);
       }
@@ -147,6 +180,10 @@ export default function AnnotationModal({ image, onClose, onSave }: AnnotationMo
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(imageRef.current, 0, 0);
+    
+    // Maintain canvas display size
+    canvas.style.width = `${imageRef.current.width * canvasScale}px`;
+    canvas.style.height = `${imageRef.current.height * canvasScale}px`;
   };
 
   const handleSave = () => {
@@ -169,8 +206,8 @@ export default function AnnotationModal({ image, onClose, onSave }: AnnotationMo
 
   return (
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
-      <div className="bg-background rounded-lg shadow-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
-        <div className="p-4 border-b flex items-center justify-between">
+      <div className="bg-background rounded-lg shadow-lg w-[95vw] max-w-[1400px] h-[90vh] flex flex-col">
+        <div className="p-4 border-b flex items-center justify-between flex-shrink-0">
           <h2 className="text-lg font-semibold">이미지 주석</h2>
           <Button
             variant="ghost"
@@ -181,9 +218,9 @@ export default function AnnotationModal({ image, onClose, onSave }: AnnotationMo
           </Button>
         </div>
 
-        <div className="p-4 flex gap-4">
+        <div className="flex-1 flex gap-4 p-4 overflow-hidden">
           {/* Toolbar */}
-          <div className="w-48 space-y-4">
+          <div className="w-48 space-y-4 flex-shrink-0 overflow-y-auto">
             <div className="space-y-2">
               <Label>도구</Label>
               <div className="grid grid-cols-2 gap-2">
@@ -265,44 +302,55 @@ export default function AnnotationModal({ image, onClose, onSave }: AnnotationMo
           </div>
 
           {/* Canvas Area */}
-          <div className="flex-1">
-            <div className="relative overflow-auto max-h-[60vh] border rounded-lg">
-              <canvas
-                ref={canvasRef}
-                className="cursor-crosshair"
-                onMouseDown={startDrawing}
-                onMouseMove={draw}
-                onMouseUp={stopDrawing}
-                onMouseLeave={stopDrawing}
-              />
-              
-              {/* Text input overlay */}
-              {textMode && textPosition && (
-                <div
-                  className="absolute bg-white border rounded p-2"
-                  style={{ left: textPosition.x, top: textPosition.y }}
-                >
-                  <Input
-                    value={textInput}
-                    onChange={(e) => setTextInput(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        addText();
-                      }
+          <div className="flex-1 flex flex-col min-w-0">
+            <div ref={containerRef} className="flex-1 relative bg-gray-100 dark:bg-gray-900 rounded-lg overflow-auto">
+              <div className="absolute inset-0 flex items-center justify-center p-4">
+                <div className="relative">
+                  <canvas
+                    ref={canvasRef}
+                    className="cursor-crosshair shadow-lg rounded bg-white"
+                    style={{ 
+                      display: 'block',
+                      imageRendering: 'crisp-edges'
                     }}
-                    placeholder="텍스트 입력"
-                    autoFocus
+                    onMouseDown={startDrawing}
+                    onMouseMove={draw}
+                    onMouseUp={stopDrawing}
+                    onMouseLeave={stopDrawing}
                   />
-                  <div className="flex gap-2 mt-2">
-                    <Button size="sm" onClick={addText}>추가</Button>
-                    <Button size="sm" variant="outline" onClick={() => {
-                      setTextMode(false);
-                      setTextPosition(null);
-                      setTextInput('');
-                    }}>취소</Button>
-                  </div>
+              
+                  {/* Text input overlay */}
+                  {textMode && textPosition && (
+                    <div
+                      className="absolute bg-white dark:bg-gray-800 border rounded p-2 z-10"
+                      style={{ 
+                        left: `${textPosition.x * canvasScale}px`, 
+                        top: `${textPosition.y * canvasScale}px` 
+                      }}
+                    >
+                      <Input
+                        value={textInput}
+                        onChange={(e) => setTextInput(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            addText();
+                          }
+                        }}
+                        placeholder="텍스트 입력"
+                        autoFocus
+                      />
+                      <div className="flex gap-2 mt-2">
+                        <Button size="sm" onClick={addText}>추가</Button>
+                        <Button size="sm" variant="outline" onClick={() => {
+                          setTextMode(false);
+                          setTextPosition(null);
+                          setTextInput('');
+                        }}>취소</Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Annotation text */}
@@ -313,12 +361,13 @@ export default function AnnotationModal({ image, onClose, onSave }: AnnotationMo
                 onChange={(e) => setAnnotationText(e.target.value)}
                 placeholder="이미지에 대한 설명이나 피드백을 작성하세요..."
                 rows={3}
+                className="resize-none"
               />
             </div>
           </div>
         </div>
 
-        <div className="p-4 border-t flex justify-end gap-2">
+        <div className="p-4 border-t flex justify-end gap-2 flex-shrink-0">
           <Button variant="outline" onClick={onClose}>
             취소
           </Button>
