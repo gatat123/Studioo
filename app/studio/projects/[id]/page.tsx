@@ -159,13 +159,35 @@ export default function ProjectDetailPage() {
               const imageWithUrl = { 
                 ...data.image, 
                 url: (data.image.url || data.image.fileUrl)?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-                fileUrl: data.image.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+                fileUrl: data.image.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
+                isCurrent: true
               }
+              
+              // Update images array (main array used for display)
+              if (!updatedScene.images) {
+                updatedScene.images = []
+              }
+              
+              // Mark all existing images of same type as not current
+              updatedScene.images = updatedScene.images.map((img: any) => 
+                img.type === data.type ? { ...img, isCurrent: false } : img
+              )
+              
+              // Add new image as current
+              updatedScene.images.push(imageWithUrl)
+              
+              // Also update legacy arrays for backward compatibility
               if (data.image.type === 'lineart') {
                 updatedScene.lineArtImages = [...(scene.lineArtImages || []), imageWithUrl]
               } else {
                 updatedScene.artImages = [...(scene.artImages || []), imageWithUrl]
               }
+              
+              // Update selected scene if it's the current one
+              if (selectedScene?.id === scene.id) {
+                setSelectedScene(updatedScene)
+              }
+              
               return updatedScene
             }
             return scene
@@ -326,6 +348,14 @@ export default function ProjectDetailPage() {
       })
       setComments([...comments, comment])
       setNewComment('')
+      
+      // Emit Socket.io event for real-time update
+      socketClient.emit('comment:created', {
+        projectId,
+        sceneId: selectedScene?.id,
+        comment
+      })
+      
       toast({
         title: '댓글 작성',
         description: '댓글이 작성되었습니다.'
@@ -433,17 +463,41 @@ export default function ProjectDetailPage() {
         prevScenes.map(scene => {
           if (scene.id === selectedScene.id) {
             const updatedScene = { ...scene }
+            
+            // Update images array (main array used for display)
+            if (!updatedScene.images) {
+              updatedScene.images = []
+            }
+            
+            // Mark all existing images of same type as not current
+            updatedScene.images = updatedScene.images.map((img: any) => 
+              img.type === type ? { ...img, isCurrent: false } : img
+            )
+            
+            // Add new image as current
+            updatedScene.images.push({ ...projectImage, isCurrent: true })
+            
+            // Also update legacy arrays for backward compatibility
             if (type === 'lineart') {
               updatedScene.lineArtImages = [...(scene.lineArtImages || []), projectImage]
             } else {
               updatedScene.artImages = [...(scene.artImages || []), projectImage]
             }
+            
             setSelectedScene(updatedScene)
             return updatedScene
           }
           return scene
         })
       )
+      
+      // Emit Socket.io event for real-time update
+      socketClient.emit('image:uploaded', {
+        projectId: project.id,
+        sceneId: selectedScene.id,
+        image: projectImage,
+        type
+      })
       
       toast({
         title: '업로드 완료',
@@ -529,9 +583,9 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Main Content - 3 Column Layout */}
-      <div className="flex-1 flex overflow-hidden min-h-0">
+      <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Scene List */}
-        <div className="w-80 border-r bg-card flex flex-col h-full">
+        <div className="w-80 border-r bg-card flex flex-col">
           <div className="p-4 border-b">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold">씬 목록</h2>
@@ -629,7 +683,7 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* Center Panel - Image Viewer */}
-        <div className="flex-1 flex flex-col bg-muted/30 h-full min-w-0">
+        <div className="flex-1 flex flex-col bg-muted/30 min-w-0">
           {selectedScene ? (
             <>
               {/* Image View Controls */}
@@ -708,14 +762,16 @@ export default function ProjectDetailPage() {
                         onClick={async () => {
                           setSelectedHistoryType(imageViewMode)
                           const history = await imagesAPI.getImageHistory(selectedScene.id, imageViewMode)
-                          // Fix image URLs to use correct backend URL
-                          const fixedHistory = history.map((img: any) => ({
+                          // Fix image URLs and add version numbers
+                          const fixedHistory = history.map((img: any, index: number) => ({
                             ...img,
                             url: img.url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-                            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+                            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
+                            version: img.version || history.length - index // Add version if missing
                           }))
                           setImageHistory(fixedHistory)
                           setShowHistory(true)
+                          console.log('Image history loaded:', fixedHistory)
                         }}
                       >
                         <History className="h-4 w-4 mr-1" />
@@ -991,7 +1047,7 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* Right Panel - Comments */}
-        <div className="w-96 border-l bg-card flex flex-col h-full overflow-hidden">
+        <div className="w-96 border-l bg-card flex flex-col">
           <div className="p-4 border-b flex-shrink-0">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">댓글</h2>
