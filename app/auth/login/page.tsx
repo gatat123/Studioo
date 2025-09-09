@@ -14,6 +14,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import SplashCursor from '@/components/ui/splash-cursor';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -54,7 +55,8 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-12">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-12" style={{ cursor: 'none' }}>
+      <SplashCursor />
       <div className="w-full max-w-md">
         <Card className="border-0 shadow-lg">
           <CardHeader className="space-y-1 pb-6">
