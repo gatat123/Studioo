@@ -17,6 +17,7 @@ export default function StudioPage() {
   const { projects, fetchProjects } = useProjectStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   
   useEffect(() => {
     // Debug: Check localStorage and cookies
@@ -24,7 +25,15 @@ export default function StudioPage() {
       console.log('🔍 Debug - localStorage token:', localStorage.getItem('token'));
       console.log('🔍 Debug - cookie token:', document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1]);
     }
-    checkAuth();
+    
+    // Give zustand time to hydrate from localStorage
+    const timer = setTimeout(() => {
+      checkAuth().finally(() => {
+        setIsInitializing(false);
+      });
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -34,15 +43,29 @@ export default function StudioPage() {
   }, [isAuthenticated]);
   
   useEffect(() => {
-    console.log('🎭 Studio - Auth state:', { isLoading, isAuthenticated, user: user?.username });
-    if (!isLoading && !isAuthenticated) {
+    console.log('🎭 Studio - Auth state:', { isInitializing, isLoading, isAuthenticated, user: user?.username });
+    
+    // Only redirect after initialization is complete
+    if (!isInitializing && !isLoading && !isAuthenticated) {
       console.log('⚠️ Studio - Redirecting to login page');
       router.push('/login');
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isInitializing, isLoading, isAuthenticated, router]);
   
   // Count projects with updates
   const projectsWithUpdates = projects.filter(p => p.hasUpdates).length;
+  
+  // Show loading during initialization
+  if (isInitializing || isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">로딩중...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
