@@ -202,8 +202,24 @@ export default function ProjectSettingsPage() {
       await projectsAPI.updateProject(projectId, { status: 'archived' })
       toast({
         title: '프로젝트 보관',
-      description: 'The project has been archived and moved to your archive.',
-    })
+        description: '프로젝트가 보관되었습니다.',
+      })
+    } catch (error) {
+      console.error('프로젝트 보관 실패:', error)
+      toast({
+        title: '오류',
+        description: '프로젝트 보관에 실패했습니다.',
+        variant: 'destructive',
+      })
+    }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
   }
 
   if (!project) {
