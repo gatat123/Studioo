@@ -28,7 +28,8 @@ import {
   X,
   History,
   GitCompare,
-  RefreshCw
+  RefreshCw,
+  PenTool
 } from 'lucide-react'
 import Link from 'next/link'
 import { projectsAPI, ProjectWithParticipants } from '@/lib/api/projects'
@@ -46,6 +47,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
+import AnnotationModal from '@/components/annotation-modal'
 
 // Dynamic import for AnnotationLayer (client-side only)
 const AnnotationLayer = dynamic(
@@ -123,6 +125,11 @@ export default function ProjectDetailPage() {
   const [compareImages, setCompareImages] = useState<{left: any, right: any} | null>(null)
   const [selectedLineartVersion, setSelectedLineartVersion] = useState<number | null>(null)
   const [selectedArtVersion, setSelectedArtVersion] = useState<number | null>(null)
+  
+  // Annotation states
+  const [showAnnotation, setShowAnnotation] = useState(false)
+  const [annotationImage, setAnnotationImage] = useState<any>(null)
+  const [annotationText, setAnnotationText] = useState('')
 
   useEffect(() => {
     // Minimize sidebar when entering project page
@@ -670,6 +677,34 @@ export default function ProjectDetailPage() {
                       <Button
                         size="sm"
                         variant="outline"
+                        onClick={() => {
+                          // Get current displayed image
+                          const currentImage = imageViewMode === 'lineart' 
+                            ? (selectedLineartVersion 
+                                ? selectedScene.lineArtImages?.find(img => img.version === selectedLineartVersion)
+                                : selectedScene.lineArtImages?.[selectedScene.lineArtImages.length - 1])
+                            : (selectedArtVersion
+                                ? selectedScene.artImages?.find(img => img.version === selectedArtVersion)
+                                : selectedScene.artImages?.[selectedScene.artImages.length - 1])
+                          
+                          if (currentImage) {
+                            setAnnotationImage(currentImage)
+                            setShowAnnotation(true)
+                          } else {
+                            toast({
+                              title: '이미지 없음',
+                              description: '주석을 남길 이미지가 없습니다.',
+                              variant: 'destructive'
+                            })
+                          }
+                        }}
+                      >
+                        <PenTool className="h-4 w-4 mr-1" />
+                        주석
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         onClick={async () => {
                           setSelectedHistoryType(imageViewMode)
                           const history = await imagesAPI.getImageHistory(selectedScene.id, imageViewMode)
@@ -964,26 +999,65 @@ export default function ProjectDetailPage() {
           <ScrollArea className="flex-1">
             <div className="p-4 space-y-4">
               {comments.length > 0 ? (
-                comments.map((comment) => (
-                  <div key={comment.id} className="flex gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-xs">
-                        {comment.user?.username?.[0]?.toUpperCase() || comment.author?.username?.[0]?.toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium">
-                          {comment.user?.nickname || comment.user?.username || comment.author?.nickname || comment.author?.username || 'Unknown'}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(comment.createdAt).toLocaleTimeString()}
-                        </p>
+                comments.map((comment) => {
+                  const isAnnotation = comment.content?.startsWith('[ANNOTATION]')
+                  const annotationText = isAnnotation ? comment.content.substring(12) : comment.content
+                  
+                  return (
+                    <div key={comment.id} className="flex gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="text-xs">
+                          {comment.user?.username?.[0]?.toUpperCase() || comment.author?.username?.[0]?.toUpperCase() || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-medium">
+                            {comment.user?.nickname || comment.user?.username || comment.author?.nickname || comment.author?.username || 'Unknown'}
+                          </p>
+                          {isAnnotation && (
+                            <Badge variant="secondary" className="text-xs">
+                              <PenTool className="h-3 w-3 mr-1" />
+                              주석
+                            </Badge>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(comment.createdAt).toLocaleTimeString()}
+                          </p>
+                        </div>
+                        {isAnnotation ? (
+                          <div
+                            className="cursor-pointer hover:bg-accent/50 rounded p-2 transition-colors"
+                            onClick={() => {
+                              if (comment.metadata?.annotationImage) {
+                                // Show annotation image in modal
+                                const img = new Image()
+                                img.src = comment.metadata.annotationImage
+                                const win = window.open('', '_blank')
+                                if (win) {
+                                  win.document.write(`
+                                    <html>
+                                      <head><title>주석 이미지</title></head>
+                                      <body style="margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000;">
+                                        <img src="${comment.metadata.annotationImage}" style="max-width: 100%; max-height: 100vh;" />
+                                      </body>
+                                    </html>
+                                  `)
+                                }
+                              }
+                            }}
+                          >
+                            <p className="text-sm text-blue-600 dark:text-blue-400">
+                              {annotationText || '주석을 남겼습니다 (클릭하여 보기)'}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-sm">{comment.content}</p>
+                        )}
                       </div>
-                      <p className="text-sm">{comment.content}</p>
                     </div>
-                  </div>
-                ))
+                  )
+                })
               ) : (
                 <div className="text-center py-8">
                   <MessageSquare className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-30" />
@@ -1217,6 +1291,49 @@ export default function ProjectDetailPage() {
           </div>
         </div>
       </div>
+      )}
+      
+      {/* Annotation Modal */}
+      {showAnnotation && annotationImage && (
+        <AnnotationModal
+          image={annotationImage}
+          onClose={() => {
+            setShowAnnotation(false)
+            setAnnotationImage(null)
+            setAnnotationText('')
+          }}
+          onSave={async (canvasDataUrl, text) => {
+            try {
+              // Create annotation comment with special type
+              const comment = await commentsAPI.createComment({
+                projectId,
+                sceneId: selectedScene?.id,
+                content: `[ANNOTATION]${text}`,
+                metadata: {
+                  annotationImage: canvasDataUrl,
+                  originalImageId: annotationImage.id,
+                  imageType: annotationImage.type
+                }
+              })
+              
+              setComments([comment, ...comments])
+              setShowAnnotation(false)
+              setAnnotationImage(null)
+              setAnnotationText('')
+              
+              toast({
+                title: '주석 저장',
+                description: '주석이 저장되었습니다.'
+              })
+            } catch (error) {
+              toast({
+                title: '오류',
+                description: '주석 저장에 실패했습니다.',
+                variant: 'destructive'
+              })
+            }
+          }}
+        />
       )}
     </div>
   )

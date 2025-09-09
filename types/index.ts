@@ -143,6 +143,11 @@ export interface Comment {
   user?: User;
   author?: User;  // Some APIs return author instead of user
   replies?: Comment[];
+  metadata?: {
+    annotationImage?: string;
+    originalImageId?: string;
+    imageType?: string;
+  };
 }
 
 // Annotation types
