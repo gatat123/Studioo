@@ -129,7 +129,7 @@ export default function ProjectDetailPage() {
         setComments(prev => [data.comment, ...prev])
         toast({
           title: '새 댓글',
-          description: `${data.comment.author?.nickname || 'Someone'}님이 댓글을 작성했습니다.`
+          description: `${data.comment.user?.nickname || data.comment.author?.nickname || 'Someone'}님이 댓글을 작성했습니다.`
         })
       }
     })
@@ -179,18 +179,37 @@ export default function ProjectDetailPage() {
 
   const fetchProjectDetails = async () => {
     try {
-      const [projectData, scenesData, commentsData] = await Promise.all([
+      const [projectData, commentsData] = await Promise.all([
         projectsAPI.getProject(projectId),
-        scenesAPI.getScenes(projectId),
         commentsAPI.getProjectComments(projectId)
       ])
+      
+      console.log('Frontend: Received project data:', {
+        projectId,
+        hasScenes: !!projectData.scenes,
+        scenesCount: projectData.scenes?.length,
+        scenes: projectData.scenes?.map((s: any) => ({
+          id: s.id,
+          imagesCount: s.images?.length,
+          images: s.images
+        }))
+      });
+      
+      // Use scenes from projectData if available, otherwise fetch separately
+      let scenesData = projectData.scenes || [];
+      if (!scenesData.length) {
+        console.log('Frontend: No scenes in project data, fetching separately');
+        scenesData = await scenesAPI.getScenes(projectId, true);
+      }
       
       // Process scenes to separate line art and art images
       const processedScenes = scenesData.map((scene: any) => ({
         ...scene,
         lineArtImages: scene.images?.filter((img: any) => img.type === 'lineart') || [],
-        artImages: scene.images?.filter((img: any) => img.type === 'art') || []
+        artImages: scene.images?.filter((img: any) => img.type === 'art' || img.type === 'storyboard') || []
       }))
+      
+      console.log('Frontend: Processed scenes:', processedScenes);
       
       setProject(projectData)
       setScenes(processedScenes)
@@ -815,13 +834,13 @@ export default function ProjectDetailPage() {
                   <div key={comment.id} className="flex gap-3">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="text-xs">
-                        {comment.author?.username?.[0]?.toUpperCase() || 'U'}
+                        {comment.user?.username?.[0]?.toUpperCase() || comment.author?.username?.[0]?.toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 space-y-1">
                       <div className="flex items-center gap-2">
                         <p className="text-sm font-medium">
-                          {comment.author?.nickname || comment.author?.username || 'Unknown'}
+                          {comment.user?.nickname || comment.user?.username || comment.author?.nickname || comment.author?.username || 'Unknown'}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {new Date(comment.createdAt).toLocaleTimeString()}

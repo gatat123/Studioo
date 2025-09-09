@@ -29,8 +29,9 @@ export const scenesAPI = {
   /**
    * Get all scenes for a project
    */
-  async getScenes(projectId: string): Promise<Scene[]> {
-    const response = await api.get(`/api/projects/${projectId}/scenes`);
+  async getScenes(projectId: string, includeImages: boolean = true): Promise<Scene[]> {
+    const params = includeImages ? '?include_images=true' : '';
+    const response = await api.get(`/api/projects/${projectId}/scenes${params}`);
     // Backend returns { scenes: [...] }
     return response.scenes || [];
   },
