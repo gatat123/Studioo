@@ -1087,9 +1087,7 @@ export default function ProjectDetailPage() {
                                 // Show annotation image in modal
                                 setAnnotationModalData({
                                   image: annotationData.annotationImage,
-                                  text: displayText,
-                                  position: annotationData.position,
-                                  color: annotationData.color
+                                  text: displayText
                                 })
                                 setShowAnnotationModal(true)
                               }
