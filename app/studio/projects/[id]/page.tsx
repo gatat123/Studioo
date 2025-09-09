@@ -49,7 +49,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
-import AnnotationModal from '@/components/annotation-modal'
 import ScenePlayModal from '@/components/projects/ScenePlayModal'
 
 // Removed AnnotationLayer - using AnnotationModal instead
