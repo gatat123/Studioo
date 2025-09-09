@@ -1,0 +1,5 @@
+백엔드
+"C:\Users\a0109\studio\backend"
+
+프론트엔드
+"C:\Users\a0109\studio\frontend"
