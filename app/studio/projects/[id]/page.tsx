@@ -162,7 +162,11 @@ export default function ProjectDetailPage() {
           prevScenes.map(scene => {
             if (scene.id === data.sceneId) {
               const updatedScene = { ...scene }
-              const imageWithUrl = { ...data.image, url: data.image.url || data.image.fileUrl }
+              const imageWithUrl = { 
+                ...data.image, 
+                url: (data.image.url || data.image.fileUrl)?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
+                fileUrl: data.image.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+              }
               if (data.image.type === 'lineart') {
                 updatedScene.lineArtImages = [...(scene.lineArtImages || []), imageWithUrl]
               } else {
@@ -218,9 +222,17 @@ export default function ProjectDetailPage() {
       const processedScenes = scenesData.map((scene: any) => ({
         ...scene,
         lineArtImages: scene.images?.filter((img: any) => img.type === 'lineart')
-          .map((img: any) => ({ ...img, url: img.url || img.fileUrl })) || [],
+          .map((img: any) => ({ 
+            ...img, 
+            url: (img.url || img.fileUrl)?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
+            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+          })) || [],
         artImages: scene.images?.filter((img: any) => img.type === 'art' || img.type === 'storyboard')
-          .map((img: any) => ({ ...img, url: img.url || img.fileUrl })) || []
+          .map((img: any) => ({ 
+            ...img, 
+            url: (img.url || img.fileUrl)?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
+            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+          })) || []
       }))
       
       console.log('Frontend: Processed scenes:', processedScenes);
@@ -661,7 +673,13 @@ export default function ProjectDetailPage() {
                         onClick={async () => {
                           setSelectedHistoryType(imageViewMode)
                           const history = await imagesAPI.getImageHistory(selectedScene.id, imageViewMode)
-                          setImageHistory(history)
+                          // Fix image URLs to use correct backend URL
+                          const fixedHistory = history.map((img: any) => ({
+                            ...img,
+                            url: img.url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
+                            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+                          }))
+                          setImageHistory(fixedHistory)
                           setShowHistory(true)
                         }}
                       >
