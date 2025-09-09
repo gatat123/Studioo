@@ -413,10 +413,10 @@ export default function ProjectDetailPage() {
         type: newImage.type,
         fileUrl: newImage.fileUrl,
         url: newImage.fileUrl, // Set url same as fileUrl for consistency
-        createdAt: newImage.uploadedAt || new Date().toISOString(),
-        uploadedAt: newImage.uploadedAt,
+        uploadedAt: newImage.uploadedAt || new Date().toISOString(),
         uploadedBy: newImage.uploadedBy,
-        uploader: newImage.uploader
+        uploader: newImage.uploader,
+        isCurrent: true
       }
       
       console.log('Uploaded image:', {
