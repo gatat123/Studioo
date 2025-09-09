@@ -29,7 +29,8 @@ export function middleware(request: NextRequest) {
   }
 
   // 토큰 확인 (쿠키 또는 헤더에서)
-  const token = request.cookies.get('token')?.value;
+  const token = request.cookies.get('token')?.value || 
+                request.headers.get('authorization')?.replace('Bearer ', '');
   
   // 보호된 경로 확인
   const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
