@@ -8,8 +8,20 @@ import { ProjectGrid } from '@/components/projects/ProjectGrid';
 import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
 import JoinProjectModal from '@/components/projects/JoinProjectModal';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { FriendList } from '@/components/friends/FriendList';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProjectStore } from '@/store/useProjectStore';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User, Settings, LogOut } from 'lucide-react';
+import Link from 'next/link';
 
 export default function StudioPage() {
   const router = useRouter();
@@ -82,8 +94,57 @@ export default function StudioPage() {
               </div>
               
               <div className="flex items-center gap-3">
+                {/* Friend List */}
+                <FriendList />
+                
                 {/* Notifications */}
                 <NotificationCenter userId={user?.id} />
+                
+                {/* Profile Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.profileImageUrl || undefined} />
+                        <AvatarFallback>
+                          {user?.nickname?.[0]?.toUpperCase() || user?.username?.[0]?.toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user?.nickname}</p>
+                        <p className="text-xs leading-none text-muted-foreground">@{user?.username}</p>
+                      </div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile">
+                        <User className="mr-2 h-4 w-4" />
+                        <span>프로필</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/profile">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>설정</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-red-600"
+                      onClick={() => {
+                        useAuthStore.getState().logout();
+                        router.push('/login');
+                      }}
+                    >
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>로그아웃</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 
                 {/* Join Project Button */}
                 <Button 
