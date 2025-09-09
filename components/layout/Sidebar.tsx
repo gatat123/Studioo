@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
   FolderOpen,
@@ -18,6 +18,7 @@ import {
   Palette,
   Star,
   Archive,
+  Bell,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -25,6 +26,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { projectsAPI } from '@/lib/api/projects';
+import { Project } from '@/types';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/components/ui/use-toast';
+import { useSocket } from '@/hooks/useSocket';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -47,9 +53,77 @@ const Sidebar: React.FC<SidebarProps> = ({
   isMobile = false,
 }) => {
   const pathname = usePathname();
+  const router = useRouter();
+  const { toast } = useToast();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [isLoadingProjects, setIsLoadingProjects] = useState(true);
+  const [recentProjects, setRecentProjects] = useState<Project[]>([]);
+  const [starredProjects, setStarredProjects] = useState<Project[]>([]);
+  const { socket, isConnected } = useSocket();
+
+  // Function to fetch projects
+  const fetchProjects = async () => {
+    try {
+      setIsLoadingProjects(true);
+      const fetchedProjects = await projectsAPI.getProjects();
+      setProjects(fetchedProjects);
+      
+      // Sort by updated date for recent projects
+      const sorted = [...fetchedProjects].sort((a, b) => 
+        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      );
+      setRecentProjects(sorted.slice(0, 5)); // Get 5 most recent
+      
+      // Filter starred projects (you might need to add a starred field to Project type)
+      // For now, we'll just use empty array
+      setStarredProjects([]);
+    } catch (error) {
+      console.error('Failed to fetch projects:', error);
+      toast({
+        title: '프로젝트 불러오기 실패',
+        description: '프로젝트 목록을 불러오는데 실패했습니다.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingProjects(false);
+    }
+  };
+
+  // Initial fetch projects data
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
+  // Listen for real-time updates
+  useEffect(() => {
+    if (!socket || !isConnected) return;
+
+    // Listen for project updates
+    const handleProjectUpdate = () => {
+      fetchProjects(); // Refresh projects list
+    };
+
+    socket.on('project:created', handleProjectUpdate);
+    socket.on('project:updated', handleProjectUpdate);
+    socket.on('project:deleted', handleProjectUpdate);
+    socket.on('project:archived', handleProjectUpdate);
+
+    return () => {
+      socket.off('project:created', handleProjectUpdate);
+      socket.off('project:updated', handleProjectUpdate);
+      socket.off('project:deleted', handleProjectUpdate);
+      socket.off('project:archived', handleProjectUpdate);
+    };
+  }, [socket, isConnected]);
+
+  // Count projects by type
+  const illustrationCount = projects.filter(p => p.tag === 'illustration').length;
+  const storyboardCount = projects.filter(p => p.tag === 'storyboard').length;
+  const activeCount = projects.filter(p => p.status === 'active').length;
+  const archivedCount = projects.filter(p => p.status === 'archived').length;
 
   const navigationItems: NavigationItem[] = [
     {
@@ -63,26 +137,37 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: 'Projects',
       href: '/studio/projects',
       icon: <FolderOpen className="h-4 w-4" />,
-      badge: 3,
+      badge: activeCount > 0 ? activeCount : undefined,
       children: [
         {
           id: 'all-projects',
           label: 'All Projects',
           href: '/studio/projects',
           icon: <LayoutGrid className="h-4 w-4" />,
+          badge: projects.length > 0 ? projects.length : undefined,
         },
         {
           id: 'illustrations',
           label: 'Illustrations',
           href: '/studio/projects?filter=illustration',
           icon: <Palette className="h-4 w-4" />,
+          badge: illustrationCount > 0 ? illustrationCount : undefined,
         },
         {
           id: 'storyboards',
           label: 'Storyboards',
           href: '/studio/projects?filter=storyboard',
           icon: <FileText className="h-4 w-4" />,
+          badge: storyboardCount > 0 ? storyboardCount : undefined,
         },
+        ...recentProjects.slice(0, 3).map(project => ({
+          id: `project-${project.id}`,
+          label: project.name,
+          href: `/studio/projects/${project.id}`,
+          icon: project.tag === 'illustration' ? 
+            <Palette className="h-3 w-3 opacity-60" /> : 
+            <FileText className="h-3 w-3 opacity-60" />,
+        })),
       ],
     },
     {
@@ -108,6 +193,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: 'Archive',
       href: '/studio/archive',
       icon: <Archive className="h-4 w-4" />,
+      badge: archivedCount > 0 ? archivedCount : undefined,
     },
   ];
 
@@ -265,6 +351,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             <Button
               className={cn('w-full', isCollapsed && 'px-2')}
               variant="outline"
+              onClick={() => router.push('/studio/projects/new')}
             >
               <Plus className="h-4 w-4" />
               {!isCollapsed && <span className="ml-2">New Project</span>}
@@ -275,9 +362,26 @@ const Sidebar: React.FC<SidebarProps> = ({
 
           {/* Navigation Items */}
           <ScrollArea className="flex-1 px-4 py-2">
-            <div className="space-y-1">
-              {navigationItems.map((item) => renderNavigationItem(item))}
-            </div>
+            {isLoadingProjects ? (
+              <div className="space-y-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {navigationItems
+                  .filter(item => {
+                    if (!searchQuery) return true;
+                    return item.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                      item.children?.some(child => 
+                        child.label.toLowerCase().includes(searchQuery.toLowerCase())
+                      );
+                  })
+                  .map((item) => renderNavigationItem(item))}
+              </div>
+            )}
           </ScrollArea>
 
           <Separator />
