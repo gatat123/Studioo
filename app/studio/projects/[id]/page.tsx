@@ -38,7 +38,7 @@ import { commentsAPI } from '@/lib/api/comments'
 import { imagesAPI } from '@/lib/api/images'
 import { socketClient } from '@/lib/socket/client'
 import { useToast } from '@/hooks/use-toast'
-import { Scene, Comment, Image } from '@/types'
+import type { Scene, Comment, Image } from '@/types'
 import { useUIStore } from '@/store/useUIStore'
 import {
   DropdownMenu,
@@ -56,23 +56,9 @@ const AnnotationLayer = dynamic(
 )
 
 // Extended Image type for project
-interface ProjectImage {
-  id: string
-  sceneId: string
-  projectId?: string
-  type: 'lineart' | 'art'
-  version?: number
-  fileUrl: string
+type ProjectImage = Image & {
   url?: string
-  thumbnailUrl?: string
-  createdAt: string | Date
-  uploadedAt?: string | Date
-  uploadedBy: string
-  uploader?: {
-    id: string
-    username: string
-    nickname?: string
-  }
+  version?: number
 }
 
 // Scene with images
