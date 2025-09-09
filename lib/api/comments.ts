@@ -11,6 +11,7 @@ export interface CreateCommentDto {
   sceneId?: string;
   content: string;
   parentCommentId?: string;
+  metadata?: any;
 }
 
 export interface UpdateCommentDto {

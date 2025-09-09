@@ -990,16 +990,11 @@ export default function ProjectDetailPage() {
               {comments.length > 0 ? (
                 comments.map((comment) => {
                   const isAnnotation = comment.content?.startsWith('[ANNOTATION]')
-                  let annotationData: any = null
+                  const annotationData = comment.metadata
                   let displayText = comment.content
                   
                   if (isAnnotation) {
-                    try {
-                      annotationData = JSON.parse(comment.content.substring(12))
-                      displayText = annotationData.text || '주석을 남겼습니다'
-                    } catch {
-                      displayText = comment.content.substring(12) || '주석을 남겼습니다'
-                    }
+                    displayText = comment.content.substring(12) || '주석을 남겼습니다'
                   }
                   
                   return (
@@ -1301,18 +1296,16 @@ export default function ProjectDetailPage() {
           }}
           onSave={async (canvasDataUrl, text) => {
             try {
-              // Create annotation comment with metadata embedded in content
-              const annotationData = {
-                text,
-                annotationImage: canvasDataUrl,
-                originalImageId: annotationImage.id,
-                imageType: annotationImage.type
-              }
-              
+              // Create annotation comment with metadata
               const comment = await commentsAPI.createComment({
                 projectId,
                 sceneId: selectedScene?.id,
-                content: `[ANNOTATION]${JSON.stringify(annotationData)}`
+                content: `[ANNOTATION]${text || '주석을 남겼습니다'}`,
+                metadata: {
+                  annotationImage: canvasDataUrl,
+                  originalImageId: annotationImage.id,
+                  imageType: annotationImage.type
+                }
               })
               
               setComments([comment, ...comments])
