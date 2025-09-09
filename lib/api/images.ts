@@ -80,15 +80,15 @@ export const imagesAPI = {
   /**
    * Delete image
    */
-  async deleteImage(sceneId: string, imageId: string): Promise<void> {
-    return api.delete(`/api/scenes/${sceneId}/images/${imageId}`);
+  async deleteImage(imageId: string): Promise<void> {
+    return api.delete(`/api/images/${imageId}`);
   },
 
   /**
-   * Get image history
+   * Get image history by type
    */
-  async getImageHistory(sceneId: string, imageId: string): Promise<ImageHistory[]> {
-    return api.get(`/api/scenes/${sceneId}/images/${imageId}/history`);
+  async getImageHistory(sceneId: string, type: 'lineart' | 'art'): Promise<Image[]> {
+    return api.get(`/api/scenes/${sceneId}/images?type=${type}&includeHistory=true`);
   },
 
   /**

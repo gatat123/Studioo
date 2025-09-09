@@ -25,7 +25,10 @@ import {
   Settings,
   Download,
   Mouse,
-  X
+  X,
+  History,
+  GitCompare,
+  RefreshCw
 } from 'lucide-react'
 import Link from 'next/link'
 import { projectsAPI, ProjectWithParticipants } from '@/lib/api/projects'
@@ -112,6 +115,13 @@ export default function ProjectDetailPage() {
   // Zoom state
   const [zoomLevel, setZoomLevel] = useState(100)
   const [selectedImageForZoom, setSelectedImageForZoom] = useState<string | null>(null)
+  
+  // Image management states
+  const [showHistory, setShowHistory] = useState(false)
+  const [showCompare, setShowCompare] = useState(false)
+  const [selectedHistoryType, setSelectedHistoryType] = useState<'lineart' | 'art'>('lineart')
+  const [imageHistory, setImageHistory] = useState<any[]>([])
+  const [compareImages, setCompareImages] = useState<{left: any, right: any} | null>(null)
 
   useEffect(() => {
     // Minimize sidebar when entering project page
@@ -691,6 +701,42 @@ export default function ProjectDetailPage() {
                       >
                         {selectedScene.lineArtImages && selectedScene.lineArtImages.length > 0 ? (
                           <div className="space-y-3">
+                            {/* Image Action Buttons */}
+                            <div className="flex gap-2 justify-end">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={async () => {
+                                  // Load history for lineart
+                                  setSelectedHistoryType('lineart')
+                                  const history = await imagesAPI.getImageHistory(selectedScene.id, 'lineart')
+                                  setImageHistory(history)
+                                  setShowHistory(true)
+                                }}
+                              >
+                                <History className="h-4 w-4 mr-1" />
+                                히스토리
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  // Re-upload functionality
+                                  document.getElementById('lineart-reupload')?.click()
+                                }}
+                              >
+                                <RefreshCw className="h-4 w-4 mr-1" />
+                                재업로드
+                              </Button>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleFileSelect(e, 'lineart')}
+                                className="hidden"
+                                id="lineart-reupload"
+                              />
+                            </div>
+                            
                             {selectedScene.lineArtImages.map((img) => (
                               <div key={img.id} className="relative group">
                                 <img 
@@ -714,7 +760,23 @@ export default function ProjectDetailPage() {
                                     }
                                   }}
                                 />
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                  <Button
+                                    size="icon"
+                                    variant="secondary"
+                                    className="h-8 w-8"
+                                    onClick={() => {
+                                      // Compare functionality
+                                      if (!compareImages) {
+                                        setCompareImages({ left: img, right: null })
+                                      } else if (compareImages.left && !compareImages.right) {
+                                        setCompareImages({ ...compareImages, right: img })
+                                        setShowCompare(true)
+                                      }
+                                    }}
+                                  >
+                                    <GitCompare className="h-4 w-4" />
+                                  </Button>
                                   <Button
                                     size="icon"
                                     variant="secondary"
@@ -728,6 +790,19 @@ export default function ProjectDetailPage() {
                                     }}
                                   >
                                     <Download className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="destructive"
+                                    className="h-8 w-8"
+                                    onClick={async () => {
+                                      if (confirm('이 이미지를 삭제하시겠습니까?')) {
+                                        await imagesAPI.deleteImage(img.id)
+                                        await fetchProjectDetails()
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
                               </div>
@@ -773,6 +848,42 @@ export default function ProjectDetailPage() {
                       >
                         {selectedScene.artImages && selectedScene.artImages.length > 0 ? (
                           <div className="space-y-3">
+                            {/* Image Action Buttons */}
+                            <div className="flex gap-2 justify-end">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={async () => {
+                                  // Load history for art
+                                  setSelectedHistoryType('art')
+                                  const history = await imagesAPI.getImageHistory(selectedScene.id, 'art')
+                                  setImageHistory(history)
+                                  setShowHistory(true)
+                                }}
+                              >
+                                <History className="h-4 w-4 mr-1" />
+                                히스토리
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  // Re-upload functionality
+                                  document.getElementById('art-reupload')?.click()
+                                }}
+                              >
+                                <RefreshCw className="h-4 w-4 mr-1" />
+                                재업로드
+                              </Button>
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleFileSelect(e, 'art')}
+                                className="hidden"
+                                id="art-reupload"
+                              />
+                            </div>
+                            
                             {selectedScene.artImages.map((img) => (
                               <div key={img.id} className="relative group">
                                 <img 
@@ -796,7 +907,23 @@ export default function ProjectDetailPage() {
                                     }
                                   }}
                                 />
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                  <Button
+                                    size="icon"
+                                    variant="secondary"
+                                    className="h-8 w-8"
+                                    onClick={() => {
+                                      // Compare functionality
+                                      if (!compareImages) {
+                                        setCompareImages({ left: img, right: null })
+                                      } else if (compareImages.left && !compareImages.right) {
+                                        setCompareImages({ ...compareImages, right: img })
+                                        setShowCompare(true)
+                                      }
+                                    }}
+                                  >
+                                    <GitCompare className="h-4 w-4" />
+                                  </Button>
                                   <Button
                                     size="icon"
                                     variant="secondary"
@@ -810,6 +937,19 @@ export default function ProjectDetailPage() {
                                     }}
                                   >
                                     <Download className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="icon"
+                                    variant="destructive"
+                                    className="h-8 w-8"
+                                    onClick={async () => {
+                                      if (confirm('이 이미지를 삭제하시겠습니까?')) {
+                                        await imagesAPI.deleteImage(img.id)
+                                        await fetchProjectDetails()
+                                      }
+                                    }}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </div>
                               </div>
@@ -973,5 +1113,96 @@ export default function ProjectDetailPage() {
         </div>
       )}
     </div>
+    
+    {/* History Modal */}
+    {showHistory && (
+      <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div className="bg-background rounded-lg shadow-lg max-w-4xl w-full max-h-[80vh] overflow-hidden">
+          <div className="p-4 border-b flex items-center justify-between">
+            <h2 className="text-lg font-semibold">
+              {selectedHistoryType === 'lineart' ? '선화' : '아트'} 업로드 히스토리
+            </h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowHistory(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <ScrollArea className="h-[calc(80vh-80px)]">
+            <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
+              {imageHistory.map((img: any) => (
+                <div key={img.id} className="space-y-2">
+                  <img 
+                    src={img.url || img.fileUrl}
+                    alt={`Version ${img.version}`}
+                    className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => {
+                      // Restore this version
+                      if (confirm('이 버전으로 복원하시겠습니까?')) {
+                        // API call to restore version
+                      }
+                    }}
+                  />
+                  <div className="text-xs space-y-1">
+                    <p className="font-medium">버전 {img.version}</p>
+                    <p className="text-muted-foreground">
+                      {new Date(img.uploadedAt).toLocaleString()}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {img.uploader?.nickname || 'Unknown'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        </div>
+      </div>
+    )}
+    
+    {/* Compare Modal */}
+    {showCompare && compareImages && (
+      <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+        <div className="bg-background rounded-lg shadow-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
+          <div className="p-4 border-b flex items-center justify-between">
+            <h2 className="text-lg font-semibold">이미지 비교</h2>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setShowCompare(false)
+                setCompareImages(null)
+              }}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="p-4 grid grid-cols-2 gap-4 h-[calc(90vh-80px)]">
+            <div className="space-y-2">
+              <h3 className="font-medium text-center">이전 버전</h3>
+              {compareImages.left && (
+                <img 
+                  src={compareImages.left.url || compareImages.left.fileUrl}
+                  alt="Left comparison"
+                  className="w-full h-[calc(100%-40px)] object-contain rounded-lg"
+                />
+              )}
+            </div>
+            <div className="space-y-2">
+              <h3 className="font-medium text-center">현재 버전</h3>
+              {compareImages.right && (
+                <img 
+                  src={compareImages.right.url || compareImages.right.fileUrl}
+                  alt="Right comparison"
+                  className="w-full h-[calc(100%-40px)] object-contain rounded-lg"
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
   )
 }
