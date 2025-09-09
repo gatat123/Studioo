@@ -1409,4 +1409,4 @@ export default function ProjectDetailPage() {
       )}
     </div>
   )
-}
+}// Footer adjustment for comment input
