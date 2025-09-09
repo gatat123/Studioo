@@ -1100,32 +1100,34 @@ export default function ProjectDetailPage() {
           
           <Separator />
           
-          {/* Comment Input - Fixed at bottom with safe area */}
-          <div className="p-4 pb-6 bg-background flex-shrink-0 border-t">
-            <div className="flex gap-2">
-              <Textarea
-                placeholder={selectedScene ? `씬 ${selectedScene.sceneNumber}에 댓글 작성...` : "댓글을 입력하세요..."}
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="min-h-[60px] max-h-[100px] resize-none"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && e.ctrlKey) {
-                    handleSubmitComment()
-                  }
-                }}
-              />
-              <Button 
-                onClick={handleSubmitComment}
-                disabled={isSubmittingComment || !newComment.trim()}
-                size="icon"
-                className="self-end mb-1"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+          {/* Comment Input - Fixed at bottom with improved layout */}
+          <div className="mt-auto border-t bg-background">
+            <div className="p-4">
+              <div className="flex items-end gap-2">
+                <Textarea
+                  placeholder={selectedScene ? `씬 ${selectedScene.sceneNumber}에 댓글 작성...` : "댓글을 입력하세요..."}
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="flex-1 min-h-[80px] max-h-[120px] resize-none"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && e.ctrlKey) {
+                      handleSubmitComment()
+                    }
+                  }}
+                />
+                <Button 
+                  onClick={handleSubmitComment}
+                  disabled={isSubmittingComment || !newComment.trim()}
+                  size="lg"
+                  className="h-[80px] px-4"
+                >
+                  <Send className="h-5 w-5" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground mt-2">
+                Ctrl+Enter로 전송
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Ctrl+Enter로 전송
-            </p>
           </div>
         </div>
       </div>
