@@ -189,7 +189,7 @@ export const useUIStore = create<UIState>()(
       storage: createJSONStorage(() => localStorage),
       partialize: (state) => ({
         theme: state.theme,
-        isSidebarOpen: state.isSidebarOpen,
+        // isSidebarOpen removed - don't persist sidebar state
         imageViewMode: state.imageViewMode,
         showAnnotations: state.showAnnotations,
         showComments: state.showComments,

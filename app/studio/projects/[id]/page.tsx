@@ -118,8 +118,10 @@ export default function ProjectDetailPage() {
   const [annotationText, setAnnotationText] = useState('')
 
   useEffect(() => {
-    // Minimize sidebar when entering project page
-    setSidebarOpen(false)
+    // Minimize sidebar when entering project page with slight delay to ensure it takes effect
+    const timer = setTimeout(() => {
+      setSidebarOpen(false)
+    }, 100)
     
     fetchProjectDetails()
     
@@ -179,6 +181,7 @@ export default function ProjectDetailPage() {
     
     // Cleanup on unmount
     return () => {
+      clearTimeout(timer)
       socketClient.leaveProject(projectId)
       socketClient.off('comment:created')
       socketClient.off('scene:created')
