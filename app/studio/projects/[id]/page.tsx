@@ -990,7 +990,17 @@ export default function ProjectDetailPage() {
               {comments.length > 0 ? (
                 comments.map((comment) => {
                   const isAnnotation = comment.content?.startsWith('[ANNOTATION]')
-                  const annotationText = isAnnotation ? comment.content.substring(12) : comment.content
+                  let annotationData: any = null
+                  let displayText = comment.content
+                  
+                  if (isAnnotation) {
+                    try {
+                      annotationData = JSON.parse(comment.content.substring(12))
+                      displayText = annotationData.text || '주석을 남겼습니다'
+                    } catch {
+                      displayText = comment.content.substring(12) || '주석을 남겼습니다'
+                    }
+                  }
                   
                   return (
                     <div key={comment.id} className="flex gap-3">
@@ -1018,17 +1028,15 @@ export default function ProjectDetailPage() {
                           <div
                             className="cursor-pointer hover:bg-accent/50 rounded p-2 transition-colors"
                             onClick={() => {
-                              if (comment.metadata?.annotationImage) {
+                              if (annotationData?.annotationImage) {
                                 // Show annotation image in modal
-                                const img = new Image()
-                                img.src = comment.metadata.annotationImage
                                 const win = window.open('', '_blank')
                                 if (win) {
                                   win.document.write(`
                                     <html>
                                       <head><title>주석 이미지</title></head>
                                       <body style="margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000;">
-                                        <img src="${comment.metadata.annotationImage}" style="max-width: 100%; max-height: 100vh;" />
+                                        <img src="${annotationData.annotationImage}" style="max-width: 100%; max-height: 100vh;" />
                                       </body>
                                     </html>
                                   `)
@@ -1037,11 +1045,11 @@ export default function ProjectDetailPage() {
                             }}
                           >
                             <p className="text-sm text-blue-600 dark:text-blue-400">
-                              {annotationText || '주석을 남겼습니다 (클릭하여 보기)'}
+                              {displayText} (클릭하여 보기)
                             </p>
                           </div>
                         ) : (
-                          <p className="text-sm">{comment.content}</p>
+                          <p className="text-sm">{displayText}</p>
                         )}
                       </div>
                     </div>
@@ -1293,16 +1301,18 @@ export default function ProjectDetailPage() {
           }}
           onSave={async (canvasDataUrl, text) => {
             try {
-              // Create annotation comment with special type
+              // Create annotation comment with metadata embedded in content
+              const annotationData = {
+                text,
+                annotationImage: canvasDataUrl,
+                originalImageId: annotationImage.id,
+                imageType: annotationImage.type
+              }
+              
               const comment = await commentsAPI.createComment({
                 projectId,
                 sceneId: selectedScene?.id,
-                content: `[ANNOTATION]${text}`,
-                metadata: {
-                  annotationImage: canvasDataUrl,
-                  originalImageId: annotationImage.id,
-                  imageType: annotationImage.type
-                }
+                content: `[ANNOTATION]${JSON.stringify(annotationData)}`
               })
               
               setComments([comment, ...comments])
