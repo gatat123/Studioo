@@ -49,11 +49,7 @@ import {
 import { cn } from '@/lib/utils'
 import AnnotationModal from '@/components/annotation-modal'
 
-// Dynamic import for AnnotationLayer (client-side only)
-const AnnotationLayer = dynamic(
-  () => import('@/components/editor/AnnotationLayer').then(mod => mod.AnnotationLayer),
-  { ssr: false }
-)
+// Removed AnnotationLayer - using AnnotationModal instead
 
 // Extended Image type for project
 type ProjectImage = Image & {
