@@ -114,7 +114,6 @@ export default function ProjectDetailPage() {
   
   // Zoom state
   const [zoomLevel, setZoomLevel] = useState(100)
-  const [selectedImageForZoom, setSelectedImageForZoom] = useState<string | null>(null)
   
   // Image management states
   const [showHistory, setShowHistory] = useState(false)
@@ -625,63 +624,72 @@ export default function ProjectDetailPage() {
           {selectedScene ? (
             <>
               {/* Image View Controls */}
-              <div className="border-b bg-card px-4 py-2 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={imageViewMode === 'lineart' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setImageViewMode('lineart')}
-                  >
-                    선화
-                  </Button>
-                  <Button
-                    variant={imageViewMode === 'art' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setImageViewMode('art')}
-                  >
-                    아트
-                  </Button>
-                  <Button
-                    variant={imageViewMode === 'both' ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setImageViewMode('both')}
-                  >
-                    모두
-                  </Button>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 px-2 py-1 bg-muted rounded">
-                    <Mouse className="h-3 w-3" />
-                    <span className="text-xs text-muted-foreground">
-                      이미지 클릭 후 스크롤
-                    </span>
+              <div className="border-b bg-card px-4 py-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={imageViewMode === 'lineart' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setImageViewMode('lineart')}
+                    >
+                      선화
+                    </Button>
+                    <Button
+                      variant={imageViewMode === 'art' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setImageViewMode('art')}
+                    >
+                      아트
+                    </Button>
+                    <Button
+                      variant={imageViewMode === 'both' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setImageViewMode('both')}
+                    >
+                      모두
+                    </Button>
                   </div>
-                  <span className="text-sm font-medium">{zoomLevel}%</span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setZoomLevel(100)
-                      setSelectedImageForZoom(null)
-                    }}
-                  >
-                    초기화
-                  </Button>
+                  
+                  {/* Action buttons for selected view mode */}
+                  {imageViewMode !== 'both' && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          setSelectedHistoryType(imageViewMode)
+                          const history = await imagesAPI.getImageHistory(selectedScene.id, imageViewMode)
+                          setImageHistory(history)
+                          setShowHistory(true)
+                        }}
+                      >
+                        <History className="h-4 w-4 mr-1" />
+                        히스토리
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          document.getElementById(`${imageViewMode}-reupload`)?.click()
+                        }}
+                      >
+                        <RefreshCw className="h-4 w-4 mr-1" />
+                        재업로드
+                      </Button>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileSelect(e, imageViewMode)}
+                        className="hidden"
+                        id={`${imageViewMode}-reupload`}
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
               
               {/* Image Display Area */}
-              <div 
-                className="flex-1 overflow-auto p-4"
-                onWheel={(e) => {
-                  if (selectedImageForZoom) {
-                    e.preventDefault()
-                    const delta = e.deltaY > 0 ? -5 : 5
-                    setZoomLevel(prev => Math.min(Math.max(prev + delta, 25), 300))
-                  }
-                }}
-              >
+              <div className="flex-1 overflow-auto p-4">
                 <div className={cn(
                   "grid gap-4",
                   imageViewMode === 'both' ? 'grid-cols-2' : 'grid-cols-1'
@@ -701,64 +709,13 @@ export default function ProjectDetailPage() {
                       >
                         {selectedScene.lineArtImages && selectedScene.lineArtImages.length > 0 ? (
                           <div className="space-y-3">
-                            {/* Image Action Buttons */}
-                            <div className="flex gap-2 justify-end">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={async () => {
-                                  // Load history for lineart
-                                  setSelectedHistoryType('lineart')
-                                  const history = await imagesAPI.getImageHistory(selectedScene.id, 'lineart')
-                                  setImageHistory(history)
-                                  setShowHistory(true)
-                                }}
-                              >
-                                <History className="h-4 w-4 mr-1" />
-                                히스토리
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  // Re-upload functionality
-                                  document.getElementById('lineart-reupload')?.click()
-                                }}
-                              >
-                                <RefreshCw className="h-4 w-4 mr-1" />
-                                재업로드
-                              </Button>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleFileSelect(e, 'lineart')}
-                                className="hidden"
-                                id="lineart-reupload"
-                              />
-                            </div>
-                            
                             {selectedScene.lineArtImages.map((img) => (
                               <div key={img.id} className="relative group">
                                 <img 
                                   src={img.url || img.fileUrl} 
                                   alt="Line art"
-                                  className={cn(
-                                    "w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all",
-                                    selectedImageForZoom === img.id && "ring-2 ring-primary"
-                                  )}
-                                  style={{ 
-                                    transform: selectedImageForZoom === img.id ? `scale(${zoomLevel / 100})` : 'scale(1)', 
-                                    transformOrigin: 'center'
-                                  }}
-                                  onClick={() => {
-                                    if (selectedImageForZoom === img.id) {
-                                      setSelectedImageForZoom(null)
-                                      setZoomLevel(100)
-                                    } else {
-                                      setSelectedImageForZoom(img.id)
-                                      setSelectedImage(img)
-                                    }
-                                  }}
+                                  className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all"
+                                  onClick={() => setSelectedImage(img)}
                                 />
                                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                                   <Button
@@ -848,64 +805,13 @@ export default function ProjectDetailPage() {
                       >
                         {selectedScene.artImages && selectedScene.artImages.length > 0 ? (
                           <div className="space-y-3">
-                            {/* Image Action Buttons */}
-                            <div className="flex gap-2 justify-end">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={async () => {
-                                  // Load history for art
-                                  setSelectedHistoryType('art')
-                                  const history = await imagesAPI.getImageHistory(selectedScene.id, 'art')
-                                  setImageHistory(history)
-                                  setShowHistory(true)
-                                }}
-                              >
-                                <History className="h-4 w-4 mr-1" />
-                                히스토리
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => {
-                                  // Re-upload functionality
-                                  document.getElementById('art-reupload')?.click()
-                                }}
-                              >
-                                <RefreshCw className="h-4 w-4 mr-1" />
-                                재업로드
-                              </Button>
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleFileSelect(e, 'art')}
-                                className="hidden"
-                                id="art-reupload"
-                              />
-                            </div>
-                            
                             {selectedScene.artImages.map((img) => (
                               <div key={img.id} className="relative group">
                                 <img 
                                   src={img.url || img.fileUrl} 
                                   alt="Art"
-                                  className={cn(
-                                    "w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all",
-                                    selectedImageForZoom === img.id && "ring-2 ring-primary"
-                                  )}
-                                  style={{ 
-                                    transform: selectedImageForZoom === img.id ? `scale(${zoomLevel / 100})` : 'scale(1)', 
-                                    transformOrigin: 'center'
-                                  }}
-                                  onClick={() => {
-                                    if (selectedImageForZoom === img.id) {
-                                      setSelectedImageForZoom(null)
-                                      setZoomLevel(100)
-                                    } else {
-                                      setSelectedImageForZoom(img.id)
-                                      setSelectedImage(img)
-                                    }
-                                  }}
+                                  className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all"
+                                  onClick={() => setSelectedImage(img)}
                                 />
                                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                                   <Button
@@ -1107,6 +1013,70 @@ export default function ProjectDetailPage() {
               </p>
               <p className="text-xs text-muted-foreground">
                 업로드: {selectedImage.uploader?.nickname || selectedImage.uploader?.username || 'Unknown'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Image View Modal with Zoom */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center" 
+          onClick={() => {
+            setSelectedImage(null)
+            setZoomLevel(100)
+          }}
+        >
+          <div 
+            className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center" 
+            onClick={(e) => e.stopPropagation()}
+            onWheel={(e) => {
+              e.preventDefault()
+              const delta = e.deltaY > 0 ? -10 : 10
+              setZoomLevel(prev => Math.min(Math.max(prev + delta, 25), 500))
+            }}
+          >
+            <img 
+              src={selectedImage.url || selectedImage.fileUrl} 
+              alt="Preview"
+              className="max-w-full max-h-[90vh] object-contain transition-transform duration-200"
+              style={{ 
+                transform: `scale(${zoomLevel / 100})`,
+                cursor: zoomLevel > 100 ? 'move' : 'default'
+              }}
+              draggable={false}
+            />
+            
+            {/* Controls Overlay */}
+            <div className="absolute top-4 right-4 flex items-center gap-2">
+              <div className="bg-background/90 backdrop-blur-sm px-3 py-1 rounded-lg flex items-center gap-2">
+                <Mouse className="h-4 w-4" />
+                <span className="text-sm font-medium">{zoomLevel}%</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="bg-background/90 backdrop-blur-sm hover:bg-background"
+                onClick={() => {
+                  setSelectedImage(null)
+                  setZoomLevel(100)
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {/* Image Info */}
+            <div className="absolute bottom-4 left-4 bg-background/90 backdrop-blur-sm p-3 rounded-lg">
+              <p className="text-sm font-medium">
+                {selectedImage.type === 'lineart' ? '선화' : '아트'} - 버전 {selectedImage.version}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                업로드: {selectedImage.uploader?.nickname || selectedImage.uploader?.username || 'Unknown'}
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                스크롤로 확대/축소
               </p>
             </div>
           </div>
