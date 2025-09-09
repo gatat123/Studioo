@@ -64,6 +64,9 @@ class APIClient {
       ...fetchOptions
     } = options;
 
+    // Prepare URL
+    const url = `${this.baseURL}${endpoint}`;
+
     // Get authentication token from localStorage or cookies
     let authToken = token;
     if (!authToken && typeof window !== 'undefined') {
@@ -97,9 +100,6 @@ class APIClient {
     } else {
       console.log('⚠️ API Client - No token available for Authorization header');
     }
-
-    // Prepare URL
-    const url = `${this.baseURL}${endpoint}`;
 
     // Create abort controller for timeout
     const controller = new AbortController();
