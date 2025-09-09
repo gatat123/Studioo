@@ -149,9 +149,8 @@ export default function ProjectDetailPage() {
     
     socketClient.on('new_image', (data: any) => {
       // Refetch images for the scene to get the full data
-      if (selectedScene && selectedScene.id === data.sceneId) {
-        fetchSceneImages(data.sceneId)
-      }
+      console.log('Received new_image event:', data)
+      fetchProjectDetails() // 전체 프로젝트 데이터를 다시 가져와서 이미지 업데이트
       
       toast({
         title: '새 이미지',
@@ -478,6 +477,7 @@ export default function ProjectDetailPage() {
       
       // Emit Socket.io event for real-time update
       socketClient.emit('image_uploaded', {
+        projectId,
         imageId: projectImage.id,
         sceneId: selectedScene.id,
         filename: projectImage.fileUrl?.split('/').pop() || 'image',
@@ -1042,9 +1042,9 @@ export default function ProjectDetailPage() {
           
           {/* Comment List */}
           <ScrollArea className="flex-1">
-            <div className="p-4 space-y-4 flex flex-col-reverse">
+            <div className="p-4 space-y-4">
               {comments.length > 0 ? (
-                [...comments].reverse().map((comment) => {
+                comments.map((comment) => {
                   const isAnnotation = comment.content?.startsWith('[ANNOTATION]')
                   const annotationData = comment.metadata
                   let displayText = comment.content
