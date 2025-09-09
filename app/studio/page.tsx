@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, Bell } from 'lucide-react';
+import { Plus, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProjectGrid } from '@/components/projects/ProjectGrid';
 import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
+import JoinProjectModal from '@/components/projects/JoinProjectModal';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProjectStore } from '@/store/useProjectStore';
@@ -15,6 +16,7 @@ export default function StudioPage() {
   const { user, isAuthenticated, isLoading, checkAuth } = useAuthStore();
   const { projects, fetchProjects } = useProjectStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
   
   useEffect(() => {
     checkAuth();
@@ -52,6 +54,15 @@ export default function StudioPage() {
               <div className="flex items-center gap-3">
                 {/* Notifications */}
                 <NotificationCenter userId={user?.id} />
+                
+                {/* Join Project Button */}
+                <Button 
+                  variant="outline"
+                  onClick={() => setShowJoinModal(true)}
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  초대 코드로 참여
+                </Button>
                 
                 {/* Create Project Button */}
                 <Button onClick={() => setShowCreateModal(true)}>
@@ -93,6 +104,12 @@ export default function StudioPage() {
       <CreateProjectModal 
         open={showCreateModal} 
         onOpenChange={setShowCreateModal} 
+      />
+
+      {/* Join Project Modal */}
+      <JoinProjectModal
+        open={showJoinModal}
+        onClose={() => setShowJoinModal(false)}
       />
     </div>
   );
