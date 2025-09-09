@@ -48,7 +48,11 @@ export const useAuthStore = create<AuthState>()(
             // Set cookie for middleware authentication
             const token = response.accessToken || response.token;
             if (token) {
-              Cookies.set('token', token, { expires: 7 });
+              Cookies.set('token', token, { 
+                expires: 7,
+                sameSite: 'lax',
+                secure: window.location.protocol === 'https:'
+              });
             }
             
             set({
@@ -88,7 +92,11 @@ export const useAuthStore = create<AuthState>()(
             // Set cookie for middleware authentication
             const token = response.accessToken || response.token;
             if (token) {
-              Cookies.set('token', token, { expires: 7 });
+              Cookies.set('token', token, { 
+                expires: 7,
+                sameSite: 'lax',
+                secure: window.location.protocol === 'https:'
+              });
             }
             
             set({
@@ -176,7 +184,11 @@ export const useAuthStore = create<AuthState>()(
           if (cookieToken && !localToken) {
             localStorage.setItem('token', cookieToken);
           } else if (!cookieToken && localToken) {
-            Cookies.set('token', localToken, { expires: 7 });
+            Cookies.set('token', localToken, { 
+              expires: 7,
+              sameSite: 'lax',
+              secure: typeof window !== 'undefined' && window.location.protocol === 'https:'
+            });
           }
           
           const sessionUser = await authAPI.getSession();

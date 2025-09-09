@@ -13,7 +13,9 @@ export const useAuth = () => {
 
   useEffect(() => {
     // Check auth only once on mount
-    checkAuth();
+    if (typeof window !== 'undefined') {
+      checkAuth();
+    }
   }, []); // Empty dependency array to run only once
 
   const requireAuth = (redirectTo: string = '/login') => {

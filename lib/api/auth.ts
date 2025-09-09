@@ -20,8 +20,10 @@ export const authAPI = {
       localStorage.setItem('userId', response.user.id);
       localStorage.setItem('user', JSON.stringify(response.user));
       
-      // Also set cookie for middleware
-      document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+      // Also set cookie for middleware (with secure flag for production)
+      const isProduction = window.location.protocol === 'https:';
+      const cookieOptions = `path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${isProduction ? '; Secure' : ''}`;
+      document.cookie = `token=${token}; ${cookieOptions}`;
     }
     
     return response;
@@ -40,8 +42,10 @@ export const authAPI = {
       localStorage.setItem('userId', response.user.id);
       localStorage.setItem('user', JSON.stringify(response.user));
       
-      // Also set cookie for middleware
-      document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
+      // Also set cookie for middleware (with secure flag for production)
+      const isProduction = window.location.protocol === 'https:';
+      const cookieOptions = `path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${isProduction ? '; Secure' : ''}`;
+      document.cookie = `token=${token}; ${cookieOptions}`;
     }
     
     return response;
@@ -124,6 +128,10 @@ export const authAPI = {
    * Check if user is authenticated
    */
   isAuthenticated(): boolean {
+    if (typeof window === 'undefined') {
+      // Server-side: can't check localStorage
+      return false;
+    }
     return !!localStorage.getItem('token');
   },
 
