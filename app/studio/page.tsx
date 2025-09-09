@@ -34,7 +34,9 @@ export default function StudioPage() {
   }, [isAuthenticated]);
   
   useEffect(() => {
+    console.log('🎭 Studio - Auth state:', { isLoading, isAuthenticated, user: user?.username });
     if (!isLoading && !isAuthenticated) {
+      console.log('⚠️ Studio - Redirecting to login page');
       router.push('/login');
     }
   }, [isLoading, isAuthenticated, router]);

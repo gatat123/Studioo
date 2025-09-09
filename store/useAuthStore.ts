@@ -207,6 +207,7 @@ export const useAuthStore = create<AuthState>()(
           }
           
           const sessionUser = await authAPI.getSession();
+          console.log('🔐 CheckAuth - Session response:', sessionUser);
           
           if (sessionUser) {
             const user: User = {
@@ -217,12 +218,14 @@ export const useAuthStore = create<AuthState>()(
               isActive: sessionUser.isActive !== undefined ? sessionUser.isActive : true
             };
             
+            console.log('✅ CheckAuth - User authenticated:', user.username);
             set({
               user,
               isAuthenticated: true,
               isLoading: false,
             });
           } else {
+            console.log('❌ CheckAuth - No session user returned');
             set({
               user: null,
               isAuthenticated: false,

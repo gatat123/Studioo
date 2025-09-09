@@ -82,10 +82,11 @@ class APIClient {
         authToken = cookieToken || undefined;
       }
       
-      // Debug logging
-      console.log('🔑 API Client - Token from localStorage:', localStorage.getItem('token'));
-      console.log('🔑 API Client - Token being used:', authToken);
-      console.log('🔑 API Client - Request URL:', url);
+      // Debug logging (only for auth endpoints)
+      if (url.includes('/auth')) {
+        console.log('🔑 API Client - Auth request:', url);
+        console.log('🔑 API Client - Token available:', !!authToken);
+      }
     }
 
     // Prepare headers
@@ -96,9 +97,11 @@ class APIClient {
 
     if (authToken) {
       requestHeaders['Authorization'] = `Bearer ${authToken}`;
-      console.log('✅ API Client - Authorization header set');
-    } else {
-      console.log('⚠️ API Client - No token available for Authorization header');
+      if (url.includes('/auth')) {
+        console.log('✅ API Client - Authorization header set for auth request');
+      }
+    } else if (url.includes('/auth')) {
+      console.log('⚠️ API Client - No token available for auth request');
     }
 
     // Create abort controller for timeout
