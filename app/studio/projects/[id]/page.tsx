@@ -41,6 +41,7 @@ import { socketClient } from '@/lib/socket/client'
 import { useToast } from '@/hooks/use-toast'
 import type { Scene, Comment, Image } from '@/types'
 import { useUIStore } from '@/store/useUIStore'
+import { AnnotationModal } from '@/components/projects/AnnotationModal'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -95,6 +96,8 @@ export default function ProjectDetailPage() {
   
   // Upload states
   const [isDragging, setIsDragging] = useState(false)
+  const [annotationModalData, setAnnotationModalData] = useState<any>(null)
+  const [showAnnotationModal, setShowAnnotationModal] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   
@@ -1083,17 +1086,13 @@ export default function ProjectDetailPage() {
                             onClick={() => {
                               if (annotationData?.annotationImage) {
                                 // Show annotation image in modal
-                                const win = window.open('', '_blank')
-                                if (win) {
-                                  win.document.write(`
-                                    <html>
-                                      <head><title>주석 이미지</title></head>
-                                      <body style="margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #000;">
-                                        <img src="${annotationData.annotationImage}" style="max-width: 100%; max-height: 100vh;" />
-                                      </body>
-                                    </html>
-                                  `)
-                                }
+                                setAnnotationModalData({
+                                  image: annotationData.annotationImage,
+                                  text: displayText,
+                                  position: annotationData.position,
+                                  color: annotationData.color
+                                })
+                                setShowAnnotationModal(true)
                               }
                             }}
                           >
@@ -1398,6 +1397,13 @@ export default function ProjectDetailPage() {
           }}
         />
       )}
+      
+      {/* Annotation Modal */}
+      <AnnotationModal
+        open={showAnnotationModal}
+        onOpenChange={setShowAnnotationModal}
+        annotation={annotationModalData}
+      />
     </div>
   )
-}// Footer adjustment for comment input
+}
