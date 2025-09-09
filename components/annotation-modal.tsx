@@ -65,6 +65,7 @@ export default function AnnotationModal({ image, onClose, onSave }: AnnotationMo
 
     // Load and draw the original image
     const img = new Image();
+    img.crossOrigin = 'anonymous'; // Enable CORS
     img.onload = () => {
       // Set canvas to original image size
       canvas.width = img.width;
@@ -75,6 +76,9 @@ export default function AnnotationModal({ image, onClose, onSave }: AnnotationMo
       
       // Initial size calculation
       updateCanvasSize();
+    };
+    img.onerror = () => {
+      console.error('Failed to load image for annotation');
     };
     img.src = image.url || image.fileUrl;
 
