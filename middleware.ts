@@ -1,21 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-// 인증이 필요한 경로들
-const protectedPaths = [
-  '/studio',
-  '/projects',
-  '/admin',
-];
-
-// 인증 없이 접근 가능한 경로들
-const publicPaths = [
-  '/auth/login',
-  '/auth/register',
-  '/auth/forgot-password',
-  '/',
-];
-
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
@@ -28,35 +13,13 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 토큰 확인 (쿠키 또는 헤더에서)
-  const token = request.cookies.get('token')?.value || 
-                request.headers.get('authorization')?.replace('Bearer ', '');
-  
-  // 보호된 경로 확인
-  const isProtectedPath = protectedPaths.some(path => pathname.startsWith(path));
-  const isPublicPath = publicPaths.some(path => pathname === path);
-
-  // 인증이 필요한 페이지인데 토큰이 없으면 로그인 페이지로 리다이렉트
-  if (isProtectedPath && !token) {
-    const loginUrl = new URL('/auth/login', request.url);
-    loginUrl.searchParams.set('from', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // 이미 로그인한 사용자가 로그인/회원가입 페이지 접근 시 스튜디오로 리다이렉트
-  if (token && (pathname === '/auth/login' || pathname === '/auth/register')) {
-    return NextResponse.redirect(new URL('/studio', request.url));
-  }
-
-  // 루트 경로 접근 시 처리
+  // 루트 경로를 /auth/login으로 리다이렉트
   if (pathname === '/') {
-    if (token) {
-      return NextResponse.redirect(new URL('/studio', request.url));
-    } else {
-      return NextResponse.redirect(new URL('/auth/login', request.url));
-    }
+    return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
+  // 미들웨어에서는 더 이상 인증 체크를 하지 않고
+  // 클라이언트 사이드에서만 처리
   return NextResponse.next();
 }
 

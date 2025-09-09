@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -19,8 +19,19 @@ import StarBorder from '@/components/ui/star-border';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { login, isLoading, error, clearError, isAuthenticated, checkAuth } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Check if already authenticated
+  useEffect(() => {
+    checkAuth();
+  }, []);
+  
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.push('/studio');
+    }
+  }, [isAuthenticated, router]);
 
   const {
     register,
