@@ -30,6 +30,7 @@ import { projectsAPI } from '@/lib/api/projects';
 import { Project } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/use-toast';
+import { socketClient } from '@/lib/socket/client';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -93,13 +94,28 @@ const Sidebar: React.FC<SidebarProps> = ({
   // Initial fetch projects data
   useEffect(() => {
     fetchProjects();
-    
-    // Refresh projects periodically (every 30 seconds)
-    const interval = setInterval(() => {
-      fetchProjects();
-    }, 30000);
+  }, []);
 
-    return () => clearInterval(interval);
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    const socket = socketClient.connect();
+
+    // Listen for project updates
+    const handleProjectUpdate = () => {
+      fetchProjects(); // Refresh projects list
+    };
+
+    socket.on('project:created', handleProjectUpdate);
+    socket.on('project:updated', handleProjectUpdate);
+    socket.on('project:deleted', handleProjectUpdate);
+    socket.on('project:archived', handleProjectUpdate);
+
+    return () => {
+      socket.off('project:created', handleProjectUpdate);
+      socket.off('project:updated', handleProjectUpdate);
+      socket.off('project:deleted', handleProjectUpdate);
+      socket.off('project:archived', handleProjectUpdate);
+    };
   }, []);
 
   // Count projects by type
@@ -184,7 +200,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     {
       id: 'settings',
       label: 'Settings',
-      href: '/settings',
+      href: '/settings/profile',
       icon: <Settings className="h-4 w-4" />,
     },
   ];
