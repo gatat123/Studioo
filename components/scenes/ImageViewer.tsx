@@ -1,17 +1,16 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
-  ZoomIn, 
-  ZoomOut, 
   RotateCw, 
   Download, 
   Maximize2,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Mouse
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -26,16 +25,67 @@ export default function ImageViewer({ sceneId, lineartImage, artImage }: ImageVi
   const [rotation, setRotation] = useState(0)
   const [activeTab, setActiveTab] = useState<'lineart' | 'art'>('lineart')
   const [isDragging, setIsDragging] = useState(false)
+  const [isImageSelected, setIsImageSelected] = useState(false)
+  const [isPanning, setIsPanning] = useState(false)
+  const [panPosition, setPanPosition] = useState({ x: 0, y: 0 })
+  const [startPanPosition, setStartPanPosition] = useState({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
 
-  const handleZoomIn = () => {
-    setZoom(prev => Math.min(prev + 25, 300))
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    if (!isImageSelected) return
+    
+    e.preventDefault()
+    const delta = e.deltaY > 0 ? -10 : 10
+    setZoom(prev => {
+      const newZoom = prev + delta
+      return Math.min(Math.max(newZoom, 25), 500)
+    })
+  }, [isImageSelected])
+
+  const handleImageClick = () => {
+    setIsImageSelected(!isImageSelected)
   }
 
-  const handleZoomOut = () => {
-    setZoom(prev => Math.max(prev - 25, 25))
+  const handleContainerClick = (e: React.MouseEvent) => {
+    if (e.target === e.currentTarget) {
+      setIsImageSelected(false)
+    }
   }
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (zoom > 100 && isImageSelected) {
+      setIsPanning(true)
+      setStartPanPosition({
+        x: e.clientX - panPosition.x,
+        y: e.clientY - panPosition.y
+      })
+    }
+  }
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (isPanning) {
+      setPanPosition({
+        x: e.clientX - startPanPosition.x,
+        y: e.clientY - startPanPosition.y
+      })
+    }
+  }, [isPanning, startPanPosition])
+
+  const handleMouseUp = useCallback(() => {
+    setIsPanning(false)
+  }, [])
+
+  useEffect(() => {
+    if (isPanning) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [isPanning, handleMouseMove, handleMouseUp])
 
   const handleRotate = () => {
     setRotation(prev => (prev + 90) % 360)
@@ -44,6 +94,8 @@ export default function ImageViewer({ sceneId, lineartImage, artImage }: ImageVi
   const handleReset = () => {
     setZoom(100)
     setRotation(0)
+    setPanPosition({ x: 0, y: 0 })
+    setIsImageSelected(false)
   }
 
   const handleFileUpload = async (type: 'lineart' | 'art', file: File) => {
@@ -95,15 +147,18 @@ export default function ImageViewer({ sceneId, lineartImage, artImage }: ImageVi
 
           {/* Zoom Controls */}
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground mr-2">
+            <div className="flex items-center gap-1 px-2 py-1 bg-muted rounded">
+              <Mouse className="h-3 w-3" />
+              <span className="text-xs text-muted-foreground">
+                클릭 후 스크롤로 확대
+              </span>
+            </div>
+            <span className={cn(
+              "text-sm font-medium px-2",
+              isImageSelected && "text-primary"
+            )}>
               {zoom}%
             </span>
-            <Button variant="outline" size="icon" onClick={handleZoomOut}>
-              <ZoomOut className="h-4 w-4" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={handleZoomIn}>
-              <ZoomIn className="h-4 w-4" />
-            </Button>
             <Button variant="outline" size="icon" onClick={handleRotate}>
               <RotateCw className="h-4 w-4" />
             </Button>
@@ -123,12 +178,14 @@ export default function ImageViewer({ sceneId, lineartImage, artImage }: ImageVi
       <div 
         ref={containerRef}
         className={cn(
-          "flex-1 relative overflow-auto bg-muted/20",
+          "flex-1 relative overflow-hidden bg-muted/20",
           isDragging && "bg-primary/10 border-2 border-dashed border-primary"
         )}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
+        onWheel={handleWheel}
+        onClick={handleContainerClick}
       >
         <div className="min-h-full flex items-center justify-center p-8">
           {currentImage ? (
@@ -136,11 +193,18 @@ export default function ImageViewer({ sceneId, lineartImage, artImage }: ImageVi
               ref={imageRef}
               src={currentImage}
               alt={`${activeTab} image`}
-              className="max-w-full h-auto"
+              className={cn(
+                "max-w-full h-auto transition-all duration-200",
+                isImageSelected && "ring-2 ring-primary ring-offset-2",
+                isPanning && "cursor-grabbing",
+                zoom > 100 && isImageSelected && !isPanning && "cursor-grab"
+              )}
               style={{
-                transform: `scale(${zoom / 100}) rotate(${rotation}deg)`,
-                transition: 'transform 0.2s ease-in-out'
+                transform: `scale(${zoom / 100}) rotate(${rotation}deg) translate(${panPosition.x}px, ${panPosition.y}px)`,
+                transition: isPanning ? 'none' : 'transform 0.2s ease-in-out'
               }}
+              onClick={handleImageClick}
+              onMouseDown={handleMouseDown}
             />
           ) : (
             <Card className="p-12 text-center">

@@ -24,8 +24,7 @@ import {
   Layers,
   Settings,
   Download,
-  ZoomIn,
-  ZoomOut,
+  Mouse,
   X
 } from 'lucide-react'
 import Link from 'next/link'
@@ -112,6 +111,7 @@ export default function ProjectDetailPage() {
   
   // Zoom state
   const [zoomLevel, setZoomLevel] = useState(100)
+  const [selectedImageForZoom, setSelectedImageForZoom] = useState<string | null>(null)
 
   useEffect(() => {
     // Minimize sidebar when entering project page
@@ -641,26 +641,37 @@ export default function ProjectDetailPage() {
                 </div>
                 
                 <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 px-2 py-1 bg-muted rounded">
+                    <Mouse className="h-3 w-3" />
+                    <span className="text-xs text-muted-foreground">
+                      이미지 클릭 후 스크롤
+                    </span>
+                  </div>
+                  <span className="text-sm font-medium">{zoomLevel}%</span>
                   <Button
                     variant="outline"
-                    size="icon"
-                    onClick={() => setZoomLevel(Math.max(25, zoomLevel - 25))}
+                    size="sm"
+                    onClick={() => {
+                      setZoomLevel(100)
+                      setSelectedImageForZoom(null)
+                    }}
                   >
-                    <ZoomOut className="h-4 w-4" />
-                  </Button>
-                  <span className="text-sm w-12 text-center">{zoomLevel}%</span>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => setZoomLevel(Math.min(200, zoomLevel + 25))}
-                  >
-                    <ZoomIn className="h-4 w-4" />
+                    초기화
                   </Button>
                 </div>
               </div>
               
               {/* Image Display Area */}
-              <div className="flex-1 overflow-auto p-4">
+              <div 
+                className="flex-1 overflow-auto p-4"
+                onWheel={(e) => {
+                  if (selectedImageForZoom) {
+                    e.preventDefault()
+                    const delta = e.deltaY > 0 ? -5 : 5
+                    setZoomLevel(prev => Math.min(Math.max(prev + delta, 25), 300))
+                  }
+                }}
+              >
                 <div className={cn(
                   "grid gap-4",
                   imageViewMode === 'both' ? 'grid-cols-2' : 'grid-cols-1'
@@ -685,9 +696,23 @@ export default function ProjectDetailPage() {
                                 <img 
                                   src={img.url || img.fileUrl} 
                                   alt="Line art"
-                                  className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                                  style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}
-                                  onClick={() => setSelectedImage(img)}
+                                  className={cn(
+                                    "w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all",
+                                    selectedImageForZoom === img.id && "ring-2 ring-primary"
+                                  )}
+                                  style={{ 
+                                    transform: selectedImageForZoom === img.id ? `scale(${zoomLevel / 100})` : 'scale(1)', 
+                                    transformOrigin: 'center'
+                                  }}
+                                  onClick={() => {
+                                    if (selectedImageForZoom === img.id) {
+                                      setSelectedImageForZoom(null)
+                                      setZoomLevel(100)
+                                    } else {
+                                      setSelectedImageForZoom(img.id)
+                                      setSelectedImage(img)
+                                    }
+                                  }}
                                 />
                                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Button
@@ -753,9 +778,23 @@ export default function ProjectDetailPage() {
                                 <img 
                                   src={img.url || img.fileUrl} 
                                   alt="Art"
-                                  className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                                  style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: 'top left' }}
-                                  onClick={() => setSelectedImage(img)}
+                                  className={cn(
+                                    "w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all",
+                                    selectedImageForZoom === img.id && "ring-2 ring-primary"
+                                  )}
+                                  style={{ 
+                                    transform: selectedImageForZoom === img.id ? `scale(${zoomLevel / 100})` : 'scale(1)', 
+                                    transformOrigin: 'center'
+                                  }}
+                                  onClick={() => {
+                                    if (selectedImageForZoom === img.id) {
+                                      setSelectedImageForZoom(null)
+                                      setZoomLevel(100)
+                                    } else {
+                                      setSelectedImageForZoom(img.id)
+                                      setSelectedImage(img)
+                                    }
+                                  }}
                                 />
                                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Button
