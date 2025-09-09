@@ -1044,7 +1044,9 @@ export default function ProjectDetailPage() {
           <ScrollArea className="flex-1">
             <div className="p-4 space-y-4">
               {comments.length > 0 ? (
-                comments.map((comment) => {
+                comments
+                  .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // 오래된 댓글이 위로, 최신이 아래로
+                  .map((comment) => {
                   const isAnnotation = comment.content?.startsWith('[ANNOTATION]')
                   const annotationData = comment.metadata
                   let displayText = comment.content
