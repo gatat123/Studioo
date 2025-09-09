@@ -1,0 +1,43 @@
+3. 프로젝트 페이지
+
+Features
+
+이미지 업로드(JPEG/PNG/WebP)
+
+선화/아트 토글 보기
+
+재업로드 시 히스토리 생성(모든 버전 선택 열람)
+
+댓글(프로젝트/씬/이미지 단위)
+
+주석(Annotation): 이미지 위 드로잉+간단 설명으로 수정요청
+
+씬 추가(다중), 씬 설명(연출/설명 텍스트)
+
+내부 활동(댓글/업로드 등) 발생 시 스튜디오 목록의 해당 프로젝트에 알림 아이콘 생성
+
+비교 모드: 히스토리 이미지들을 드래그&드롭으로 캔버스 비교
+
+ImageZoomViewer: 확대/팬 기능
+
+Functions
+
+업로드: 프리사인드 URL로 스토리지 전송 → images(project_id, scene_id, kind=line|art, version) 메타 저장
+
+버저닝: 선화/아트별 증분 버전 부여, 썸네일 생성
+
+히스토리 패널: 모든 버전 목록/선택 미리보기
+
+댓글: comments(target_type=project|scene|image, target_id, text, author_id) + 멘션(@)
+
+주석: annotations(image_id, shape(points), note, author_id) + 화면 좌표 저장
+
+씬 관리: scenes(project_id, index, title, description) 추가/정렬/삭제
+
+비교 모드: 히스토리 트레이 → 캔버스 두 영역(Drop Zone)으로 드래그, 동기화 줌/패닝
+
+알림 트리거: 업로드/댓글/주석/씬 변경 시 notifications(project_id, type, actor_id) 생성
+
+실시간 협업: 동일 프로젝트 접속자에 이벤트 브로드캐스트(코멘트, 주석, 업로드 완료 등)
+
+접근 제어: 프로젝트 멤버만 열람/편집, 삭제는 생성자만
