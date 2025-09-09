@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Search, Filter, Grid3X3, List, Plus, Calendar, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import TiltedCard from '@/components/ui/tilted-card';
 import {
   Select,
   SelectContent,
@@ -284,19 +285,24 @@ export function ProjectGrid() {
             const deadline = formatDeadline(project.deadline);
             
             return viewMode === 'grid' ? (
-              // Grid View Card
-              <div
+              // Grid View Card with Tilted Effect
+              <TiltedCard
                 key={project.id}
-                className="group relative bg-white rounded-lg border hover:shadow-lg transition-all cursor-pointer"
+                containerHeight="320px"
+                containerWidth="100%"
+                imageHeight="100%"
+                imageWidth="100%"
                 onClick={() => handleProjectClick(project.id)}
+                className="relative"
               >
-                {project.hasUpdates && (
-                  <div className="absolute -top-2 -right-2 z-10">
-                    <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse" />
-                  </div>
-                )}
-                
-                <div className="aspect-video bg-gray-100 rounded-t-lg overflow-hidden">
+                <div className="group relative bg-white dark:bg-gray-900 rounded-lg border hover:shadow-lg transition-all h-full w-full">
+                  {project.hasUpdates && (
+                    <div className="absolute -top-2 -right-2 z-10">
+                      <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse" />
+                    </div>
+                  )}
+                  
+                  <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-t-lg overflow-hidden">
                   {project.thumbnail ? (
                     <img
                       src={project.thumbnail}
@@ -337,7 +343,7 @@ export function ProjectGrid() {
                     )}
                   </div>
                 </div>
-              </div>
+              </TiltedCard>
             ) : (
               // List View Item
               <div

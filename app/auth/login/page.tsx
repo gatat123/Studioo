@@ -56,9 +56,15 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-12" style={{ cursor: 'none' }}>
-      <SplashCursor />
-      <div className="w-full max-w-md">
+    <div className="min-h-screen relative bg-gray-50 dark:bg-gray-900">
+      {/* Background effect */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <SplashCursor />
+      </div>
+      
+      {/* Login content */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
+        <div className="w-full max-w-md">
         <StarBorder className="rounded-lg">
           <Card className="border-0 shadow-lg">
           <CardHeader className="space-y-1 pb-6">
@@ -171,6 +177,7 @@ export default function LoginPage() {
           </form>
         </Card>
         </StarBorder>
+        </div>
       </div>
     </div>
   );

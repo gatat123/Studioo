@@ -29,7 +29,8 @@ import {
   History,
   GitCompare,
   RefreshCw,
-  PenTool
+  PenTool,
+  Play
 } from 'lucide-react'
 import Link from 'next/link'
 import { projectsAPI, ProjectWithParticipants } from '@/lib/api/projects'
@@ -48,6 +49,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import AnnotationModal from '@/components/annotation-modal'
+import ScenePlayModal from '@/components/projects/ScenePlayModal'
 
 // Removed AnnotationLayer - using AnnotationModal instead
 
@@ -112,6 +114,7 @@ export default function ProjectDetailPage() {
   const [showAnnotation, setShowAnnotation] = useState(false)
   const [annotationImage, setAnnotationImage] = useState<any>(null)
   const [annotationText, setAnnotationText] = useState('')
+  const [showScenePlay, setShowScenePlay] = useState(false)
 
   useEffect(() => {
     // Minimize sidebar when entering project page with slight delay to ensure it takes effect
@@ -654,6 +657,17 @@ export default function ProjectDetailPage() {
                     >
                       모두
                     </Button>
+                    
+                    {/* Play Button */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowScenePlay(true)}
+                      className="ml-2"
+                      title="씬 플레이 모드"
+                    >
+                      <Play className="h-4 w-4" />
+                    </Button>
                   </div>
                   
                   {/* Action buttons for selected view mode */}
@@ -972,7 +986,7 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* Right Panel - Comments */}
-        <div className="w-96 border-l bg-card flex flex-col h-full">
+        <div className="w-96 border-l bg-card flex flex-col h-full overflow-hidden">
           <div className="p-4 border-b flex-shrink-0">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">댓글</h2>
@@ -981,7 +995,7 @@ export default function ProjectDetailPage() {
           </div>
           
           {/* Comment List */}
-          <ScrollArea className="flex-1 min-h-0">
+          <ScrollArea className="flex-1 overflow-y-auto">
             <div className="p-4 space-y-4 flex flex-col-reverse">
               {comments.length > 0 ? (
                 [...comments].reverse().map((comment) => {
@@ -1056,8 +1070,8 @@ export default function ProjectDetailPage() {
             </div>
           </ScrollArea>
           
-          {/* Comment Input */}
-          <div className="p-4 border-t bg-background flex-shrink-0">
+          {/* Comment Input - Fixed at bottom */}
+          <div className="p-4 border-t bg-background flex-shrink-0 mt-auto">
             <div className="flex gap-2">
               <Textarea
                 placeholder={selectedScene ? `씬 ${selectedScene.sceneNumber}에 댓글 작성...` : "댓글을 입력하세요..."}
@@ -1279,6 +1293,15 @@ export default function ProjectDetailPage() {
           </div>
         </div>
       </div>
+      )}
+      
+      {/* Scene Play Modal */}
+      {showScenePlay && (
+        <ScenePlayModal
+          scenes={scenes}
+          imageType={imageViewMode === 'both' ? 'lineart' : imageViewMode}
+          onClose={() => setShowScenePlay(false)}
+        />
       )}
       
       {/* Annotation Modal */}

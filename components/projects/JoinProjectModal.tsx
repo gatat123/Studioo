@@ -84,7 +84,7 @@ export default function JoinProjectModal({ open, onClose }: JoinProjectModalProp
             <Label htmlFor="invite-code">초대 코드</Label>
             <Input
               id="invite-code"
-              placeholder="예: ABCD1234"
+              placeholder="예: ABCD1234EFGH5678"
               value={inviteCode}
               onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
               onKeyPress={(e) => {
@@ -94,7 +94,7 @@ export default function JoinProjectModal({ open, onClose }: JoinProjectModalProp
               }}
               disabled={isJoining}
               className="font-mono uppercase"
-              maxLength={10}
+              maxLength={16}
             />
             <p className="text-sm text-muted-foreground">
               프로젝트 관리자로부터 받은 초대 코드를 입력하세요.
