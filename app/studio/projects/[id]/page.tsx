@@ -169,6 +169,15 @@ export default function ProjectDetailPage() {
     }
   }, [projectId])
 
+  const fetchComments = async () => {
+    try {
+      const commentsData = await commentsAPI.getProjectComments(projectId)
+      setComments(commentsData || [])
+    } catch (error) {
+      console.error('Failed to fetch comments:', error)
+    }
+  }
+
   const fetchProjectDetails = async () => {
     try {
       const [projectData, commentsData] = await Promise.all([
