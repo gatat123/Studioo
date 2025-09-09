@@ -15,6 +15,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Loader2, CheckCircle } from 'lucide-react';
 import SplashCursor from '@/components/ui/splash-cursor';
+import StarBorder from '@/components/ui/star-border';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -73,7 +74,8 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 px-4 py-12" style={{ cursor: 'none' }}>
       <SplashCursor />
       <div className="w-full max-w-md">
-        <Card className="border-0 shadow-lg">
+        <StarBorder className="rounded-lg">
+          <Card className="border-0 shadow-lg">
           <CardHeader className="space-y-1 pb-6">
             <CardTitle className="text-2xl font-bold text-center">회원가입</CardTitle>
             <CardDescription className="text-center">
@@ -261,6 +263,7 @@ export default function RegisterPage() {
             </CardFooter>
           </form>
         </Card>
+        </StarBorder>
       </div>
     </div>
   );

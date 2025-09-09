@@ -121,6 +121,8 @@ export default function ProjectDetailPage() {
   const [selectedHistoryType, setSelectedHistoryType] = useState<'lineart' | 'art'>('lineart')
   const [imageHistory, setImageHistory] = useState<any[]>([])
   const [compareImages, setCompareImages] = useState<{left: any, right: any} | null>(null)
+  const [selectedLineartVersion, setSelectedLineartVersion] = useState<number | null>(null)
+  const [selectedArtVersion, setSelectedArtVersion] = useState<number | null>(null)
 
   useEffect(() => {
     // Minimize sidebar when entering project page
@@ -709,61 +711,70 @@ export default function ProjectDetailPage() {
                       >
                         {selectedScene.lineArtImages && selectedScene.lineArtImages.length > 0 ? (
                           <div className="space-y-3">
-                            {selectedScene.lineArtImages.map((img) => (
-                              <div key={img.id} className="relative group">
-                                <img 
-                                  src={img.url || img.fileUrl} 
-                                  alt="Line art"
-                                  className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all"
-                                  onClick={() => setSelectedImage(img)}
-                                />
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                                  <Button
-                                    size="icon"
-                                    variant="secondary"
-                                    className="h-8 w-8"
-                                    onClick={() => {
-                                      // Compare functionality
-                                      if (!compareImages) {
-                                        setCompareImages({ left: img, right: null })
-                                      } else if (compareImages.left && !compareImages.right) {
-                                        setCompareImages({ ...compareImages, right: img })
-                                        setShowCompare(true)
-                                      }
-                                    }}
-                                  >
-                                    <GitCompare className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="icon"
-                                    variant="secondary"
-                                    className="h-8 w-8"
-                                    onClick={() => {
-                                      // Download functionality
-                                      const link = document.createElement('a')
-                                      link.href = img.url || img.fileUrl
-                                      link.download = `lineart-v${img.version}.png`
-                                      link.click()
-                                    }}
-                                  >
-                                    <Download className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="icon"
-                                    variant="destructive"
-                                    className="h-8 w-8"
-                                    onClick={async () => {
-                                      if (confirm('이 이미지를 삭제하시겠습니까?')) {
-                                        await imagesAPI.deleteImage(img.id)
-                                        await fetchProjectDetails()
-                                      }
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                            {(() => {
+                              // Show only the current version image
+                              const currentImage = selectedLineartVersion ? 
+                                selectedScene.lineArtImages.find(img => img.version === selectedLineartVersion) :
+                                selectedScene.lineArtImages[selectedScene.lineArtImages.length - 1]; // Latest version
+                              
+                              if (!currentImage) return null;
+                              
+                              return (
+                                <div key={currentImage.id} className="relative group">
+                                  <img 
+                                    src={currentImage.url || currentImage.fileUrl} 
+                                    alt="Line art"
+                                    className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all"
+                                    onClick={() => setSelectedImage(currentImage)}
+                                  />
+                                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                    <Button
+                                      size="icon"
+                                      variant="secondary"
+                                      className="h-8 w-8"
+                                      onClick={() => {
+                                        // Compare functionality
+                                        if (!compareImages) {
+                                          setCompareImages({ left: currentImage, right: null })
+                                        } else if (compareImages.left && !compareImages.right) {
+                                          setCompareImages({ ...compareImages, right: currentImage })
+                                          setShowCompare(true)
+                                        }
+                                      }}
+                                    >
+                                      <GitCompare className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="icon"
+                                      variant="secondary"
+                                      className="h-8 w-8"
+                                      onClick={() => {
+                                        // Download functionality
+                                        const link = document.createElement('a')
+                                        link.href = currentImage.url || currentImage.fileUrl
+                                        link.download = `lineart-v${currentImage.version}.png`
+                                        link.click()
+                                      }}
+                                    >
+                                      <Download className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="icon"
+                                      variant="destructive"
+                                      className="h-8 w-8"
+                                      onClick={async () => {
+                                        if (confirm('이 이미지를 삭제하시겠습니까?')) {
+                                          await imagesAPI.deleteImage(currentImage.id)
+                                          await fetchProjectDetails()
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })()}
                           </div>
                         ) : (
                           <div className="text-center">
@@ -805,61 +816,70 @@ export default function ProjectDetailPage() {
                       >
                         {selectedScene.artImages && selectedScene.artImages.length > 0 ? (
                           <div className="space-y-3">
-                            {selectedScene.artImages.map((img) => (
-                              <div key={img.id} className="relative group">
-                                <img 
-                                  src={img.url || img.fileUrl} 
-                                  alt="Art"
-                                  className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all"
-                                  onClick={() => setSelectedImage(img)}
-                                />
-                                <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
-                                  <Button
-                                    size="icon"
-                                    variant="secondary"
-                                    className="h-8 w-8"
-                                    onClick={() => {
-                                      // Compare functionality
-                                      if (!compareImages) {
-                                        setCompareImages({ left: img, right: null })
-                                      } else if (compareImages.left && !compareImages.right) {
-                                        setCompareImages({ ...compareImages, right: img })
-                                        setShowCompare(true)
-                                      }
-                                    }}
-                                  >
-                                    <GitCompare className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="icon"
-                                    variant="secondary"
-                                    className="h-8 w-8"
-                                    onClick={() => {
-                                      // Download functionality
-                                      const link = document.createElement('a')
-                                      link.href = img.url || img.fileUrl
-                                      link.download = `art-v${img.version}.png`
-                                      link.click()
-                                    }}
-                                  >
-                                    <Download className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="icon"
-                                    variant="destructive"
-                                    className="h-8 w-8"
-                                    onClick={async () => {
-                                      if (confirm('이 이미지를 삭제하시겠습니까?')) {
-                                        await imagesAPI.deleteImage(img.id)
-                                        await fetchProjectDetails()
-                                      }
-                                    }}
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
+                            {(() => {
+                              // Show only the current version image
+                              const currentImage = selectedArtVersion ? 
+                                selectedScene.artImages.find(img => img.version === selectedArtVersion) :
+                                selectedScene.artImages[selectedScene.artImages.length - 1]; // Latest version
+                              
+                              if (!currentImage) return null;
+                              
+                              return (
+                                <div key={currentImage.id} className="relative group">
+                                  <img 
+                                    src={currentImage.url || currentImage.fileUrl} 
+                                    alt="Art"
+                                    className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all"
+                                    onClick={() => setSelectedImage(currentImage)}
+                                  />
+                                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
+                                    <Button
+                                      size="icon"
+                                      variant="secondary"
+                                      className="h-8 w-8"
+                                      onClick={() => {
+                                        // Compare functionality
+                                        if (!compareImages) {
+                                          setCompareImages({ left: currentImage, right: null })
+                                        } else if (compareImages.left && !compareImages.right) {
+                                          setCompareImages({ ...compareImages, right: currentImage })
+                                          setShowCompare(true)
+                                        }
+                                      }}
+                                    >
+                                      <GitCompare className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="icon"
+                                      variant="secondary"
+                                      className="h-8 w-8"
+                                      onClick={() => {
+                                        // Download functionality
+                                        const link = document.createElement('a')
+                                        link.href = currentImage.url || currentImage.fileUrl
+                                        link.download = `art-v${currentImage.version}.png`
+                                        link.click()
+                                      }}
+                                    >
+                                      <Download className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="icon"
+                                      variant="destructive"
+                                      className="h-8 w-8"
+                                      onClick={async () => {
+                                        if (confirm('이 이미지를 삭제하시겠습니까?')) {
+                                          await imagesAPI.deleteImage(currentImage.id)
+                                          await fetchProjectDetails()
+                                        }
+                                      }}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              );
+                            })()}
                           </div>
                         ) : (
                           <div className="text-center">
@@ -1108,10 +1128,17 @@ export default function ProjectDetailPage() {
                     alt={`Version ${img.version}`}
                     className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
                     onClick={() => {
-                      // Restore this version
-                      if (confirm('이 버전으로 복원하시겠습니까?')) {
-                        // API call to restore version
+                      // Set this version as the current displayed version
+                      if (selectedHistoryType === 'lineart') {
+                        setSelectedLineartVersion(img.version)
+                      } else {
+                        setSelectedArtVersion(img.version)
                       }
+                      setShowHistory(false)
+                      toast({
+                        title: '버전 변경',
+                        description: `버전 ${img.version}으로 변경되었습니다.`
+                      })
                     }}
                   />
                   <div className="text-xs space-y-1">
