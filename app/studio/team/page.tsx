@@ -75,7 +75,7 @@ export default function TeamPage() {
     const socket = socketClient.connect()
     
     // Join team channel
-    socket.emit('join:team')
+    socketClient.emit('join:team')
     
     // Listen for team events
     socketClient.on('team:member-joined', (member: TeamMember) => {
@@ -104,7 +104,7 @@ export default function TeamPage() {
     loadMessages()
     
     return () => {
-      socket.emit('leave:team')
+      socketClient.emit('leave:team')
       socketClient.off('team:member-joined')
       socketClient.off('team:member-left')
       socketClient.off('team:message')

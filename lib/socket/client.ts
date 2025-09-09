@@ -126,6 +126,11 @@ class SocketClient {
     this.socket?.emit('annotation:delete', { imageId, annotationId });
   }
 
+  // Custom event emitter
+  emit(event: string, data?: any) {
+    this.socket?.emit(event, data);
+  }
+
   // Custom event listener registration
   on(event: string, callback: (...args: any[]) => void) {
     this.socket?.on(event, callback);
