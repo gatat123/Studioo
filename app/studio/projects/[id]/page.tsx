@@ -178,6 +178,15 @@ export default function ProjectDetailPage() {
     }
   }
 
+  const fetchSceneImages = async (sceneId: string) => {
+    try {
+      // Refetch the entire project to get updated scene data
+      await fetchProjectDetails()
+    } catch (error) {
+      console.error('Failed to fetch scene images:', error)
+    }
+  }
+
   const fetchProjectDetails = async () => {
     try {
       const [projectData, commentsData] = await Promise.all([
