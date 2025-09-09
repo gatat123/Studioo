@@ -128,7 +128,7 @@ export default function ProjectDetailPage() {
     // Set up real-time event listeners
     socketClient.on('comment:created', (data: any) => {
       if (data.projectId === projectId) {
-        setComments(prev => [data.comment, ...prev])
+        setComments(prev => [...prev, data.comment])
         toast({
           title: '새 댓글',
           description: `${data.comment.user?.nickname || data.comment.author?.nickname || 'Someone'}님이 댓글을 작성했습니다.`
@@ -321,7 +321,7 @@ export default function ProjectDetailPage() {
         sceneId: selectedScene?.id,
         content: newComment
       })
-      setComments([comment, ...comments])
+      setComments([...comments, comment])
       setNewComment('')
       toast({
         title: '댓글 작성',
@@ -496,9 +496,9 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background">
+    <div className="flex flex-col h-screen bg-background overflow-hidden">
       {/* Header */}
-      <div className="border-b px-4 py-3 flex items-center justify-between bg-card">
+      <div className="border-b px-4 py-3 flex items-center justify-between bg-card flex-shrink-0">
         <div className="flex items-center gap-4">
           <Button
             variant="ghost"
@@ -526,9 +526,9 @@ export default function ProjectDetailPage() {
       </div>
 
       {/* Main Content - 3 Column Layout */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden min-h-0">
         {/* Left Panel - Scene List */}
-        <div className="w-80 border-r bg-card flex flex-col">
+        <div className="w-80 border-r bg-card flex flex-col h-full">
           <div className="p-4 border-b">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold">씬 목록</h2>
@@ -626,7 +626,7 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* Center Panel - Image Viewer */}
-        <div className="flex-1 flex flex-col bg-muted/30">
+        <div className="flex-1 flex flex-col bg-muted/30 h-full min-w-0">
           {selectedScene ? (
             <>
               {/* Image View Controls */}
@@ -972,8 +972,8 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* Right Panel - Comments */}
-        <div className="w-96 border-l bg-card flex flex-col">
-          <div className="p-4 border-b">
+        <div className="w-96 border-l bg-card flex flex-col h-full">
+          <div className="p-4 border-b flex-shrink-0">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">댓글</h2>
               <Badge variant="outline">{comments.length}</Badge>
@@ -981,10 +981,10 @@ export default function ProjectDetailPage() {
           </div>
           
           {/* Comment List */}
-          <ScrollArea className="flex-1">
-            <div className="p-4 space-y-4">
+          <ScrollArea className="flex-1 min-h-0">
+            <div className="p-4 space-y-4 flex flex-col-reverse">
               {comments.length > 0 ? (
-                comments.map((comment) => {
+                [...comments].reverse().map((comment) => {
                   const isAnnotation = comment.content?.startsWith('[ANNOTATION]')
                   const annotationData = comment.metadata
                   let displayText = comment.content
@@ -1057,13 +1057,13 @@ export default function ProjectDetailPage() {
           </ScrollArea>
           
           {/* Comment Input */}
-          <div className="p-4 border-t">
+          <div className="p-4 border-t bg-background flex-shrink-0">
             <div className="flex gap-2">
               <Textarea
                 placeholder={selectedScene ? `씬 ${selectedScene.sceneNumber}에 댓글 작성...` : "댓글을 입력하세요..."}
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="min-h-[80px] resize-none"
+                className="min-h-[60px] max-h-[120px] resize-none"
                 onKeyPress={(e) => {
                   if (e.key === 'Enter' && e.ctrlKey) {
                     handleSubmitComment()
@@ -1079,7 +1079,7 @@ export default function ProjectDetailPage() {
                 <Send className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-1">
               Ctrl+Enter로 전송
             </p>
           </div>
@@ -1304,7 +1304,7 @@ export default function ProjectDetailPage() {
                 }
               })
               
-              setComments([comment, ...comments])
+              setComments([...comments, comment])
               setShowAnnotation(false)
               setAnnotationImage(null)
               setAnnotationText('')
