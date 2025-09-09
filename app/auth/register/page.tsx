@@ -74,14 +74,9 @@ export default function RegisterPage() {
         password: data.password,
         nickname: data.nickname
       });
-
+      
       // 회원가입 성공 시 스튜디오 페이지로 이동
-      // router.refresh()를 먼저 호출하여 서버 상태 동기화
-      router.refresh();
-      // 약간의 딜레이 후 페이지 이동 (상태 업데이트 완료 보장)
-      setTimeout(() => {
-        router.push('/studio');
-      }, 100);
+      router.push('/studio');
     } catch {
       // 에러는 store에서 처리됨
     }

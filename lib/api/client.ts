@@ -11,7 +11,7 @@ import { getAuthToken } from '@/lib/utils/cookies';
 const getAPIBaseURL = () => {
   // Production 환경에서는 NEXT_PUBLIC_BACKEND_URL 우선 사용
   if (process.env.NODE_ENV === 'production') {
-    return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://studioo-backend-production.up.railway.app';
+    return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://courageous-spirit-production.up.railway.app';
   }
   // Development 환경에서는 로컬 API URL 사용
   return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
