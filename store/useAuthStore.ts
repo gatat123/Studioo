@@ -48,10 +48,15 @@ export const useAuthStore = create<AuthState>()(
             // Set cookie for middleware authentication
             const token = response.accessToken || response.token;
             if (token) {
+              // Extract domain for cookie (for Railway deployment)
+              const hostname = window.location.hostname;
+              const domain = hostname.includes('railway.app') ? `.${hostname.split('.').slice(-3).join('.')}` : undefined;
+              
               Cookies.set('token', token, { 
                 expires: 7,
                 sameSite: 'lax',
-                secure: window.location.protocol === 'https:'
+                secure: window.location.protocol === 'https:',
+                domain: domain
               });
             }
             
@@ -92,10 +97,15 @@ export const useAuthStore = create<AuthState>()(
             // Set cookie for middleware authentication
             const token = response.accessToken || response.token;
             if (token) {
+              // Extract domain for cookie (for Railway deployment)
+              const hostname = window.location.hostname;
+              const domain = hostname.includes('railway.app') ? `.${hostname.split('.').slice(-3).join('.')}` : undefined;
+              
               Cookies.set('token', token, { 
                 expires: 7,
                 sameSite: 'lax',
-                secure: window.location.protocol === 'https:'
+                secure: window.location.protocol === 'https:',
+                domain: domain
               });
             }
             
@@ -184,10 +194,15 @@ export const useAuthStore = create<AuthState>()(
           if (cookieToken && !localToken) {
             localStorage.setItem('token', cookieToken);
           } else if (!cookieToken && localToken) {
+            // Extract domain for cookie (for Railway deployment)
+            const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+            const domain = hostname.includes('railway.app') ? `.${hostname.split('.').slice(-3).join('.')}` : undefined;
+            
             Cookies.set('token', localToken, { 
               expires: 7,
               sameSite: 'lax',
-              secure: typeof window !== 'undefined' && window.location.protocol === 'https:'
+              secure: typeof window !== 'undefined' && window.location.protocol === 'https:',
+              domain: domain
             });
           }
           

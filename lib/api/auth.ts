@@ -22,7 +22,10 @@ export const authAPI = {
       
       // Also set cookie for middleware (with secure flag for production)
       const isProduction = window.location.protocol === 'https:';
-      const cookieOptions = `path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${isProduction ? '; Secure' : ''}`;
+      // Extract domain for cookie (remove port if present)
+      const hostname = window.location.hostname;
+      const domain = hostname.includes('railway.app') ? `.${hostname.split('.').slice(-3).join('.')}` : '';
+      const cookieOptions = `path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${domain ? `; Domain=${domain}` : ''}${isProduction ? '; Secure' : ''}`;
       document.cookie = `token=${token}; ${cookieOptions}`;
     }
     
@@ -44,7 +47,10 @@ export const authAPI = {
       
       // Also set cookie for middleware (with secure flag for production)
       const isProduction = window.location.protocol === 'https:';
-      const cookieOptions = `path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${isProduction ? '; Secure' : ''}`;
+      // Extract domain for cookie (remove port if present)
+      const hostname = window.location.hostname;
+      const domain = hostname.includes('railway.app') ? `.${hostname.split('.').slice(-3).join('.')}` : '';
+      const cookieOptions = `path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax${domain ? `; Domain=${domain}` : ''}${isProduction ? '; Secure' : ''}`;
       document.cookie = `token=${token}; ${cookieOptions}`;
     }
     

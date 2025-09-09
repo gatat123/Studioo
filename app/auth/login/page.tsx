@@ -58,6 +58,10 @@ export default function LoginPage() {
         password: data.password
       });
       
+      // Debug: 로그인 후 토큰 확인
+      console.log('🆕 After login - localStorage token:', localStorage.getItem('token'));
+      console.log('🆕 After login - cookie token:', document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1]);
+      
       // 로그인 성공 시 스튜디오 페이지로 이동
       router.push('/studio');
     } catch (err) {

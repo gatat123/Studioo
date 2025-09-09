@@ -19,6 +19,11 @@ export default function StudioPage() {
   const [showJoinModal, setShowJoinModal] = useState(false);
   
   useEffect(() => {
+    // Debug: Check localStorage and cookies
+    if (typeof window !== 'undefined') {
+      console.log('🔍 Debug - localStorage token:', localStorage.getItem('token'));
+      console.log('🔍 Debug - cookie token:', document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1]);
+    }
     checkAuth();
   }, []);
 
