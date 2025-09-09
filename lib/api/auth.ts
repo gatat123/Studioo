@@ -19,6 +19,9 @@ export const authAPI = {
       localStorage.setItem('token', token);
       localStorage.setItem('userId', response.user.id);
       localStorage.setItem('user', JSON.stringify(response.user));
+      
+      // Also set cookie for middleware
+      document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
     }
     
     return response;
@@ -36,6 +39,9 @@ export const authAPI = {
       localStorage.setItem('token', token);
       localStorage.setItem('userId', response.user.id);
       localStorage.setItem('user', JSON.stringify(response.user));
+      
+      // Also set cookie for middleware
+      document.cookie = `token=${token}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Lax`;
     }
     
     return response;
@@ -52,6 +58,9 @@ export const authAPI = {
       localStorage.removeItem('token');
       localStorage.removeItem('userId');
       localStorage.removeItem('user');
+      
+      // Clear cookie
+      document.cookie = 'token=; path=/; max-age=0; SameSite=Lax';
       
       // Redirect to login
       window.location.href = '/auth/login';

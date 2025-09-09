@@ -158,7 +158,10 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         
         try {
-          const token = Cookies.get('token') || localStorage.getItem('token');
+          // Check both cookie and localStorage for token
+          const cookieToken = Cookies.get('token');
+          const localToken = localStorage.getItem('token');
+          const token = cookieToken || localToken;
           
           if (!token) {
             set({
@@ -167,6 +170,13 @@ export const useAuthStore = create<AuthState>()(
               isLoading: false,
             });
             return;
+          }
+          
+          // Sync token between cookie and localStorage
+          if (cookieToken && !localToken) {
+            localStorage.setItem('token', cookieToken);
+          } else if (!cookieToken && localToken) {
+            Cookies.set('token', localToken, { expires: 7 });
           }
           
           const sessionUser = await authAPI.getSession();

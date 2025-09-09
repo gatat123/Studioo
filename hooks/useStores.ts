@@ -12,8 +12,9 @@ export const useAuth = () => {
   const router = useRouter();
 
   useEffect(() => {
+    // Check auth only once on mount
     checkAuth();
-  }, [checkAuth]);
+  }, []); // Empty dependency array to run only once
 
   const requireAuth = (redirectTo: string = '/login') => {
     if (!isLoading && !isAuthenticated) {
