@@ -41,7 +41,8 @@ import { socketClient } from '@/lib/socket/client'
 import { useToast } from '@/hooks/use-toast'
 import type { Scene, Comment, Image } from '@/types'
 import { useUIStore } from '@/store/useUIStore'
-import { AnnotationModal } from '@/components/projects/AnnotationModal'
+import { AnnotationViewModal } from '@/components/projects/AnnotationViewModal'
+import AnnotationModal from '@/components/annotation-modal'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1395,8 +1396,8 @@ export default function ProjectDetailPage() {
         />
       )}
       
-      {/* Annotation Modal */}
-      <AnnotationModal
+      {/* Annotation View Modal */}
+      <AnnotationViewModal
         open={showAnnotationModal}
         onOpenChange={setShowAnnotationModal}
         annotation={annotationModalData}

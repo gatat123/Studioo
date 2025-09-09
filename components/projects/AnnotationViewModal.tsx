@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { X, Download, ZoomIn, ZoomOut } from 'lucide-react';
 import Image from 'next/image';
 
-interface AnnotationModalProps {
+interface AnnotationViewModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   annotation: {
@@ -22,7 +22,7 @@ interface AnnotationModalProps {
   } | null;
 }
 
-export function AnnotationModal({ open, onOpenChange, annotation }: AnnotationModalProps) {
+export function AnnotationViewModal({ open, onOpenChange, annotation }: AnnotationViewModalProps) {
   const [scale, setScale] = useState(1);
 
   useEffect(() => {
