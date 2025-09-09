@@ -12,10 +12,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from '@/components/ui/textarea'
 import { Upload, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { usersAPI } from '@/lib/api/users'
 
 const profileSchema = z.object({
   username: z.string().min(3, '사용자명은 최소 3자 이상이어야 합니다'),
-  displayName: z.string().min(2, '표시 이름은 최소 2자 이상이어야 합니다'),
+  nickname: z.string().min(2, '닉네임은 최소 2자 이상이어야 합니다'),
   email: z.string().email('올바른 이메일 주소를 입력하세요'),
   bio: z.string().max(500, '자기소개는 500자 이내로 작성하세요').optional()
 })
@@ -30,13 +31,14 @@ interface ProfileEditProps {
 export function ProfileEdit({ user, onUpdate }: ProfileEditProps) {
   const [loading, setLoading] = useState(false)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(user.avatar)
+  const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
       username: user.username,
-      displayName: user.displayName,
+      nickname: user.displayName || user.nickname,
       email: user.email,
       bio: user.bio || ''
     }
@@ -50,6 +52,7 @@ export function ProfileEdit({ user, onUpdate }: ProfileEditProps) {
         return
       }
 
+      setAvatarFile(file)
       const reader = new FileReader()
       reader.onloadend = () => {
         setAvatarPreview(reader.result as string)
@@ -60,6 +63,7 @@ export function ProfileEdit({ user, onUpdate }: ProfileEditProps) {
 
   const removeAvatar = () => {
     setAvatarPreview(null)
+    setAvatarFile(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -68,18 +72,31 @@ export function ProfileEdit({ user, onUpdate }: ProfileEditProps) {
   const onSubmit = async (data: ProfileFormValues) => {
     setLoading(true)
     try {
-      // TODO: 실제 API 호출로 교체
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const updatedUser = {
-        ...user,
-        ...data,
-        avatar: avatarPreview
+      // Upload profile image if changed
+      let profileImageUrl = user.avatar
+      if (avatarFile) {
+        try {
+          const imageResult = await usersAPI.uploadProfileImage(avatarFile)
+          profileImageUrl = imageResult.url
+        } catch (error) {
+          console.error('프로필 이미지 업로드 실패:', error)
+          toast.error('프로필 이미지 업로드에 실패했습니다')
+        }
       }
+      
+      // Update profile
+      const updateData = {
+        nickname: data.nickname,
+        email: data.email,
+        ...(profileImageUrl && { profileImageUrl })
+      }
+      
+      const updatedUser = await usersAPI.updateProfile(updateData)
       
       onUpdate(updatedUser)
       toast.success('프로필이 성공적으로 업데이트되었습니다')
     } catch (error) {
+      console.error('프로필 업데이트 실패:', error)
       toast.error('프로필 업데이트에 실패했습니다')
     } finally {
       setLoading(false)
@@ -165,10 +182,10 @@ export function ProfileEdit({ user, onUpdate }: ProfileEditProps) {
 
               <FormField
                 control={form.control}
-                name="displayName"
+                name="nickname"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>표시 이름</FormLabel>
+                    <FormLabel>닉네임</FormLabel>
                     <FormControl>
                       <Input {...field} />
                     </FormControl>

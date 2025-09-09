@@ -53,15 +53,16 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
-import { useProjectStore } from '@/store/useProjectStore'
+import { projectsAPI } from '@/lib/api/projects'
 import ParticipantsList from '@/components/projects/ParticipantsList'
 import NotificationSettings from '@/components/projects/NotificationSettings'
 
 const projectFormSchema = z.object({
-  name: z.string().min(1, 'Project name is required'),
+  name: z.string().min(1, '프로젝트 이름은 필수입니다'),
   description: z.string().optional(),
-  type: z.enum(['illustration', 'storyboard']),
+  tag: z.enum(['illustration', 'storyboard']).optional(),
   deadline: z.date().optional(),
+  status: z.enum(['active', 'completed', 'archived']).optional(),
 })
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>
@@ -72,50 +73,95 @@ export default function ProjectSettingsPage() {
   const { toast } = useToast()
   const projectId = params.id as string
   
-  const { projects, updateProject, deleteProject, generateInviteCode } = useProjectStore()
-  const project = projects.find(p => p.id === projectId)
-  
-  const [inviteCode, setInviteCode] = useState(project?.inviteCode || '')
+  const [project, setProject] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+  const [inviteCode, setInviteCode] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
   const [activeTab, setActiveTab] = useState('general')
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
-      name: project?.name || '',
-      description: project?.description || '',
-      type: project?.tag || 'illustration',
-      deadline: project?.deadline ? new Date(project?.deadline) : undefined,
+      name: '',
+      description: '',
+      tag: 'illustration',
+      deadline: undefined,
+      status: 'active',
     },
   })
 
   useEffect(() => {
-    if (!project) {
-      router.push('/studio')
+    const fetchProject = async () => {
+      try {
+        const data = await projectsAPI.getProject(projectId)
+        setProject(data)
+        setInviteCode(data.inviteCode || '')
+        form.reset({
+          name: data.name,
+          description: data.description || '',
+          tag: data.tag || 'illustration',
+          deadline: data.deadline ? new Date(data.deadline) : undefined,
+          status: data.status || 'active',
+        })
+      } catch (error) {
+        console.error('프로젝트 로드 실패:', error)
+        toast({
+          title: '오류',
+          description: '프로젝트를 불러올 수 없습니다.',
+          variant: 'destructive',
+        })
+        router.push('/studio')
+      } finally {
+        setLoading(false)
+      }
     }
-  }, [project, router])
+    
+    fetchProject()
+  }, [projectId, router, form])
 
-  const onSubmit = (data: ProjectFormValues) => {
+  const onSubmit = async (data: ProjectFormValues) => {
     if (!project) return
 
-    updateProject(projectId, {
-      ...data,
-      deadline: data.deadline,
-    })
-
-    toast({
-      title: 'Settings Updated',
-      description: 'Your project settings have been saved successfully.',
-    })
+    try {
+      const updateData = {
+        name: data.name,
+        description: data.description,
+        tag: data.tag,
+        deadline: data.deadline?.toISOString(),
+        status: data.status,
+      }
+      
+      const updatedProject = await projectsAPI.updateProject(projectId, updateData)
+      setProject(updatedProject)
+      
+      toast({
+        title: '설정 업데이트',
+        description: '프로젝트 설정이 저장되었습니다.',
+      })
+    } catch (error) {
+      console.error('프로젝트 업데이트 실패:', error)
+      toast({
+        title: '오류',
+        description: '프로젝트 업데이트에 실패했습니다.',
+        variant: 'destructive',
+      })
+    }
   }
 
   const handleGenerateInviteCode = async () => {
-    const newCode = await generateInviteCode(projectId)
-    if (newCode) {
-      setInviteCode(newCode)
+    try {
+      const result = await projectsAPI.generateInviteCode(projectId)
+      setInviteCode(result.inviteCode)
       toast({
-        title: 'New Invite Code Generated',
-        description: 'A new invitation code has been created.',
+        title: '초대 코드 생성',
+        description: '새로운 초대 코드가 생성되었습니다.',
+      })
+    } catch (error) {
+      console.error('초대 코드 생성 실패:', error)
+      toast({
+        title: '오류',
+        description: '초대 코드 생성에 실패했습니다.',
+        variant: 'destructive',
       })
     }
   }
@@ -131,23 +177,31 @@ export default function ProjectSettingsPage() {
   const handleDeleteProject = async () => {
     setIsDeleting(true)
     
-    // Simulate deletion delay
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    deleteProject(projectId)
-    
-    toast({
-      title: 'Project Deleted',
-      description: 'The project has been permanently deleted.',
-    })
-    
-    router.push('/studio')
+    try {
+      await projectsAPI.deleteProject(projectId)
+      
+      toast({
+        title: '프로젝트 삭제',
+        description: '프로젝트가 영구적으로 삭제되었습니다.',
+      })
+      
+      router.push('/studio')
+    } catch (error) {
+      console.error('프로젝트 삭제 실패:', error)
+      toast({
+        title: '오류',
+        description: '프로젝트 삭제에 실패했습니다.',
+        variant: 'destructive',
+      })
+      setIsDeleting(false)
+    }
   }
 
-  const handleArchiveProject = () => {
-    updateProject(projectId, { status: 'archived' })
-    toast({
-      title: 'Project Archived',
+  const handleArchiveProject = async () => {
+    try {
+      await projectsAPI.updateProject(projectId, { status: 'archived' })
+      toast({
+        title: '프로젝트 보관',
       description: 'The project has been archived and moved to your archive.',
     })
   }
