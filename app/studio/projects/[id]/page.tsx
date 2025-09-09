@@ -138,15 +138,13 @@ export default function ProjectDetailPage() {
       })
     })
     
-    socketClient.on('scene:created', (data: any) => {
-      if (data.projectId === projectId) {
-        const processedScene = {
-          ...data.scene,
-          lineArtImages: [],
-          artImages: []
-        }
-        setScenes(prev => [...prev, processedScene])
-      }
+    socketClient.on('new_scene', (data: any) => {
+      // Refetch scenes to get the full data with proper structure
+      fetchProjectDetails()
+      toast({
+        title: '새 씬',
+        description: `${data.user?.nickname || 'Someone'}님이 새 씬을 추가했습니다.`
+      })
     })
     
     socketClient.on('new_image', (data: any) => {
@@ -166,7 +164,7 @@ export default function ProjectDetailPage() {
       clearTimeout(timer)
       socketClient.leaveProject(projectId)
       socketClient.off('new_comment')
-      socketClient.off('scene:created')
+      socketClient.off('new_scene')
       socketClient.off('new_image')
     }
   }, [projectId])
@@ -256,6 +254,12 @@ export default function ProjectDetailPage() {
       setSelectedScene(processedScene)
       setNewSceneName('')
       setNewSceneDescription('')
+      
+      // Emit Socket.io event for real-time update
+      socketClient.emit('scene_created', {
+        projectId,
+        scene: processedScene
+      })
       
       toast({
         title: '씬 추가',
@@ -516,7 +520,7 @@ export default function ProjectDetailPage() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-background overflow-hidden">
+    <div className="flex flex-col h-[calc(100vh-4rem)] bg-background overflow-hidden">
       {/* Header */}
       <div className="border-b px-4 py-3 flex items-center justify-between bg-card flex-shrink-0">
         <div className="flex items-center gap-4">
@@ -1010,7 +1014,7 @@ export default function ProjectDetailPage() {
         </div>
 
         {/* Right Panel - Comments */}
-        <div className="w-96 border-l bg-card flex flex-col h-full">
+        <div className="w-96 border-l bg-card flex flex-col h-full overflow-hidden">
           <div className="p-4 border-b flex-shrink-0">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold">댓글</h2>
@@ -1096,14 +1100,14 @@ export default function ProjectDetailPage() {
           
           <Separator />
           
-          {/* Comment Input - Fixed at bottom */}
-          <div className="p-4 bg-background flex-shrink-0">
+          {/* Comment Input - Fixed at bottom with safe area */}
+          <div className="p-4 pb-6 bg-background flex-shrink-0 border-t">
             <div className="flex gap-2">
               <Textarea
                 placeholder={selectedScene ? `씬 ${selectedScene.sceneNumber}에 댓글 작성...` : "댓글을 입력하세요..."}
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
-                className="min-h-[80px] max-h-[120px] resize-none"
+                className="min-h-[60px] max-h-[100px] resize-none"
                 onKeyPress={(e) => {
                   if (e.key === 'Enter' && e.ctrlKey) {
                     handleSubmitComment()
@@ -1114,12 +1118,12 @@ export default function ProjectDetailPage() {
                 onClick={handleSubmitComment}
                 disabled={isSubmittingComment || !newComment.trim()}
                 size="icon"
-                className="self-end"
+                className="self-end mb-1"
               >
                 <Send className="h-4 w-4" />
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-2">
+            <p className="text-xs text-muted-foreground mt-1">
               Ctrl+Enter로 전송
             </p>
           </div>

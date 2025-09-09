@@ -128,15 +128,18 @@ class SocketClient {
 
   // Custom event emitter
   emit(event: string, data?: any) {
+    console.log(`📤 Emitting Socket.io event: ${event}`, data);
     this.socket?.emit(event, data);
   }
 
   // Custom event listener registration
   on(event: string, callback: (...args: any[]) => void) {
+    console.log(`👂 Listening for Socket.io event: ${event}`);
     this.socket?.on(event, callback);
   }
 
   off(event: string, callback?: (...args: any[]) => void) {
+    console.log(`🔇 Removing Socket.io listener: ${event}`);
     this.socket?.off(event, callback);
   }
 
