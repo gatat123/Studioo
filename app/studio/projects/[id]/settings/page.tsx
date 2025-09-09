@@ -301,19 +301,19 @@ export default function ProjectSettingsPage() {
 
                   <FormField
                     control={form.control}
-                    name="type"
+                    name="tag"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Project Type</FormLabel>
+                        <FormLabel>프로젝트 유형</FormLabel>
                         <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Select project type" />
+                              <SelectValue placeholder="프로젝트 유형 선택" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="illustration">Illustration</SelectItem>
-                            <SelectItem value="storyboard">Storyboard</SelectItem>
+                            <SelectItem value="illustration">일러스트</SelectItem>
+                            <SelectItem value="storyboard">스토리보드</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
