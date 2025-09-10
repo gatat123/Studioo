@@ -58,12 +58,12 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
       <div className="h-screen w-full">
         <ScrollStack
           className="h-full"
-          itemDistance={150}
+          itemDistance={100}
           itemScale={0.03}
-          itemStackDistance={40}
-          stackPosition="50%"
-          scaleEndPosition="30%"
-          baseScale={0.88}
+          itemStackDistance={30}
+          stackPosition="20%"
+          scaleEndPosition="10%"
+          baseScale={0.85}
           rotationAmount={0}
           blurAmount={0}
           useWindowScroll={false}

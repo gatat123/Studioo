@@ -213,7 +213,13 @@ const ScrollStack = ({
       const lenis = new Lenis({
         duration: 1.2,
         easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        smoothWheel: true
+        smoothWheel: true,
+        touchMultiplier: 2,
+        infinite: false,
+        wheelMultiplier: 1,
+        lerp: 0.1,
+        syncTouch: true,
+        syncTouchLerp: 0.075
       });
 
       lenis.on('scroll', handleScroll);
@@ -230,15 +236,22 @@ const ScrollStack = ({
       const scroller = scrollerRef.current;
       if (!scroller) return;
 
-      const content = scroller.querySelector('.scroll-stack-inner') as HTMLElement;
-      if (!content) return;
-
       const lenis = new Lenis({
         wrapper: scroller,
-        content: content,
+        content: scroller.querySelector('.scroll-stack-inner') as HTMLElement,
         duration: 1.2,
         easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-        smoothWheel: true
+        smoothWheel: true,
+        touchMultiplier: 2,
+        infinite: false,
+        gestureOrientationHandler: true,
+        normalizeWheel: true,
+        wheelMultiplier: 1,
+        touchInertiaMultiplier: 35,
+        lerp: 0.1,
+        syncTouch: true,
+        syncTouchLerp: 0.075,
+        touchInertia: 0.6
       });
 
       lenis.on('scroll', handleScroll);
@@ -262,23 +275,26 @@ const ScrollStack = ({
       useWindowScroll
         ? document.querySelectorAll('.scroll-stack-card')
         : scroller?.querySelectorAll('.scroll-stack-card') || []
-    ) as HTMLElement[];
+    );
 
-    cardsRef.current = cards;
+    cardsRef.current = cards as HTMLElement[];
     const transformsCache = lastTransformsRef.current;
 
     cards.forEach((card, i) => {
       if (i < cards.length - 1) {
-        card.style.marginBottom = `${itemDistance}px`;
+        (card as HTMLElement).style.marginBottom = `${itemDistance}px`;
       }
-      card.style.willChange = 'transform, filter';
-      card.style.transformOrigin = 'top center';
-      card.style.backfaceVisibility = 'hidden';
-      card.style.transform = 'translateZ(0)';
-      card.style.perspective = '1000px';
+      (card as HTMLElement).style.willChange = 'transform, filter';
+      (card as HTMLElement).style.transformOrigin = 'top center';
+      (card as HTMLElement).style.backfaceVisibility = 'hidden';
+      (card as HTMLElement).style.transform = 'translateZ(0)';
+      (card as HTMLElement).style.webkitTransform = 'translateZ(0)';
+      (card as HTMLElement).style.perspective = '1000px';
+      (card as HTMLElement).style.webkitPerspective = '1000px';
     });
 
     setupLenis();
+
     updateCardTransforms();
 
     return () => {
@@ -313,6 +329,7 @@ const ScrollStack = ({
     <div className={`scroll-stack-scroller ${className}`.trim()} ref={scrollerRef}>
       <div className="scroll-stack-inner">
         {children}
+        {/* Spacer so the last pin can release cleanly */}
         <div className="scroll-stack-end" />
       </div>
     </div>
