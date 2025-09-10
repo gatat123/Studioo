@@ -58,27 +58,28 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
       <div className="h-screen w-full pt-20">
         <ScrollStack
           className="h-full"
-          itemDistance={410}
-          itemScale={0.02}
-          itemStackDistance={2}
-          stackPosition="30%"
-          scaleEndPosition="15%"
-          baseScale={0.9}
+          itemDistance={100}
+          itemScale={0.05}
+          itemStackDistance={30}
+          stackPosition="50%"
+          scaleEndPosition="20%"
+          baseScale={0.85}
           rotationAmount={0}
           blurAmount={0}
+          useWindowScroll={false}
         >
           {sceneImages.map(({ scene, image }, index) => (
-            <ScrollStackItem key={scene.id} itemClassName="bg-transparent">
-              <div className="relative bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-2xl">
+            <ScrollStackItem key={scene.id} itemClassName="scene-card">
+              <div className="relative bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-xl max-w-3xl mx-auto">
                 {/* Scene Number Badge */}
-                <div className="absolute top-4 left-4 z-10">
-                  <div className="bg-black/70 text-white px-3 py-1 rounded-full text-sm font-medium backdrop-blur">
+                <div className="absolute top-3 left-3 z-10">
+                  <div className="bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur">
                     씬 {scene.sceneNumber}
                   </div>
                 </div>
 
-                {/* Image Container */}
-                <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative">
+                {/* Image Container - Smaller size */}
+                <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative" style={{ maxHeight: '300px' }}>
                   {image ? (
                     <img
                       src={(image as any).url || (image as any).fileUrl}
@@ -88,23 +89,23 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center text-gray-500">
-                        <p className="text-lg font-medium mb-2">이미지 없음</p>
-                        <p className="text-sm">씬 {scene.sceneNumber}</p>
+                        <p className="text-sm font-medium mb-1">이미지 없음</p>
+                        <p className="text-xs">씬 {scene.sceneNumber}</p>
                       </div>
                     </div>
                   )}
                 </div>
 
-                {/* Scene Info */}
+                {/* Scene Info - Smaller padding */}
                 {(scene.description || scene.notes) && (
-                  <div className="p-6 bg-gradient-to-t from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
+                  <div className="p-4 bg-gradient-to-t from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
                     {scene.description && (
-                      <p className="text-gray-700 dark:text-gray-300 mb-2">
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-1 line-clamp-2">
                         {scene.description}
                       </p>
                     )}
                     {scene.notes && (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-1">
                         노트: {scene.notes}
                       </p>
                     )}
