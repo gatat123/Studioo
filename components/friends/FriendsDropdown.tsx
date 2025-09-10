@@ -14,7 +14,8 @@ import {
   UserMinus,
   Settings,
   Edit2,
-  StickyNote
+  StickyNote,
+  MessageCircle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import ChatModal from '@/components/chat/ChatModal';
 
 interface Friend {
   id: string;
@@ -91,8 +93,24 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
   const [showAddFriend, setShowAddFriend] = useState(false);
   const [editingMemo, setEditingMemo] = useState<string | null>(null);
   const [memoText, setMemoText] = useState('');
+  const [activeChatFriend, setActiveChatFriend] = useState<Friend | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // 현재 사용자 ID 가져오기
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // JWT 토큰 디코딩하여 userId 추출
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        setCurrentUserId(payload.userId);
+      } catch (error) {
+        console.error('Error decoding token:', error);
+      }
+    }
+  }, []);
 
   // 친구 목록 불러오기
   const fetchFriends = async () => {
@@ -288,6 +306,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
   const offlineFriends = friends.filter(f => !(f.friend.isOnline ?? f.friend.isActive));
 
   return (
+    <>
     <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
@@ -454,8 +473,13 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                             </div>
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
-                              <MessageSquare className="h-4 w-4" />
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-7 w-7"
+                              onClick={() => setActiveChatFriend(friendship)}
+                            >
+                              <MessageCircle className="h-4 w-4" />
                             </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -542,7 +566,15 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                               )}
                             </div>
                           </div>
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-7 w-7"
+                              onClick={() => setActiveChatFriend(friendship)}
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                            </Button>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-7 w-7">
@@ -645,5 +677,21 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    {/* 채팅 모달 */}
+    {activeChatFriend && (
+      <ChatModal
+        friend={{
+          id: activeChatFriend.friend.id,
+          username: activeChatFriend.friend.username,
+          nickname: activeChatFriend.friend.nickname,
+          profileImageUrl: activeChatFriend.friend.profileImageUrl,
+          isActive: activeChatFriend.friend.isActive || activeChatFriend.friend.isOnline
+        }}
+        currentUserId={currentUserId}
+        onClose={() => setActiveChatFriend(null)}
+      />
+    )}
+  </>
   );
 }
