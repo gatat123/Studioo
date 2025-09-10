@@ -124,6 +124,11 @@ const Sidebar: React.FC<SidebarProps> = ({
   const activeCount = projects.filter(p => p.status === 'active').length;
   const archivedCount = projects.filter(p => p.status === 'archived').length;
 
+  // Get recent projects for each type
+  const allProjects = projects.slice(0, 5); // Top 5 projects
+  const illustrationProjects = projects.filter(p => p.tag === 'illustration').slice(0, 5);
+  const storyboardProjects = projects.filter(p => p.tag === 'storyboard').slice(0, 5);
+
   const navigationItems: NavigationItem[] = [
     {
       id: 'home',
@@ -137,6 +142,62 @@ const Sidebar: React.FC<SidebarProps> = ({
       href: '/studio/projects',
       icon: <FolderOpen className="h-4 w-4" />,
       badge: activeCount > 0 ? activeCount : undefined,
+      children: [
+        {
+          id: 'all-projects',
+          label: 'All Projects',
+          href: '/studio/projects',
+          icon: <LayoutGrid className="h-4 w-4" />,
+          badge: projects.length > 0 ? projects.length : undefined,
+          children: allProjects.length > 0 ? allProjects.map(p => ({
+            id: `project-${p.id}`,
+            label: p.name,
+            href: `/studio/projects/${p.id}`,
+            icon: p.tag === 'illustration' ? <Palette className="h-3 w-3" /> : <FileText className="h-3 w-3" />,
+          })) : [{
+            id: 'no-projects',
+            label: 'No projects yet',
+            href: '#',
+            icon: <span className="h-3 w-3" />,
+          }],
+        },
+        {
+          id: 'illustrations',
+          label: 'Illustrations',
+          href: '/studio/projects?type=illustration',
+          icon: <Palette className="h-4 w-4" />,
+          badge: illustrationCount > 0 ? illustrationCount : undefined,
+          children: illustrationProjects.length > 0 ? illustrationProjects.map(p => ({
+            id: `ill-project-${p.id}`,
+            label: p.name,
+            href: `/studio/projects/${p.id}`,
+            icon: <Palette className="h-3 w-3" />,
+          })) : [{
+            id: 'no-illustrations',
+            label: 'No illustrations',
+            href: '#',
+            icon: <span className="h-3 w-3" />,
+          }],
+        },
+        {
+          id: 'storyboards',
+          label: 'Storyboards',
+          href: '/studio/projects?type=storyboard',
+          icon: <FileText className="h-4 w-4" />,
+          badge: storyboardCount > 0 ? storyboardCount : undefined,
+          children: storyboardProjects.length > 0 ? storyboardProjects.map(p => ({
+            id: `story-project-${p.id}`,
+            label: p.name,
+            href: `/studio/projects/${p.id}`,
+            icon: <FileText className="h-3 w-3" />,
+          })) : [{
+            id: 'no-storyboards',
+            label: 'No storyboards',
+            href: '#',
+            icon: <span className="h-3 w-3" />,
+          }],
+        },
+      ],
     },
     {
       id: 'recent',
@@ -198,8 +259,10 @@ const Sidebar: React.FC<SidebarProps> = ({
         <Button
           variant={isActive ? 'secondary' : 'ghost'}
           className={cn(
-            'w-full justify-start',
-            depth > 0 && 'ml-4',
+            'w-full justify-start text-left',
+            depth === 1 && 'ml-4 text-sm',
+            depth === 2 && 'ml-8 text-xs',
+            depth > 2 && 'ml-12 text-xs',
             isCollapsed && depth === 0 && 'justify-center px-2'
           )}
           onClick={() => {
@@ -215,16 +278,19 @@ const Sidebar: React.FC<SidebarProps> = ({
             {item.icon}
             {!isCollapsed && (
               <>
-                <span className="ml-3 flex-1 text-left">{item.label}</span>
-                {item.badge && (
-                  <Badge variant="secondary" className="ml-auto">
+                <span className={cn(
+                  'ml-2 flex-1 text-left truncate',
+                  depth > 1 && 'ml-1'
+                )}>{item.label}</span>
+                {item.badge && depth < 2 && (
+                  <Badge variant="secondary" className="ml-auto h-5 px-1 text-xs">
                     {item.badge}
                   </Badge>
                 )}
                 {hasChildren && (
                   <ChevronRight
                     className={cn(
-                      'h-4 w-4 transition-transform',
+                      'h-3 w-3 transition-transform ml-1',
                       isExpanded && 'rotate-90'
                     )}
                   />
@@ -234,7 +300,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </Button>
         {hasChildren && isExpanded && !isCollapsed && (
-          <div className="mt-1">
+          <div className="mt-0.5">
             {item.children?.map((child) => renderNavigationItem(child, depth + 1))}
           </div>
         )}

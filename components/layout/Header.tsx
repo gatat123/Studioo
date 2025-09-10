@@ -3,7 +3,7 @@
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Bell, Menu, User, ChevronDown, LogOut, Settings, UserCircle, FolderOpen, Palette, FileText, LayoutGrid } from 'lucide-react';
+import { Bell, Menu, User, ChevronDown, LogOut, Settings, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -49,12 +49,6 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string; router: any }> =
     { href: '/studio/projects', label: 'Projects' },
     { href: '/studio/recent', label: 'Recent' },
   ];
-  
-  const projectFilters = [
-    { value: 'all', label: 'All Projects', icon: LayoutGrid },
-    { value: 'illustration', label: 'Illustrations', icon: Palette },
-    { value: 'storyboard', label: 'Storyboards', icon: FileText },
-  ];
 
   const handleSignOut = () => {
     // TODO: Implement sign out logic
@@ -87,70 +81,20 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string; router: any }> =
 
         {/* Navigation Links */}
         <nav className="hidden md:flex items-center space-x-6 flex-1">
-          {navLinks.map((link) => {
-            // Special handling for Projects link - make it a dropdown
-            if (link.label === 'Projects') {
-              return (
-                <DropdownMenu key={link.href}>
-                  <DropdownMenuTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      className={cn(
-                        'text-sm font-medium transition-colors hover:text-black px-0',
-                        pathname.startsWith('/studio/projects')
-                          ? 'text-black'
-                          : 'text-gray-500'
-                      )}
-                    >
-                      <FolderOpen className="h-4 w-4 mr-2" />
-                      Projects
-                      <ChevronDown className="h-4 w-4 ml-1" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-48">
-                    {projectFilters.map((filter) => {
-                      const Icon = filter.icon;
-                      return (
-                        <DropdownMenuItem
-                          key={filter.value}
-                          onClick={() => {
-                            if (filter.value === 'all') {
-                              router.push('/studio/projects');
-                            } else {
-                              router.push(`/studio/projects?type=${filter.value}`);
-                            }
-                          }}
-                          className={cn(
-                            'cursor-pointer',
-                            currentFilter === filter.value && pathname.startsWith('/studio/projects') && 'bg-gray-100'
-                          )}
-                        >
-                          <Icon className="h-4 w-4 mr-2" />
-                          {filter.label}
-                        </DropdownMenuItem>
-                      );
-                    })}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              );
-            }
-            
-            // Regular link for other items
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                className={cn(
-                  'text-sm font-medium transition-colors hover:text-black',
-                  pathname === link.href
-                    ? 'text-black'
-                    : 'text-gray-500'
-                )}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                'text-sm font-medium transition-colors hover:text-black',
+                pathname === link.href
+                  ? 'text-black'
+                  : 'text-gray-500'
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
         </nav>
 
         {/* Right Section */}
