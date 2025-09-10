@@ -1,0 +1,534 @@
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Users, 
+  UserPlus, 
+  Search, 
+  Check, 
+  X, 
+  Bell,
+  Circle,
+  MessageSquare,
+  MoreVertical,
+  UserMinus,
+  Settings
+} from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import Link from 'next/link';
+
+interface Friend {
+  id: string;
+  friend: {
+    id: string;
+    username: string;
+    nickname: string;
+    profileImageUrl?: string;
+    isActive: boolean;
+    lastLoginAt?: string;
+  };
+  createdAt: string;
+}
+
+interface FriendRequest {
+  id: string;
+  sender?: {
+    id: string;
+    username: string;
+    nickname: string;
+    profileImageUrl?: string;
+  };
+  receiver?: {
+    id: string;
+    username: string;
+    nickname: string;
+    profileImageUrl?: string;
+  };
+  message?: string;
+  createdAt: string;
+}
+
+interface SearchResult {
+  id: string;
+  username: string;
+  nickname: string;
+  profileImageUrl?: string;
+  status?: 'friends' | 'request_sent' | 'request_received' | 'none';
+  requestId?: string;
+}
+
+interface FriendsDropdownProps {
+  isOpen: boolean;
+  onOpenChange: (open: boolean) => void;
+  friendRequestCount?: number;
+}
+
+export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCount = 0 }: FriendsDropdownProps) {
+  const [friends, setFriends] = useState<Friend[]>([]);
+  const [receivedRequests, setReceivedRequests] = useState<FriendRequest[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [activeTab, setActiveTab] = useState('friends');
+  const [showAddFriend, setShowAddFriend] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // 친구 목록 불러오기
+  const fetchFriends = async () => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/friends`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setFriends(data.friends || []);
+        setReceivedRequests(data.receivedRequests || []);
+      }
+    } catch (error) {
+      console.error('Error fetching friends:', error);
+    }
+  };
+
+  // 실시간 검색
+  const handleSearch = async (query: string) => {
+    if (!query.trim() || query.length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL}/api/friends/search?q=${encodeURIComponent(query)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.users || []);
+      }
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // 검색 디바운싱
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (searchQuery) {
+      searchTimeoutRef.current = setTimeout(() => {
+        handleSearch(searchQuery);
+      }, 300);
+    } else {
+      setSearchResults([]);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery]);
+
+  // 친구 요청 보내기
+  const sendFriendRequest = async (userId: string) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/friends/requests`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ receiverId: userId })
+      });
+
+      if (response.ok) {
+        toast.success('친구 요청을 보냈습니다!');
+        await fetchFriends();
+        setSearchQuery('');
+        setSearchResults([]);
+      } else {
+        const error = await response.json();
+        toast.error(error.error || '요청 실패');
+      }
+    } catch (error) {
+      console.error('Error sending friend request:', error);
+      toast.error('요청 실패');
+    }
+  };
+
+  // 친구 요청 수락/거절
+  const respondToRequest = async (requestId: string, action: 'accept' | 'reject') => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/friends/requests`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ requestId, action })
+      });
+
+      if (response.ok) {
+        toast.success(action === 'accept' ? '친구 요청을 수락했습니다!' : '친구 요청을 거절했습니다');
+        await fetchFriends();
+      } else {
+        toast.error('요청 처리 실패');
+      }
+    } catch (error) {
+      console.error('Error responding to request:', error);
+      toast.error('요청 처리 실패');
+    }
+  };
+
+  // 친구 삭제
+  const removeFriend = async (friendId: string) => {
+    if (!confirm('정말 친구를 삭제하시겠습니까?')) return;
+
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/friends?friendId=${friendId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        toast.success('친구가 삭제되었습니다');
+        await fetchFriends();
+      } else {
+        toast.error('친구 삭제 실패');
+      }
+    } catch (error) {
+      console.error('Error removing friend:', error);
+      toast.error('친구 삭제 실패');
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchFriends();
+    }
+  }, [isOpen]);
+
+  const getInitials = (name: string) => {
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  // 온라인/오프라인 친구 분리
+  const onlineFriends = friends.filter(f => f.friend.isActive);
+  const offlineFriends = friends.filter(f => !f.friend.isActive);
+
+  return (
+    <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="relative">
+          <Users className="h-5 w-5" />
+          {(friendRequestCount > 0 || receivedRequests.length > 0) && (
+            <Badge
+              className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+              variant="default"
+            >
+              {friendRequestCount || receivedRequests.length}
+            </Badge>
+          )}
+          <span className="sr-only">Friends</span>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-[360px] p-0">
+        <div className="p-3 pb-0">
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="font-semibold text-sm">친구</h3>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7"
+                onClick={() => setShowAddFriend(!showAddFriend)}
+              >
+                <UserPlus className="h-4 w-4" />
+              </Button>
+              <Link href="/studio/friends">
+                <Button variant="ghost" size="icon" className="h-7 w-7">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+          </div>
+
+          {/* 친구 추가 검색창 */}
+          {showAddFriend && (
+            <div className="mb-3">
+              <div className="relative">
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  ref={searchInputRef}
+                  placeholder="닉네임으로 친구 검색..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-8 h-8 text-sm"
+                />
+              </div>
+              
+              {/* 검색 결과 */}
+              {searchResults.length > 0 && (
+                <div className="mt-2 border rounded-md max-h-[150px] overflow-y-auto">
+                  {searchResults.map((user) => (
+                    <div key={user.id} className="flex items-center justify-between p-2 hover:bg-gray-50">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src={user.profileImageUrl} />
+                          <AvatarFallback className="text-xs">{getInitials(user.nickname)}</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="text-xs font-medium">{user.nickname}</span>
+                          <span className="text-xs text-gray-500">@{user.username}</span>
+                        </div>
+                      </div>
+                      <div>
+                        {user.status === 'friends' && (
+                          <Badge variant="secondary" className="text-xs h-5">친구</Badge>
+                        )}
+                        {user.status === 'request_sent' && (
+                          <Badge variant="outline" className="text-xs h-5">요청됨</Badge>
+                        )}
+                        {user.status === 'none' && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 text-xs"
+                            onClick={() => sendFriendRequest(user.id)}
+                          >
+                            추가
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2 h-8 mx-3" style={{ width: 'calc(100% - 24px)' }}>
+            <TabsTrigger value="friends" className="text-xs">
+              친구 ({friends.length})
+            </TabsTrigger>
+            <TabsTrigger value="requests" className="text-xs relative">
+              요청
+              {receivedRequests.length > 0 && (
+                <Badge className="ml-1 h-4 px-1 text-xs" variant="destructive">
+                  {receivedRequests.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+
+          {/* 친구 목록 탭 */}
+          <TabsContent value="friends" className="mt-0 p-0">
+            <ScrollArea className="h-[300px]">
+              {friends.length === 0 ? (
+                <div className="text-center text-gray-500 text-sm py-8">
+                  아직 친구가 없습니다
+                </div>
+              ) : (
+                <div className="p-2">
+                  {/* 온라인 친구 */}
+                  {onlineFriends.length > 0 && (
+                    <>
+                      <div className="text-xs text-gray-500 px-2 py-1">
+                        온라인 — {onlineFriends.length}
+                      </div>
+                      {onlineFriends.map((friendship) => (
+                        <div key={friendship.id} className="group flex items-center justify-between p-2 rounded hover:bg-gray-100">
+                          <div className="flex items-center gap-2">
+                            <div className="relative">
+                              <Avatar className="h-8 w-8">
+                                <AvatarImage src={friendship.friend.profileImageUrl} />
+                                <AvatarFallback className="text-xs">{getInitials(friendship.friend.nickname)}</AvatarFallback>
+                              </Avatar>
+                              <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-green-500 text-green-500" />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">{friendship.friend.nickname}</span>
+                              <span className="text-xs text-gray-500">온라인</span>
+                            </div>
+                          </div>
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <MessageSquare className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>프로필 보기</DropdownMenuItem>
+                                <DropdownMenuItem>프로젝트 초대</DropdownMenuItem>
+                                <Separator className="my-1" />
+                                <DropdownMenuItem 
+                                  className="text-red-600"
+                                  onClick={() => removeFriend(friendship.friend.id)}
+                                >
+                                  <UserMinus className="mr-2 h-4 w-4" />
+                                  친구 삭제
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* 오프라인 친구 */}
+                  {offlineFriends.length > 0 && (
+                    <>
+                      <div className="text-xs text-gray-500 px-2 py-1 mt-2">
+                        오프라인 — {offlineFriends.length}
+                      </div>
+                      {offlineFriends.map((friendship) => (
+                        <div key={friendship.id} className="group flex items-center justify-between p-2 rounded hover:bg-gray-100">
+                          <div className="flex items-center gap-2">
+                            <div className="relative">
+                              <Avatar className="h-8 w-8 opacity-60">
+                                <AvatarImage src={friendship.friend.profileImageUrl} />
+                                <AvatarFallback className="text-xs">{getInitials(friendship.friend.nickname)}</AvatarFallback>
+                              </Avatar>
+                              <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-gray-400 text-gray-400" />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium text-gray-600">{friendship.friend.nickname}</span>
+                              <span className="text-xs text-gray-400">오프라인</span>
+                            </div>
+                          </div>
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem>프로필 보기</DropdownMenuItem>
+                                <Separator className="my-1" />
+                                <DropdownMenuItem 
+                                  className="text-red-600"
+                                  onClick={() => removeFriend(friendship.friend.id)}
+                                >
+                                  <UserMinus className="mr-2 h-4 w-4" />
+                                  친구 삭제
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              )}
+            </ScrollArea>
+          </TabsContent>
+
+          {/* 친구 요청 탭 */}
+          <TabsContent value="requests" className="mt-0 p-0">
+            <ScrollArea className="h-[300px]">
+              {receivedRequests.length === 0 ? (
+                <div className="text-center text-gray-500 text-sm py-8">
+                  받은 친구 요청이 없습니다
+                </div>
+              ) : (
+                <div className="p-2">
+                  <div className="text-xs text-gray-500 px-2 py-1">
+                    받은 요청 — {receivedRequests.length}
+                  </div>
+                  {receivedRequests.map((request) => (
+                    <div key={request.id} className="flex items-center justify-between p-2 rounded bg-blue-50 mb-1">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage src={request.sender?.profileImageUrl} />
+                          <AvatarFallback className="text-xs">
+                            {getInitials(request.sender?.nickname || '')}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">{request.sender?.nickname}</span>
+                          <span className="text-xs text-gray-500">친구 요청</span>
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="h-7 text-xs"
+                          onClick={() => respondToRequest(request.id, 'accept')}
+                        >
+                          <Check className="h-3 w-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs"
+                          onClick={() => respondToRequest(request.id, 'reject')}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
+
+        <Separator />
+        
+        <div className="p-2">
+          <Link href="/studio/friends">
+            <Button variant="ghost" className="w-full justify-start text-sm">
+              <Users className="mr-2 h-4 w-4" />
+              모든 친구 관리
+            </Button>
+          </Link>
+        </div>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
