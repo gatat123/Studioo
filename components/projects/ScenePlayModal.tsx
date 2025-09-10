@@ -58,14 +58,14 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
       <div className="h-screen w-full pt-20">
         <ScrollStack
           className="h-full"
-          itemDistance={200}
+          itemDistance={410}
           itemScale={0.02}
-          itemStackDistance={40}
+          itemStackDistance={2}
           stackPosition="30%"
           scaleEndPosition="15%"
           baseScale={0.9}
           rotationAmount={0}
-          blurAmount={2}
+          blurAmount={0}
         >
           {sceneImages.map(({ scene, image }, index) => (
             <ScrollStackItem key={scene.id} itemClassName="bg-transparent">
