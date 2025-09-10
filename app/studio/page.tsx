@@ -9,6 +9,7 @@ import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
 import JoinProjectModal from '@/components/projects/JoinProjectModal';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { FriendList } from '@/components/friends/FriendList';
+import { StudioSidebar } from '@/components/navigation/StudioSidebar';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProjectStore } from '@/store/useProjectStore';
 import {
@@ -80,8 +81,12 @@ export default function StudioPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="p-6">
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar Navigation */}
+      <StudioSidebar />
+      
+      {/* Main Content */}
+      <div className="flex-1 p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-8">
@@ -189,6 +194,7 @@ export default function StudioPage() {
           {/* Project Grid Component */}
           <ProjectGrid />
         </div>
+      </div>
       </div>
 
       {/* Create Project Modal */}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Search, Filter, Grid3X3, List, Plus, Calendar, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +43,7 @@ interface Project {
 
 export function ProjectGrid() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { projects, isLoading, fetchProjects } = useProjectStore();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,6 +52,7 @@ export function ProjectGrid() {
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'deadline'>('date');
   const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAll, setShowAll] = useState(false);
   const itemsPerPage = 12;
 
   // Handle project click
@@ -58,10 +60,18 @@ export function ProjectGrid() {
     router.push(`/studio/projects/${projectId}`);
   };
 
-  // Load projects on mount
+  // Load projects on mount and handle URL filter
   useEffect(() => {
     fetchProjects();
-  }, [fetchProjects]);
+    
+    // Get filter from URL
+    const urlFilter = searchParams.get('filter');
+    if (urlFilter && (urlFilter === 'illustration' || urlFilter === 'storyboard')) {
+      setFilterTag(urlFilter);
+    } else {
+      setFilterTag('all');
+    }
+  }, [fetchProjects, searchParams]);
 
   // Filter and sort projects
   useEffect(() => {
@@ -106,12 +116,14 @@ export function ProjectGrid() {
     setCurrentPage(1); // Reset to first page when filters change
   }, [projects, searchQuery, filterTag, filterStatus, sortBy]);
 
-  // Paginate projects
+  // Paginate projects (only if not showing all)
   const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-  const paginatedProjects = filteredProjects.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  const displayedProjects = showAll 
+    ? filteredProjects 
+    : filteredProjects.slice(
+        (currentPage - 1) * itemsPerPage,
+        currentPage * itemsPerPage
+      );
 
   // Format deadline
   const formatDeadline = (deadline?: Date | string) => {
@@ -281,7 +293,7 @@ export function ProjectGrid() {
             ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
             : 'space-y-4'
         )}>
-          {paginatedProjects.map((project) => {
+          {displayedProjects.map((project) => {
             const deadline = formatDeadline(project.deadline);
             
             return viewMode === 'grid' ? (
@@ -411,14 +423,36 @@ export function ProjectGrid() {
         </div>
       )}
 
-      {/* Pagination */}
+      {/* Show All Button or Pagination */}
       {!isLoading && filteredProjects.length > itemsPerPage && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          className="mt-8"
-        />
+        <div className="mt-8 flex justify-center">
+          {!showAll ? (
+            <div className="flex flex-col items-center gap-4">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+              <Button 
+                variant="outline" 
+                onClick={() => setShowAll(true)}
+                className="mt-2"
+              >
+                모든 프로젝트 보기 ({filteredProjects.length}개)
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowAll(false);
+                setCurrentPage(1);
+              }}
+            >
+              페이지별로 보기
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );
