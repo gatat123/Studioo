@@ -30,7 +30,8 @@ import {
   GitCompare,
   RefreshCw,
   PenTool,
-  Play
+  Play,
+  RotateCcw
 } from 'lucide-react'
 import Link from 'next/link'
 import { projectsAPI, ProjectWithParticipants } from '@/lib/api/projects'
@@ -82,6 +83,9 @@ export default function ProjectDetailPage() {
   // UI states
   const [selectedScene, setSelectedScene] = useState<SceneWithImages | null>(null)
   const [selectedImage, setSelectedImage] = useState<ProjectImage | null>(null)
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 })
+  const [isDraggingImage, setIsDraggingImage] = useState(false)
+  const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 })
   const [imageViewMode, setImageViewMode] = useState<'lineart' | 'art' | 'both'>('both')
   
   // Scene management
@@ -1182,31 +1186,55 @@ export default function ProjectDetailPage() {
         </div>
       )}
       
-      {/* Image View Modal with Zoom */}
+      {/* Image View Modal with Zoom and Drag */}
       {selectedImage && (
         <div 
           className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center" 
           onClick={() => {
             setSelectedImage(null)
             setZoomLevel(100)
+            setImagePosition({ x: 0, y: 0 })
           }}
         >
           <div 
-            className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center" 
+            className="relative max-w-[90vw] max-h-[90vh] flex items-center justify-center overflow-hidden" 
             onClick={(e) => e.stopPropagation()}
             onWheel={(e) => {
               e.preventDefault()
               const delta = e.deltaY > 0 ? -10 : 10
               setZoomLevel(prev => Math.min(Math.max(prev + delta, 25), 500))
             }}
+            onMouseDown={(e) => {
+              if (zoomLevel > 100) {
+                setIsDraggingImage(true)
+                setDragStartPos({
+                  x: e.clientX - imagePosition.x,
+                  y: e.clientY - imagePosition.y
+                })
+                e.preventDefault()
+              }
+            }}
+            onMouseMove={(e) => {
+              if (isDraggingImage && zoomLevel > 100) {
+                setImagePosition({
+                  x: e.clientX - dragStartPos.x,
+                  y: e.clientY - dragStartPos.y
+                })
+              }
+            }}
+            onMouseUp={() => setIsDraggingImage(false)}
+            onMouseLeave={() => setIsDraggingImage(false)}
+            style={{ cursor: isDraggingImage ? 'grabbing' : (zoomLevel > 100 ? 'grab' : 'default') }}
           >
             <img 
               src={selectedImage.url || selectedImage.fileUrl} 
               alt="Preview"
-              className="max-w-full max-h-[90vh] object-contain transition-transform duration-200"
+              className="max-w-full max-h-[90vh] object-contain"
               style={{ 
-                transform: `scale(${zoomLevel / 100})`,
-                cursor: zoomLevel > 100 ? 'move' : 'default'
+                transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${zoomLevel / 100})`,
+                transition: isDraggingImage ? 'none' : 'transform 0.2s',
+                cursor: isDraggingImage ? 'grabbing' : (zoomLevel > 100 ? 'grab' : 'default'),
+                userSelect: 'none'
               }}
               draggable={false}
             />
@@ -1217,6 +1245,20 @@ export default function ProjectDetailPage() {
                 <Mouse className="h-4 w-4" />
                 <span className="text-sm font-medium">{zoomLevel}%</span>
               </div>
+              {(zoomLevel > 100 || imagePosition.x !== 0 || imagePosition.y !== 0) && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="bg-background/90 backdrop-blur-sm hover:bg-background"
+                  onClick={() => {
+                    setZoomLevel(100)
+                    setImagePosition({ x: 0, y: 0 })
+                  }}
+                  title="초기화"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 size="icon"
@@ -1224,6 +1266,7 @@ export default function ProjectDetailPage() {
                 onClick={() => {
                   setSelectedImage(null)
                   setZoomLevel(100)
+                  setImagePosition({ x: 0, y: 0 })
                 }}
               >
                 <X className="h-4 w-4" />
