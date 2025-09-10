@@ -97,7 +97,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
   // 친구 목록 불러오기
   const fetchFriends = async () => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/friends`, {
         headers: {
           'Authorization': `Bearer ${token}`
@@ -123,7 +123,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
 
     setIsSearching(true);
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('token');
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/friends/search?q=${encodeURIComponent(query)}`,
         {
@@ -168,7 +168,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
   // 친구 요청 보내기
   const sendFriendRequest = async (userId: string) => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/friends/requests`, {
         method: 'POST',
         headers: {
@@ -196,7 +196,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
   // 친구 요청 수락/거절
   const respondToRequest = async (requestId: string, action: 'accept' | 'reject') => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/friends/requests`, {
         method: 'PUT',
         headers: {
@@ -223,7 +223,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
     if (!confirm('정말 친구를 삭제하시겠습니까?')) return;
 
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/friends?friendId=${friendId}`, {
         method: 'DELETE',
         headers: {
@@ -246,7 +246,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
   // 메모 저장
   const saveMemo = async (friendId: string) => {
     try {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/friends/memo`, {
         method: 'PUT',
         headers: {
