@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Bell, Menu, User, ChevronDown, LogOut, Settings, UserCircle, FolderOpen, Palette, FileText, LayoutGrid } from 'lucide-react';
@@ -26,16 +26,17 @@ interface HeaderProps {
   friendRequestCount?: number;
 }
 
-const Header: React.FC<HeaderProps> = ({
+// Inner component that uses useSearchParams
+const HeaderContent: React.FC<HeaderProps & { pathname: string; router: any }> = ({
   onMenuClick,
-  userName = 'Guest User',
-  userEmail = 'guest@example.com',
+  userName,
+  userEmail,
   userProfileImage,
-  notificationCount = 0,
-  friendRequestCount = 0,
+  notificationCount,
+  friendRequestCount,
+  pathname,
+  router
 }) => {
-  const pathname = usePathname();
-  const router = useRouter();
   const searchParams = useSearchParams();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isFriendsOpen, setIsFriendsOpen] = useState(false);
@@ -237,6 +238,24 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
     </header>
+  );
+};
+
+// Wrapper component with Suspense
+const Header: React.FC<HeaderProps> = (props) => {
+  const pathname = usePathname();
+  const router = useRouter();
+
+  return (
+    <Suspense fallback={
+      <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+        <div className="flex h-16 items-center px-4 md:px-6">
+          <div className="h-8 w-full animate-pulse bg-gray-200 rounded" />
+        </div>
+      </header>
+    }>
+      <HeaderContent {...props} pathname={pathname} router={router} />
+    </Suspense>
   );
 };
 
