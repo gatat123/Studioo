@@ -12,7 +12,9 @@ import {
   MessageSquare,
   MoreVertical,
   UserMinus,
-  Settings
+  Settings,
+  Edit2,
+  StickyNote
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -38,8 +40,11 @@ interface Friend {
     nickname: string;
     profileImageUrl?: string;
     isActive: boolean;
+    isOnline?: boolean;
     lastLoginAt?: string;
+    bio?: string;
   };
+  memo?: string;
   createdAt: string;
 }
 
@@ -84,6 +89,8 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
   const [isSearching, setIsSearching] = useState(false);
   const [activeTab, setActiveTab] = useState('friends');
   const [showAddFriend, setShowAddFriend] = useState(false);
+  const [editingMemo, setEditingMemo] = useState<string | null>(null);
+  const [memoText, setMemoText] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -236,6 +243,36 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
     }
   };
 
+  // 메모 저장
+  const saveMemo = async (friendId: string) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/friends/memo`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          friendId, 
+          memo: memoText.trim() || null 
+        })
+      });
+
+      if (response.ok) {
+        toast.success('메모가 저장되었습니다');
+        await fetchFriends();
+        setEditingMemo(null);
+        setMemoText('');
+      } else {
+        toast.error('메모 저장 실패');
+      }
+    } catch (error) {
+      console.error('Error saving memo:', error);
+      toast.error('메모 저장 실패');
+    }
+  };
+
   useEffect(() => {
     if (isOpen) {
       fetchFriends();
@@ -246,9 +283,9 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  // 온라인/오프라인 친구 분리
-  const onlineFriends = friends.filter(f => f.friend.isActive);
-  const offlineFriends = friends.filter(f => !f.friend.isActive);
+  // 온라인/오프라인 친구 분리 (isOnline 우선, 없으면 isActive 사용)
+  const onlineFriends = friends.filter(f => f.friend.isOnline ?? f.friend.isActive);
+  const offlineFriends = friends.filter(f => !(f.friend.isOnline ?? f.friend.isActive));
 
   return (
     <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
@@ -385,6 +422,35 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                             <div className="flex flex-col">
                               <span className="text-sm font-medium">{friendship.friend.nickname}</span>
                               <span className="text-xs text-gray-500">온라인</span>
+                              {friendship.memo && editingMemo !== friendship.friend.id && (
+                                <span className="text-xs text-gray-400 italic mt-0.5">{friendship.memo}</span>
+                              )}
+                              {editingMemo === friendship.friend.id && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <Input
+                                    value={memoText}
+                                    onChange={(e) => setMemoText(e.target.value)}
+                                    placeholder="메모 추가..."
+                                    className="h-6 text-xs"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') saveMemo(friendship.friend.id);
+                                      if (e.key === 'Escape') {
+                                        setEditingMemo(null);
+                                        setMemoText('');
+                                      }
+                                    }}
+                                    autoFocus
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 w-6 p-0"
+                                    onClick={() => saveMemo(friendship.friend.id)}
+                                  >
+                                    <Check className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
@@ -399,6 +465,16 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem>프로필 보기</DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setEditingMemo(friendship.friend.id);
+                                    setMemoText(friendship.memo || '');
+                                  }}
+                                >
+                                  <StickyNote className="mr-2 h-4 w-4" />
+                                  메모 {friendship.memo ? '수정' : '추가'}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem>프로젝트 초대</DropdownMenuItem>
                                 <Separator className="my-1" />
                                 <DropdownMenuItem 
@@ -435,6 +511,35 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                             <div className="flex flex-col">
                               <span className="text-sm font-medium text-gray-600">{friendship.friend.nickname}</span>
                               <span className="text-xs text-gray-400">오프라인</span>
+                              {friendship.memo && editingMemo !== friendship.friend.id && (
+                                <span className="text-xs text-gray-400 italic mt-0.5">{friendship.memo}</span>
+                              )}
+                              {editingMemo === friendship.friend.id && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <Input
+                                    value={memoText}
+                                    onChange={(e) => setMemoText(e.target.value)}
+                                    placeholder="메모 추가..."
+                                    className="h-6 text-xs"
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter') saveMemo(friendship.friend.id);
+                                      if (e.key === 'Escape') {
+                                        setEditingMemo(null);
+                                        setMemoText('');
+                                      }
+                                    }}
+                                    autoFocus
+                                  />
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    className="h-6 w-6 p-0"
+                                    onClick={() => saveMemo(friendship.friend.id)}
+                                  >
+                                    <Check className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              )}
                             </div>
                           </div>
                           <div className="opacity-0 group-hover:opacity-100 transition-opacity">
@@ -446,6 +551,16 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
                                 <DropdownMenuItem>프로필 보기</DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    setEditingMemo(friendship.friend.id);
+                                    setMemoText(friendship.memo || '');
+                                  }}
+                                >
+                                  <StickyNote className="mr-2 h-4 w-4" />
+                                  메모 {friendship.memo ? '수정' : '추가'}
+                                </DropdownMenuItem>
                                 <Separator className="my-1" />
                                 <DropdownMenuItem 
                                   className="text-red-600"
