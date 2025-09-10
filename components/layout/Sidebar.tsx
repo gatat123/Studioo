@@ -137,29 +137,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       href: '/studio/projects',
       icon: <FolderOpen className="h-4 w-4" />,
       badge: activeCount > 0 ? activeCount : undefined,
-      children: [
-        {
-          id: 'all-projects',
-          label: 'All Projects',
-          href: '/studio/projects',
-          icon: <LayoutGrid className="h-4 w-4" />,
-          badge: projects.length > 0 ? projects.length : undefined,
-        },
-        {
-          id: 'illustrations',
-          label: 'Illustrations',
-          href: '/studio/projects?type=illustration',
-          icon: <Palette className="h-4 w-4" />,
-          badge: illustrationCount > 0 ? illustrationCount : undefined,
-        },
-        {
-          id: 'storyboards',
-          label: 'Storyboards',
-          href: '/studio/projects?type=storyboard',
-          icon: <FileText className="h-4 w-4" />,
-          badge: storyboardCount > 0 ? storyboardCount : undefined,
-        },
-      ],
     },
     {
       id: 'recent',
@@ -211,7 +188,8 @@ const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const renderNavigationItem = (item: NavigationItem, depth = 0) => {
-    const isActive = pathname === item.href;
+    const isActive = pathname === item.href || 
+                    (item.href === '/studio/projects' && pathname.startsWith('/studio/projects'));
     const hasChildren = item.children && item.children.length > 0;
     const isExpanded = expandedItems.includes(item.id);
 
@@ -227,45 +205,33 @@ const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => {
             if (hasChildren) {
               toggleExpanded(item.id);
+            } else {
+              router.push(item.href);
             }
           }}
-          asChild={!hasChildren}
+          asChild={false}
         >
-          {hasChildren ? (
-            <div className="flex items-center w-full">
-              {item.icon}
-              {!isCollapsed && (
-                <>
-                  <span className="ml-3 flex-1 text-left">{item.label}</span>
-                  {item.badge && (
-                    <Badge variant="secondary" className="ml-auto mr-2">
-                      {item.badge}
-                    </Badge>
-                  )}
+          <div className="flex items-center w-full">
+            {item.icon}
+            {!isCollapsed && (
+              <>
+                <span className="ml-3 flex-1 text-left">{item.label}</span>
+                {item.badge && (
+                  <Badge variant="secondary" className="ml-auto">
+                    {item.badge}
+                  </Badge>
+                )}
+                {hasChildren && (
                   <ChevronRight
                     className={cn(
                       'h-4 w-4 transition-transform',
                       isExpanded && 'rotate-90'
                     )}
                   />
-                </>
-              )}
-            </div>
-          ) : (
-            <Link href={item.href} className="flex items-center w-full">
-              {item.icon}
-              {!isCollapsed && (
-                <>
-                  <span className="ml-3 flex-1 text-left">{item.label}</span>
-                  {item.badge && (
-                    <Badge variant="secondary" className="ml-auto">
-                      {item.badge}
-                    </Badge>
-                  )}
-                </>
-              )}
-            </Link>
-          )}
+                )}
+              </>
+            )}
+          </div>
         </Button>
         {hasChildren && isExpanded && !isCollapsed && (
           <div className="mt-1">
