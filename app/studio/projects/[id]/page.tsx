@@ -1313,22 +1313,68 @@ export default function ProjectDetailPage() {
                     src={img.url || img.fileUrl}
                     alt={`Version ${img.version}`}
                     className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={() => {
-                      // Set this version as the current displayed version
-                      if (selectedHistoryType === 'lineart') {
-                        setSelectedLineartVersion(img.version)
-                      } else {
-                        setSelectedArtVersion(img.version)
+                    onClick={async () => {
+                      try {
+                        // API 호출하여 현재 버전 설정
+                        await imagesAPI.setCurrentImage(selectedScene.id, img.id)
+                        
+                        // 로컬 상태 업데이트
+                        if (selectedHistoryType === 'lineart') {
+                          setSelectedLineartVersion(img.version)
+                        } else {
+                          setSelectedArtVersion(img.version)
+                        }
+                        
+                        // 씬 데이터 업데이트
+                        const updatedScenes = scenes.map(scene => {
+                          if (scene.id === selectedScene.id) {
+                            const updatedImages = scene.images.map((image: any) => ({
+                              ...image,
+                              isCurrent: image.id === img.id ? true : 
+                                        (image.type === img.type ? false : image.isCurrent)
+                            }))
+                            return { ...scene, images: updatedImages }
+                          }
+                          return scene
+                        })
+                        setScenes(updatedScenes)
+                        
+                        // 선택된 씬도 업데이트
+                        const updatedScene = updatedScenes.find(s => s.id === selectedScene.id)
+                        if (updatedScene) {
+                          setSelectedScene(updatedScene)
+                        }
+                        
+                        // 히스토리도 업데이트
+                        const updatedHistory = imageHistory.map(histImg => ({
+                          ...histImg,
+                          isCurrent: histImg.id === img.id ? true :
+                                    (histImg.type === img.type ? false : histImg.isCurrent)
+                        }))
+                        setImageHistory(updatedHistory)
+                        
+                        setShowHistory(false)
+                        toast({
+                          title: '버전 변경 완료',
+                          description: `버전 ${img.version}으로 변경되었습니다.`
+                        })
+                      } catch (error) {
+                        console.error('Failed to change version:', error)
+                        toast({
+                          title: '버전 변경 실패',
+                          description: '버전 변경 중 오류가 발생했습니다.',
+                          variant: 'destructive'
+                        })
                       }
-                      setShowHistory(false)
-                      toast({
-                        title: '버전 변경',
-                        description: `버전 ${img.version}으로 변경되었습니다.`
-                      })
                     }}
                   />
                   <div className="text-xs space-y-1">
-                    <p className="font-medium">버전 {img.version}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">버전 {img.version}</p>
+                      {img.isCurrent && (
+                        <Badge variant="default" className="text-xs">현재</Badge>
+                      )}
+                    </div>
                     <p className="text-muted-foreground">
                       {new Date(img.uploadedAt).toLocaleString()}
                     </p>
