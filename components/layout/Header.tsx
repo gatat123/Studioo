@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, Menu, User, ChevronDown, LogOut, Settings, UserCircle } from 'lucide-react';
+import { Bell, Menu, User, ChevronDown, LogOut, Settings, UserCircle, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -21,6 +21,7 @@ interface HeaderProps {
   userName?: string;
   userEmail?: string;
   notificationCount?: number;
+  friendRequestCount?: number;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -28,9 +29,11 @@ const Header: React.FC<HeaderProps> = ({
   userName = 'Guest User',
   userEmail = 'guest@example.com',
   notificationCount = 0,
+  friendRequestCount = 0,
 }) => {
   const pathname = usePathname();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isFriendsOpen, setIsFriendsOpen] = useState(false);
 
   const navLinks = [
     { href: '/studio', label: 'Studio' },
@@ -87,6 +90,44 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* Right Section */}
         <div className="flex items-center space-x-4 ml-auto">
+          {/* Friends */}
+          <DropdownMenu open={isFriendsOpen} onOpenChange={setIsFriendsOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="relative">
+                <Users className="h-5 w-5" />
+                {friendRequestCount > 0 && (
+                  <Badge
+                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                    variant="default"
+                  >
+                    {friendRequestCount > 9 ? '9+' : friendRequestCount}
+                  </Badge>
+                )}
+                <span className="sr-only">Friends</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-80">
+              <DropdownMenuLabel>Friends</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/studio/friends" className="flex items-center">
+                  <Users className="mr-2 h-4 w-4" />
+                  Manage Friends
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/studio/friends/requests" className="flex items-center">
+                  <Bell className="mr-2 h-4 w-4" />
+                  Friend Requests {friendRequestCount > 0 && `(${friendRequestCount})`}
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <div className="py-2 px-3 text-sm text-gray-500">
+                No friends online
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* Notifications */}
           <DropdownMenu open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>
             <DropdownMenuTrigger asChild>
