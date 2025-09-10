@@ -137,12 +137,81 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Here you would typically upload to a storage service
-    // For now, we'll just show a placeholder message
-    toast({
-      title: '알림',
-      description: '이미지 업로드 기능은 곧 추가될 예정입니다.'
-    });
+    // 파일 크기 확인 (5MB 제한)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: '오류',
+        description: '파일 크기는 5MB 이하여야 합니다.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // 파일 타입 확인
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: '오류',
+        description: '이미지 파일만 업로드 가능합니다.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile/image`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // 프로필 이미지 URL 업데이트
+        setProfileData(prev => ({
+          ...prev,
+          profileImageUrl: data.fileDetails?.url || data.user?.profileImageUrl || ''
+        }));
+        
+        // 전역 상태 업데이트
+        const authStore = useAuthStore.getState();
+        if (authStore.user) {
+          authStore.setUser({
+            ...authStore.user,
+            profileImageUrl: data.fileDetails?.url || data.user?.profileImageUrl
+          });
+        }
+        
+        toast({
+          title: '성공',
+          description: '프로필 사진이 업데이트되었습니다.'
+        });
+      } else {
+        toast({
+          title: '오류',
+          description: data.error || '프로필 사진 업로드에 실패했습니다.',
+          variant: 'destructive'
+        });
+      }
+    } catch (error) {
+      console.error('Image upload error:', error);
+      toast({
+        title: '오류',
+        description: '프로필 사진 업로드 중 오류가 발생했습니다.',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
+      // 파일 입력 초기화
+      e.target.value = '';
+    }
   };
 
   if (!user) {
@@ -155,7 +224,7 @@ export default function ProfilePage() {
         {/* Header */}
         <div className="mb-6">
           <Link href="/studio">
-            <Button variant="ghost" size="sm">
+            <Button variant="outline" size="sm">
               <ArrowLeft className="h-4 w-4 mr-2" />
               스튜디오로 돌아가기
             </Button>
@@ -207,6 +276,7 @@ export default function ProfilePage() {
                       accept="image/*"
                       className="hidden"
                       onChange={handleImageUpload}
+                      disabled={isLoading}
                     />
                     <p className="text-xs text-gray-500 mt-1">
                       JPG, PNG 파일 (최대 5MB)

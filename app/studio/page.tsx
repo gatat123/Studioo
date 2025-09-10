@@ -8,7 +8,6 @@ import { ProjectGrid } from '@/components/projects/ProjectGrid';
 import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
 import JoinProjectModal from '@/components/projects/JoinProjectModal';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
-import { FriendList } from '@/components/friends/FriendList';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProjectStore } from '@/store/useProjectStore';
 import {
@@ -94,9 +93,6 @@ export default function StudioPage() {
               </div>
               
               <div className="flex items-center gap-3">
-                {/* Friend List */}
-                <FriendList />
-                
                 {/* Notifications */}
                 <NotificationCenter userId={user?.id} />
                 

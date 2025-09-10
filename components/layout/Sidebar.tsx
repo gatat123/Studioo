@@ -148,25 +148,17 @@ const Sidebar: React.FC<SidebarProps> = ({
         {
           id: 'illustrations',
           label: 'Illustrations',
-          href: '/studio/projects?filter=illustration',
+          href: '/studio/projects?type=illustration',
           icon: <Palette className="h-4 w-4" />,
           badge: illustrationCount > 0 ? illustrationCount : undefined,
         },
         {
           id: 'storyboards',
           label: 'Storyboards',
-          href: '/studio/projects?filter=storyboard',
+          href: '/studio/projects?type=storyboard',
           icon: <FileText className="h-4 w-4" />,
           badge: storyboardCount > 0 ? storyboardCount : undefined,
         },
-        ...recentProjects.slice(0, 3).map(project => ({
-          id: `project-${project.id}`,
-          label: project.name,
-          href: `/studio/projects/${project.id}`,
-          icon: project.tag === 'illustration' ? 
-            <Palette className="h-3 w-3 opacity-60" /> : 
-            <FileText className="h-3 w-3 opacity-60" />,
-        })),
       ],
     },
     {

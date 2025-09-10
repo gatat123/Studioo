@@ -64,10 +64,10 @@ export function ProjectGrid() {
   useEffect(() => {
     fetchProjects();
     
-    // Get filter from URL
-    const urlFilter = searchParams.get('filter');
-    if (urlFilter && (urlFilter === 'illustration' || urlFilter === 'storyboard')) {
-      setFilterTag(urlFilter);
+    // Get type filter from URL (updated to use 'type' instead of 'filter')
+    const urlType = searchParams.get('type');
+    if (urlType && (urlType === 'illustration' || urlType === 'storyboard')) {
+      setFilterTag(urlType);
     } else {
       setFilterTag('all');
     }

@@ -21,6 +21,7 @@ interface HeaderProps {
   onMenuClick?: () => void;
   userName?: string;
   userEmail?: string;
+  userProfileImage?: string;
   notificationCount?: number;
   friendRequestCount?: number;
 }
@@ -29,6 +30,7 @@ const Header: React.FC<HeaderProps> = ({
   onMenuClick,
   userName = 'Guest User',
   userEmail = 'guest@example.com',
+  userProfileImage,
   notificationCount = 0,
   friendRequestCount = 0,
 }) => {
@@ -127,9 +129,17 @@ const Header: React.FC<HeaderProps> = ({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center space-x-2">
-                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                  <UserCircle className="h-5 w-5 text-gray-600" />
-                </div>
+                {userProfileImage ? (
+                  <img 
+                    src={userProfileImage} 
+                    alt={userName}
+                    className="h-8 w-8 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                    <UserCircle className="h-5 w-5 text-gray-600" />
+                  </div>
+                )}
                 <div className="hidden md:block text-left">
                   <p className="text-sm font-medium">{userName}</p>
                 </div>
