@@ -55,22 +55,22 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
       </div>
 
       {/* Scene Stack */}
-      <div className="h-screen w-full pt-20">
+      <div className="h-screen w-full">
         <ScrollStack
           className="h-full"
-          itemDistance={100}
-          itemScale={0.05}
-          itemStackDistance={30}
+          itemDistance={150}
+          itemScale={0.03}
+          itemStackDistance={40}
           stackPosition="50%"
-          scaleEndPosition="20%"
-          baseScale={0.85}
+          scaleEndPosition="30%"
+          baseScale={0.88}
           rotationAmount={0}
           blurAmount={0}
           useWindowScroll={false}
         >
           {sceneImages.map(({ scene, image }, index) => (
             <ScrollStackItem key={scene.id} itemClassName="scene-card">
-              <div className="relative bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-xl max-w-3xl mx-auto">
+              <div className="relative bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-2xl w-full max-w-5xl mx-auto">
                 {/* Scene Number Badge */}
                 <div className="absolute top-3 left-3 z-10">
                   <div className="bg-black/70 text-white px-2 py-1 rounded-full text-xs font-medium backdrop-blur">
@@ -78,8 +78,8 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
                   </div>
                 </div>
 
-                {/* Image Container - Smaller size */}
-                <div className="aspect-video bg-gray-100 dark:bg-gray-800 relative" style={{ maxHeight: '300px' }}>
+                {/* Image Container */}
+                <div className="bg-gray-100 dark:bg-gray-800 relative" style={{ height: '500px' }}>
                   {image ? (
                     <img
                       src={(image as any).url || (image as any).fileUrl}

@@ -12,31 +12,37 @@
 }
 
 .scroll-stack-inner {
-  padding: 10vh 2rem 100vh;
-  min-height: 200vh;
+  padding: 50vh 1rem 150vh;
+  min-height: 300vh;
   position: relative;
+  width: 100%;
+  max-width: 100%;
 }
 
 .scroll-stack-card {
-  transform-origin: center center;
+  transform-origin: top center;
   will-change: transform, filter;
   backface-visibility: hidden;
   transform-style: preserve-3d;
-  position: sticky;
-  top: 50%;
   width: 100%;
-  max-width: 800px;
-  margin: 0 auto 100px auto;
+  margin: 0 0 150px 0;
   padding: 0;
   box-sizing: border-box;
   -webkit-transform: translateZ(0);
   transform: translateZ(0);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 .scroll-stack-card.scene-card {
-  position: relative;
-  margin-bottom: 50px;
+  max-width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media (min-width: 1280px) {
+  .scroll-stack-card.scene-card {
+    max-width: 1200px;
+  }
 }
 
 .scroll-stack-end {
