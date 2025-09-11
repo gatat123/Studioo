@@ -304,9 +304,9 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
             )}
             style={{
               position: 'fixed',
-              top: '150px',  // 헤더 아래 위치 (50px 더 아래로)
+              top: '250px',  // 헤더 아래 위치 (100px 더 아래로)
               right: '40px',
-              maxHeight: 'calc(100vh - 190px)'
+              maxHeight: 'calc(100vh - 290px)'
             }}
           >
             {/* Header */}
