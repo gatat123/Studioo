@@ -299,14 +299,13 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
             }}
             className={cn(
               "fixed z-50 bg-white rounded-lg shadow-2xl border",
-              isMinimized ? "h-14 w-80" : "h-[600px] w-[380px]",
+              isMinimized ? "h-14 w-80" : "h-[650px] w-[420px]",
               "flex flex-col"
             )}
             style={{
               position: 'fixed',
-              bottom: '20px',
-              right: '20px',
-              maxHeight: '600px'
+              bottom: '40px',
+              right: '40px'
             }}
           >
             {/* Header */}
