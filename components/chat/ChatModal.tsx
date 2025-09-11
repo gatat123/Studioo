@@ -256,6 +256,14 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose })
 
   return (
     <AnimatePresence>
+      {/* Background overlay */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/50 z-40"
+        onClick={onClose}
+      />
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -273,9 +281,10 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose })
         )}
         style={{
           position: 'fixed',
-          bottom: '16px',
-          right: '16px',
-          maxHeight: 'calc(100vh - 32px)'
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          maxHeight: '90vh'
         }}
       >
       {/* Header */}

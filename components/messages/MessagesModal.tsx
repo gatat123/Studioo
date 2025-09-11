@@ -136,9 +136,16 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
         const unread = data.conversations?.reduce((acc: number, conv: Conversation) => 
           acc + conv.unreadCount, 0) || 0
         setTotalUnread(unread)
+      } else if (response.status === 404) {
+        console.warn('Conversations endpoint not found, using empty list')
+        setConversations([])
+        setTotalUnread(0)
       }
     } catch (error) {
       console.error('Failed to load conversations:', error)
+      // Set empty conversations on error to allow modal to open
+      setConversations([])
+      setTotalUnread(0)
     }
   }
 
@@ -281,7 +288,16 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
       {/* Messages Modal */}
       <AnimatePresence>
         {isOpen && !selectedFriend && (
-          <motion.div
+          <>
+            {/* Background overlay */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 z-40"
+              onClick={() => setIsOpen(false)}
+            />
+            <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -297,8 +313,10 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
             )}
             style={{
               position: 'fixed',
-              bottom: '80px',  // 하단에서 80px 위
-              right: '16px'
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              maxHeight: '90vh'
             }}
           >
             {/* Header */}
@@ -511,6 +529,7 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
               </>
             )}
           </motion.div>
+          </>
         )}
       </AnimatePresence>
 
