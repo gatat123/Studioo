@@ -89,37 +89,37 @@ export const channelsAPI = {
   // Get all channels (for current user)
   getChannels: async (): Promise<Channel[]> => {
     const response = await apiClient.get('/api/channels')
-    return response.data.channels
+    return response.channels || []
   },
 
   // Create a new channel
   createChannel: async (data: CreateChannelData): Promise<Channel> => {
     const response = await apiClient.post('/api/channels', data)
-    return response.data.channel
+    return response.channel
   },
 
   // Get channel details
   getChannel: async (channelId: string): Promise<Channel> => {
     const response = await apiClient.get(`/api/channels/${channelId}`)
-    return response.data.channel
+    return response.channel
   },
 
   // Get channel members
   getMembers: async (channelId: string): Promise<ChannelMember[]> => {
     const response = await apiClient.get(`/api/channels/${channelId}/members`)
-    return response.data.members
+    return response.members || []
   },
 
   // Invite member to channel
   inviteMember: async (channelId: string, data: InviteMemberData) => {
     const response = await apiClient.post(`/api/channels/${channelId}/members`, data)
-    return response.data.invite
+    return response.invite
   },
 
   // Leave channel
   leaveChannel: async (channelId: string) => {
     const response = await apiClient.delete(`/api/channels/${channelId}/members`)
-    return response.data
+    return response
   },
 
   // Get channel messages
@@ -133,13 +133,13 @@ export const channelsAPI = {
     if (cursor) params.append('cursor', cursor)
     
     const response = await apiClient.get(`/api/channels/${channelId}/messages?${params}`)
-    return response.data
+    return response
   },
 
   // Send message to channel
   sendMessage: async (channelId: string, data: SendMessageData): Promise<ChannelMessage> => {
     const response = await apiClient.post(`/api/channels/${channelId}/messages`, data)
-    return response.data.message
+    return response.message
   },
 
   // Upload file to channel
@@ -153,24 +153,24 @@ export const channelsAPI = {
         'Content-Type': 'multipart/form-data'
       }
     })
-    return response.data.file
+    return response.file
   },
 
   // Accept channel invite
   acceptInvite: async (inviteId: string) => {
     const response = await apiClient.post(`/api/channels/invites/${inviteId}/accept`)
-    return response.data
+    return response
   },
 
   // Reject channel invite
   rejectInvite: async (inviteId: string) => {
     const response = await apiClient.post(`/api/channels/invites/${inviteId}/reject`)
-    return response.data
+    return response
   },
 
   // Get pending invites
   getPendingInvites: async () => {
     const response = await apiClient.get('/api/channels/invites')
-    return response.data.invites
+    return response.invites || []
   }
 }
