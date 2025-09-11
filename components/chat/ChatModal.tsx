@@ -256,14 +256,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose })
 
   return (
     <AnimatePresence>
-      {/* Background overlay */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/50 z-40"
-        onClick={onClose}
-      />
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -281,9 +273,9 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose })
         )}
         style={{
           position: 'fixed',
-          bottom: '80px',  // 하단에서 충분한 여백
+          bottom: '20px',
           right: '20px',
-          maxHeight: 'calc(100vh - 120px)'  // 상하 여백 고려
+          maxHeight: '500px'
         }}
       >
       {/* Header */}

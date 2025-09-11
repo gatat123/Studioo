@@ -288,16 +288,7 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
       {/* Messages Modal */}
       <AnimatePresence>
         {isOpen && !selectedFriend && (
-          <>
-            {/* Background overlay */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 z-40"
-              onClick={() => setIsOpen(false)}
-            />
-            <motion.div
+          <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -313,9 +304,9 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
             )}
             style={{
               position: 'fixed',
-              bottom: '80px',  // 하단에서 충분한 여백
+              bottom: '20px',
               right: '20px',
-              maxHeight: 'calc(100vh - 120px)'  // 상하 여백 고려
+              maxHeight: '600px'
             }}
           >
             {/* Header */}
@@ -528,7 +519,6 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
               </>
             )}
           </motion.div>
-          </>
         )}
       </AnimatePresence>
 
