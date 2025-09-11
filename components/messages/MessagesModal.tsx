@@ -313,9 +313,9 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
             )}
             style={{
               position: 'fixed',
-              bottom: '20px',
+              bottom: '80px',  // 하단에서 충분한 여백
               right: '20px',
-              maxHeight: '80vh'
+              maxHeight: 'calc(100vh - 120px)'  // 상하 여백 고려
             }}
           >
             {/* Header */}
