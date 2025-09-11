@@ -268,7 +268,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose })
         className={cn(
           "fixed bottom-4 right-4 z-50",
           "w-96 bg-white rounded-lg shadow-2xl border",
-          isMinimized ? "h-14" : "h-[600px]",
+          isMinimized ? "h-14" : "h-[500px] max-h-[calc(100vh-2rem)]",
           "flex flex-col"
         )}
       >
