@@ -7,7 +7,6 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   Send, 
   Users, 
@@ -21,7 +20,8 @@ import {
   AtSign,
   Smile,
   UserPlus,
-  Settings
+  Settings,
+  LogOut
 } from 'lucide-react'
 import { socketClient } from '@/lib/socket/client'
 import { useToast } from '@/hooks/use-toast'
@@ -30,7 +30,7 @@ import { channelsAPI, type Channel, type ChannelMember, type ChannelMessage } fr
 import { useAuthStore } from '@/store/useAuthStore'
 import { CreateChannelModal } from '@/components/team/CreateChannelModal'
 import { InviteMemberModal } from '@/components/team/InviteMemberModal'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 
 export default function TeamPage() {
@@ -67,29 +67,48 @@ export default function TeamPage() {
   
   useEffect(() => {
     if (selectedChannel) {
-      // Join channel
-      socketClient.emit('join:channel', { channelId: selectedChannel.id })
+      // Join channel using correct Socket.io event names
+      socketClient.emit('join_channel', { channelId: selectedChannel.id })
       
-      // Listen for channel events
-      socketClient.on(`channel:${selectedChannel.id}:message`, (message: ChannelMessage) => {
-        setMessages(prev => [...prev, message])
-        scrollToBottom()
+      // Listen for real-time channel messages
+      socketClient.on('new_channel_message', (data: { message: ChannelMessage }) => {
+        if (data.message.channelId === selectedChannel.id) {
+          setMessages(prev => {
+            // Avoid duplicate messages
+            const exists = prev.some(m => m.id === data.message.id)
+            if (exists) return prev
+            return [...prev, data.message]
+          })
+          scrollToBottom()
+        }
       })
       
-      socketClient.on(`channel:${selectedChannel.id}:member-joined`, (member: ChannelMember) => {
-        setChannelMembers(prev => [...prev, member])
-        toast({
-          title: '새 멤버',
-          description: `${member.user.nickname}님이 채널에 참여했습니다.`
-        })
+      // Listen for member joined
+      socketClient.on('member_joined_channel', (data: { userId: string, user: any }) => {
+        if (data.user) {
+          loadChannelMembers(selectedChannel.id)
+          toast({
+            title: '새 멤버',
+            description: `${data.user.nickname}님이 채널에 참여했습니다.`
+          })
+        }
       })
       
-      socketClient.on(`channel:${selectedChannel.id}:member-left`, (userId: string) => {
-        setChannelMembers(prev => prev.filter(m => m.userId !== userId))
+      // Listen for member left
+      socketClient.on('member_left_channel', (data: { userId: string }) => {
+        setChannelMembers(prev => prev.filter(m => m.userId !== data.userId))
       })
       
-      socketClient.on(`channel:${selectedChannel.id}:typing`, (data: { userId: string, isTyping: boolean }) => {
+      // Listen for typing indicators
+      socketClient.on('user_typing_channel', (data: { userId: string, user: any }) => {
         // Handle typing indicator
+        if (data.userId !== currentUser?.id) {
+          // Show typing indicator for other users
+        }
+      })
+      
+      socketClient.on('user_stopped_typing_channel', (data: { userId: string }) => {
+        // Hide typing indicator
       })
       
       // Load channel data
@@ -97,14 +116,15 @@ export default function TeamPage() {
       loadMessages(selectedChannel.id)
       
       return () => {
-        socketClient.emit('leave:channel', { channelId: selectedChannel.id })
-        socketClient.off(`channel:${selectedChannel.id}:message`)
-        socketClient.off(`channel:${selectedChannel.id}:member-joined`)
-        socketClient.off(`channel:${selectedChannel.id}:member-left`)
-        socketClient.off(`channel:${selectedChannel.id}:typing`)
+        socketClient.emit('leave_channel', { channelId: selectedChannel.id })
+        socketClient.off('new_channel_message')
+        socketClient.off('member_joined_channel')
+        socketClient.off('member_left_channel')
+        socketClient.off('user_typing_channel')
+        socketClient.off('user_stopped_typing_channel')
       }
     }
-  }, [selectedChannel])
+  }, [selectedChannel, currentUser])
   
   const loadChannels = async () => {
     try {
@@ -163,31 +183,55 @@ export default function TeamPage() {
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedChannel) return
     
-    try {
-      // Send message through API
-      const message = await channelsAPI.sendMessage(selectedChannel.id, {
-        content: newMessage,
-        type: 'text'
-      })
-      
-      // Emit through socket for real-time update to other users
-      socketClient.emit('channel:send-message', {
-        channelId: selectedChannel.id,
-        message
-      })
-      
-      // Optimistically add message
-      setMessages(prev => [...prev, message])
-      setNewMessage('')
-      scrollToBottom()
-    } catch (error) {
-      console.error('Failed to send message:', error)
-      toast({
-        title: '오류',
-        description: '메시지 전송에 실패했습니다',
-        variant: 'destructive'
-      })
-    }
+    const tempId = `temp-${Date.now()}`
+    const optimisticMessage = {
+      id: tempId,
+      channelId: selectedChannel.id,
+      senderId: currentUser?.id || '',
+      content: newMessage.trim(),
+      type: 'text',
+      createdAt: new Date().toISOString(),
+      sender: {
+        id: currentUser?.id || '',
+        username: currentUser?.username || '',
+        nickname: currentUser?.nickname || '',
+        profileImageUrl: currentUser?.profileImageUrl
+      }
+    } as ChannelMessage
+    
+    // Optimistically add message
+    setMessages(prev => [...prev, optimisticMessage])
+    setNewMessage('')
+    scrollToBottom()
+    
+    // Send through Socket.io for real-time delivery
+    socketClient.emit('send_channel_message', {
+      channelId: selectedChannel.id,
+      content: newMessage.trim(),
+      type: 'text',
+      tempId
+    })
+    
+    // Listen for confirmation
+    socketClient.once('channel_message_sent', (data: { message: ChannelMessage, tempId: string }) => {
+      if (data.tempId === tempId) {
+        setMessages(prev => prev.map(msg => 
+          msg.id === tempId ? data.message : msg
+        ))
+      }
+    })
+    
+    socketClient.once('channel_message_error', (data: { error: string, tempId: string }) => {
+      if (data.tempId === tempId) {
+        // Remove optimistic message
+        setMessages(prev => prev.filter(msg => msg.id !== tempId))
+        toast({
+          title: '오류',
+          description: data.error || '메시지 전송에 실패했습니다',
+          variant: 'destructive'
+        })
+      }
+    })
   }
   
   const scrollToBottom = () => {
@@ -199,12 +243,12 @@ export default function TeamPage() {
   const handleTyping = () => {
     if (!isTyping && selectedChannel) {
       setIsTyping(true)
-      socketClient.emit('channel:typing', { channelId: selectedChannel.id, isTyping: true })
+      socketClient.emit('typing_start_channel', { channelId: selectedChannel.id })
       
       setTimeout(() => {
         setIsTyping(false)
         if (selectedChannel) {
-          socketClient.emit('channel:typing', { channelId: selectedChannel.id, isTyping: false })
+          socketClient.emit('typing_stop_channel', { channelId: selectedChannel.id })
         }
       }, 2000)
     }
@@ -212,6 +256,65 @@ export default function TeamPage() {
   
   const handleChannelCreated = () => {
     loadChannels()
+  }
+  
+  const handleLeaveChannel = async () => {
+    if (!selectedChannel) return
+    
+    const isAdmin = channelMembers.find(m => m.userId === currentUser?.id)?.role === 'admin'
+    const otherMembers = channelMembers.filter(m => m.userId !== currentUser?.id)
+    
+    if (isAdmin && otherMembers.length > 0) {
+      // Admin leaving - need to assign new admin
+      toast({
+        title: '새 관리자 지정',
+        description: '채널을 나가기 전에 새 관리자를 지정해주세요.',
+        variant: 'destructive'
+      })
+      // TODO: Open modal to select new admin
+      return
+    }
+    
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/${selectedChannel.id}/leave`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        toast({
+          title: '채널 탈퇴',
+          description: `${selectedChannel.name} 채널에서 나갔습니다.`
+        })
+        
+        // Remove channel from list
+        setChannels(prev => prev.filter(ch => ch.id !== selectedChannel.id))
+        setSelectedChannel(null)
+        
+        // Emit socket event
+        socketClient.emit('leave_channel', { channelId: selectedChannel.id })
+      } else {
+        throw new Error('Failed to leave channel')
+      }
+    } catch (error) {
+      console.error('Leave channel error:', error)
+      toast({
+        title: '오류',
+        description: '채널 탈퇴에 실패했습니다.',
+        variant: 'destructive'
+      })
+    }
+  }
+  
+  const handleChannelSettings = () => {
+    // TODO: Open channel settings modal for admin
+    toast({
+      title: '채널 설정',
+      description: '채널 설정 기능은 준비 중입니다.'
+    })
   }
   
   const getStatusColor = (status: string) => {
@@ -225,9 +328,9 @@ export default function TeamPage() {
 
   return (
     <>
-      <div className="flex h-full">
+      <div className="flex h-screen overflow-hidden">
         {/* Left Sidebar - Channels */}
-      <div className="w-64 border-r bg-muted/30">
+      <div className="w-64 border-r bg-muted/30 flex flex-col overflow-hidden">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold">채널</h2>
@@ -250,7 +353,7 @@ export default function TeamPage() {
             />
           </div>
           
-          <ScrollArea className="h-[calc(100vh-240px)]">
+          <ScrollArea className="flex-1">
             <div className="space-y-1">
               {channels.filter(ch => 
                 ch.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -311,8 +414,8 @@ export default function TeamPage() {
         )}
       </div>
       
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      {/* Main Chat Area - 50% width reduction */}
+      <div className="flex-1 max-w-[800px] flex flex-col overflow-hidden">
         {selectedChannel ? (
           <>
             {/* Chat Header */}
@@ -344,9 +447,19 @@ export default function TeamPage() {
                         <UserPlus className="h-4 w-4 mr-2" />
                         멤버 초대
                       </DropdownMenuItem>
-                      <DropdownMenuItem>
-                        <Settings className="h-4 w-4 mr-2" />
-                        채널 설정
+                      {channelMembers.find(m => m.userId === currentUser?.id && m.role === 'admin') && (
+                        <DropdownMenuItem onClick={() => handleChannelSettings()}>
+                          <Settings className="h-4 w-4 mr-2" />
+                          채널 설정
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem 
+                        className="text-destructive"
+                        onClick={() => handleLeaveChannel()}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        채널 나가기
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -355,7 +468,7 @@ export default function TeamPage() {
             </div>
             
             {/* Messages Area */}
-            <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+            <div className="flex-1 overflow-y-auto p-4" ref={scrollAreaRef}>
               {hasMore && (
                 <div className="text-center py-2">
                   <Button 
@@ -427,10 +540,10 @@ export default function TeamPage() {
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
             
-            {/* Message Input */}
-            <div className="p-4 border-t">
+            {/* Message Input - Moved up from bottom */}
+            <div className="p-4 border-t bg-background">
               <div className="flex gap-2">
                 <Button size="icon" variant="ghost">
                   <Plus className="h-4 w-4" />
@@ -477,75 +590,14 @@ export default function TeamPage() {
         )}
       </div>
       
-      {/* Right Sidebar - Info Panel (Optional) */}
-      <div className="w-80 border-l bg-muted/30">
-        <Tabs defaultValue="members" className="h-full">
-          <TabsList className="w-full">
-            <TabsTrigger value="members" className="flex-1">
-              <Users className="h-4 w-4 mr-2" />
-              멤버
-            </TabsTrigger>
-            <TabsTrigger value="files" className="flex-1">
-              파일
-            </TabsTrigger>
-            <TabsTrigger value="info" className="flex-1">
-              정보
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="members" className="p-4">
-            <ScrollArea className="h-[calc(100vh-120px)]">
-              <div className="space-y-3">
-                {channelMembers.map((member) => (
-                  <Card key={member.id}>
-                    <CardContent className="p-3">
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={member.user.profileImageUrl} />
-                          <AvatarFallback>
-                            {member.user.nickname[0].toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{member.user.nickname}</p>
-                          <p className="text-xs text-muted-foreground">@{member.user.username}</p>
-                          <Badge variant="outline" className="mt-1">
-                            {member.role}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-          
-          <TabsContent value="files" className="p-4">
-            <p className="text-sm text-muted-foreground text-center py-8">
-              공유된 파일이 없습니다
-            </p>
-          </TabsContent>
-          
-          <TabsContent value="info" className="p-4">
-            {selectedChannel && (
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-sm mb-1">채널 이름</h4>
-                  <p className="text-sm text-muted-foreground">#{selectedChannel.name}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm mb-1">채널 유형</h4>
-                  <p className="text-sm text-muted-foreground">{selectedChannel.type}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm mb-1">멤버 수</h4>
-                  <p className="text-sm text-muted-foreground">{channelMembers.length}명</p>
-                </div>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+      {/* Right Sidebar - Extra space for future features */}
+      <div className="flex-1 border-l bg-muted/10">
+        {/* Future features area */}
+        <div className="p-8 text-center">
+          <div className="text-muted-foreground">
+            <p className="text-sm">추후 기능이 추가될 예정입니다</p>
+          </div>
+        </div>
       </div>
       </div>
       

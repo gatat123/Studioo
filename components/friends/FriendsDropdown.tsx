@@ -99,7 +99,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // 현재 사용자 ID 가져오기
+  // 현재 사용자 ID 가져오기 및 Socket.io 연결
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
@@ -110,6 +110,63 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
         console.error('Error parsing user data:', error);
       }
     }
+
+    // Socket.io 연결 및 실시간 이벤트 리스너
+    const connectSocket = async () => {
+      const socket = (window as any).socket;
+      if (!socket) return;
+
+      // 친구 요청 받음
+      socket.on('friend_request_received', (data: any) => {
+        console.log('Friend request received:', data);
+        fetchFriends(); // 친구 목록 새로고침
+        toast.info(`${data.sender?.nickname || '누군가'}님이 친구 요청을 보냈습니다!`);
+      });
+
+      // 친구 요청 수락됨
+      socket.on('friend_request_accepted', (data: any) => {
+        console.log('Friend request accepted:', data);
+        fetchFriends(); // 친구 목록 새로고침
+        toast.success(`${data.receiver?.nickname || '누군가'}님이 친구 요청을 수락했습니다!`);
+      });
+
+      // 친구 요청 거절됨
+      socket.on('friend_request_rejected', (data: any) => {
+        console.log('Friend request rejected:', data);
+        fetchFriends(); // 친구 목록 새로고침
+      });
+
+      // 친구 온라인 상태 변경
+      socket.on('friend_online_status', (data: { userId: string; isOnline: boolean }) => {
+        setFriends(prevFriends => 
+          prevFriends.map(f => 
+            f.friend.id === data.userId 
+              ? { ...f, friend: { ...f.friend, isOnline: data.isOnline } }
+              : f
+          )
+        );
+      });
+
+      // 친구 삭제됨
+      socket.on('friend_removed', (data: any) => {
+        console.log('Friend removed:', data);
+        fetchFriends(); // 친구 목록 새로고침
+      });
+    };
+
+    connectSocket();
+
+    // Cleanup
+    return () => {
+      const socket = (window as any).socket;
+      if (socket) {
+        socket.off('friend_request_received');
+        socket.off('friend_request_accepted');
+        socket.off('friend_request_rejected');
+        socket.off('friend_online_status');
+        socket.off('friend_removed');
+      }
+    };
   }, []);
 
 
