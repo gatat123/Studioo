@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -332,9 +331,9 @@ export default function TeamPage() {
 
   return (
     <>
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-full overflow-hidden">
         {/* Left Sidebar - Channels */}
-      <div className="w-64 border-r bg-muted/30 flex flex-col overflow-hidden">
+      <div className="w-64 border-r bg-muted/30 flex flex-col h-full">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold">채널</h2>
@@ -357,7 +356,7 @@ export default function TeamPage() {
             />
           </div>
           
-          <ScrollArea className="flex-1">
+          <div className="flex-1 overflow-y-auto">
             <div className="space-y-1">
               {channels.filter(ch => 
                 ch.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -382,7 +381,7 @@ export default function TeamPage() {
                 </Button>
               ))}
             </div>
-          </ScrollArea>
+          </div>
         </div>
         
         {/* Channel Members */}
@@ -419,11 +418,11 @@ export default function TeamPage() {
       </div>
       
       {/* Main Chat Area - 50% width reduction */}
-      <div className="flex-1 max-w-[800px] flex flex-col overflow-hidden">
+      <div className="flex-1 max-w-[800px] flex flex-col h-full">
         {selectedChannel ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b bg-background/95 backdrop-blur">
+            <div className="p-4 border-b bg-background/95 backdrop-blur flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Hash className="h-5 w-5 text-muted-foreground" />
@@ -547,7 +546,7 @@ export default function TeamPage() {
             </div>
             
             {/* Message Input - Moved up from bottom */}
-            <div className="p-4 border-t bg-background">
+            <div className="p-4 border-t bg-background flex-shrink-0">
               <div className="flex gap-2">
                 <Button size="icon" variant="ghost">
                   <Plus className="h-4 w-4" />
@@ -582,7 +581,7 @@ export default function TeamPage() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center h-full">
             <div className="text-center">
               <MessageSquare className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">채널을 선택하세요</h3>
@@ -595,7 +594,7 @@ export default function TeamPage() {
       </div>
       
       {/* Right Sidebar - Extra space for future features */}
-      <div className="flex-1 border-l bg-muted/10">
+      <div className="flex-1 border-l bg-muted/10 h-full overflow-y-auto">
         {/* Future features area */}
         <div className="p-8 text-center">
           <div className="text-muted-foreground">
