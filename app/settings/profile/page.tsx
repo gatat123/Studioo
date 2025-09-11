@@ -67,13 +67,21 @@ export default function ProfilePage() {
   const handleUpdateProfile = async () => {
     setSaving(true)
     try {
+      console.log('[Profile Update] Sending data:', {
+        nickname: formData.nickname,
+        email: formData.email,
+        bio: formData.bio
+      })
+      
       const response = await api.put('/api/users/profile', {
         nickname: formData.nickname,
         email: formData.email,
         bio: formData.bio
       })
       
-      if (response.user) {
+      console.log('[Profile Update] Response:', response)
+      
+      if (response && response.user) {
         setProfile(response.user)
         setFormData(prev => ({
           ...prev,
@@ -81,18 +89,28 @@ export default function ProfilePage() {
           email: response.user.email || '',
           bio: response.user.bio || ''
         }))
+        
+        toast({
+          title: '성공',
+          description: '프로필이 업데이트되었습니다.'
+        })
+        
+        // Refresh profile data
+        await fetchProfile()
+      } else {
+        console.error('[Profile Update] Invalid response structure:', response)
+        toast({
+          title: '오류',
+          description: response?.message || '프로필 업데이트에 실패했습니다.',
+          variant: 'destructive'
+        })
       }
-      
-      toast({
-        title: '성공',
-        description: '프로필이 업데이트되었습니다.'
-      })
-      
-      fetchProfile()
-    } catch (error) {
+    } catch (error: any) {
+      console.error('[Profile Update] Error:', error)
+      const errorMessage = error?.response?.data?.error || error?.message || '프로필 업데이트에 실패했습니다.'
       toast({
         title: '오류',
-        description: '프로필 업데이트에 실패했습니다.',
+        description: errorMessage,
         variant: 'destructive'
       })
     } finally {
@@ -147,18 +165,35 @@ export default function ProfilePage() {
       )
 
       const response = await api.upload('/api/users/profile/image', formData)
+      
+      console.log('[Profile Upload] Response:', response)
 
-      if (response.user) {
+      if (response && response.user) {
         setProfile(response.user)
         toast({
           title: '성공',
           description: '프로필 사진이 업데이트되었습니다.'
         })
+        
+        // Refresh profile data to get the updated image
+        await fetchProfile()
+        
+        // Force page refresh to update all image instances
+        window.location.reload()
+      } else {
+        console.error('[Profile Upload] Invalid response structure:', response)
+        toast({
+          title: '오류',
+          description: response?.message || '프로필 사진 업로드에 실패했습니다.',
+          variant: 'destructive'
+        })
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('[Profile Upload] Error:', error)
+      const errorMessage = error?.response?.data?.error || error?.message || '프로필 사진 업로드에 실패했습니다.'
       toast({
         title: '오류',
-        description: '프로필 사진 업로드에 실패했습니다.',
+        description: errorMessage,
         variant: 'destructive'
       })
     } finally {
