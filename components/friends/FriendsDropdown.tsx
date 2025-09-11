@@ -32,6 +32,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import ChatModal from '@/components/chat/ChatModal';
 
 interface Friend {
   id: string;
@@ -84,6 +85,8 @@ interface FriendsDropdownProps {
 }
 
 export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCount = 0, onMessageClick }: FriendsDropdownProps) {
+  const [activeChatFriend, setActiveChatFriend] = useState<any>(null);
+  const [currentUserId, setCurrentUserId] = useState<string>('');
   const [friends, setFriends] = useState<Friend[]>([]);
   const [receivedRequests, setReceivedRequests] = useState<FriendRequest[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -95,6 +98,19 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
   const [memoText, setMemoText] = useState('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
+
+  // 현재 사용자 ID 가져오기
+  useEffect(() => {
+    const userData = localStorage.getItem('user');
+    if (userData) {
+      try {
+        const user = JSON.parse(userData);
+        setCurrentUserId(user.id);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+      }
+    }
+  }, []);
 
 
   // 친구 목록 불러오기
@@ -291,6 +307,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
   const offlineFriends = friends.filter(f => !(f.friend.isOnline ?? f.friend.isActive));
 
   return (
+    <>
     <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
@@ -462,8 +479,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                               size="icon" 
                               className="h-7 w-7"
                               onClick={() => {
-                                onMessageClick?.(friendship.friend);
-                                onOpenChange(false);
+                                setActiveChatFriend(friendship.friend);
                               }}
                             >
                               <MessageCircle className="h-4 w-4" />
@@ -559,8 +575,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                               size="icon" 
                               className="h-7 w-7"
                               onClick={() => {
-                                onMessageClick?.(friendship.friend);
-                                onOpenChange(false);
+                                setActiveChatFriend(friendship.friend);
                               }}
                             >
                               <MessageCircle className="h-4 w-4" />
@@ -667,5 +682,15 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
+
+    {/* 채팅 모달 */}
+    {activeChatFriend && currentUserId && (
+      <ChatModal
+        friend={activeChatFriend}
+        currentUserId={currentUserId}
+        onClose={() => setActiveChatFriend(null)}
+      />
+    )}
+    </>
   );
 }
