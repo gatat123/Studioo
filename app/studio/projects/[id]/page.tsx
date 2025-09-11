@@ -182,6 +182,17 @@ export default function ProjectDetailPage() {
       })
     })
     
+    // Listen for image version changes
+    socketClient.on('image_version_changed', (data: any) => {
+      console.log('Received image_version_changed event:', data)
+      fetchProjectDetails() // 전체 프로젝트 데이터를 다시 가져와서 이미지 업데이트
+      
+      toast({
+        title: '이미지 버전 변경',
+        description: `${data.user?.username || 'Someone'}님이 ${data.imageType === 'lineart' ? '선화' : '아트'} 버전을 변경했습니다.`
+      })
+    })
+    
     // Cleanup on unmount
     return () => {
       clearTimeout(timer)
@@ -189,6 +200,7 @@ export default function ProjectDetailPage() {
       socketClient.off('new_comment')
       socketClient.off('new_scene')
       socketClient.off('new_image')
+      socketClient.off('image_version_changed')
     }
   }, [projectId])
 
