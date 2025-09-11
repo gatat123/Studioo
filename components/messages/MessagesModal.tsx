@@ -229,7 +229,7 @@ export function MessagesModal() {
             )}
             style={{
               position: 'fixed',
-              bottom: '16px',
+              top: '80px',  // Header 아래 위치
               right: '16px'
             }}
           >

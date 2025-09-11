@@ -27,6 +27,7 @@ import { socketClient } from '@/lib/socket/client'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { channelsAPI, type Channel, type ChannelMember, type ChannelMessage } from '@/lib/api/channels'
+import { useAuthStore } from '@/store/useAuthStore'
 import { CreateChannelModal } from '@/components/team/CreateChannelModal'
 import { InviteMemberModal } from '@/components/team/InviteMemberModal'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
@@ -34,6 +35,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 
 export default function TeamPage() {
   const { toast } = useToast()
+  const { user: currentUser } = useAuthStore()
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null)
   const [channels, setChannels] = useState<Channel[]>([])
   const [channelMembers, setChannelMembers] = useState<ChannelMember[]>([])
@@ -378,22 +380,40 @@ export default function TeamPage() {
                     )
                   }
                   
+                  const isOwnMessage = currentUser?.id === message.senderId
+                  
                   return (
-                    <div key={message.id} className="flex gap-3">
+                    <div key={message.id} className={cn(
+                      "flex gap-3",
+                      isOwnMessage && "flex-row-reverse"
+                    )}>
                       <Avatar className="h-8 w-8">
                         <AvatarImage src={message.sender.profileImageUrl} />
                         <AvatarFallback className="text-xs">
                           {message.sender.nickname[0].toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1">
-                        <div className="flex items-baseline gap-2">
+                      <div className={cn(
+                        "max-w-[70%]",
+                        isOwnMessage && "items-end"
+                      )}>
+                        <div className={cn(
+                          "flex items-baseline gap-2",
+                          isOwnMessage && "flex-row-reverse"
+                        )}>
                           <span className="font-medium text-sm">{message.sender.nickname}</span>
                           <span className="text-xs text-muted-foreground">
                             {new Date(message.createdAt).toLocaleTimeString()}
                           </span>
                         </div>
-                        <p className="text-sm mt-1">{message.content}</p>
+                        <div className={cn(
+                          "mt-1 px-3 py-2 rounded-lg inline-block",
+                          isOwnMessage 
+                            ? "bg-primary text-primary-foreground ml-auto" 
+                            : "bg-muted"
+                        )}>
+                          <p className="text-sm">{message.content}</p>
+                        </div>
                       </div>
                     </div>
                   )

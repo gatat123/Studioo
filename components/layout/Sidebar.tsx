@@ -369,18 +369,6 @@ const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
-          {/* New Project Button */}
-          <div className="px-4 pb-2">
-            <Button
-              className={cn('w-full', isCollapsed && 'px-2')}
-              variant="outline"
-              onClick={() => router.push('/studio/projects/new')}
-            >
-              <Plus className="h-4 w-4" />
-              {!isCollapsed && <span className="ml-2">New Project</span>}
-            </Button>
-          </div>
-
           <Separator />
 
           {/* Navigation Items */}

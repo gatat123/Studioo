@@ -157,17 +157,11 @@ export function ProjectGrid() {
         <Grid3X3 className="h-8 w-8 text-gray-400" />
       </div>
       <h3 className="text-lg font-semibold text-gray-900 mb-2">프로젝트가 없습니다</h3>
-      <p className="text-sm text-gray-500 mb-6">
+      <p className="text-sm text-gray-500">
         {searchQuery || filterTag !== 'all' || filterStatus !== 'all'
           ? '검색 조건에 맞는 프로젝트가 없습니다.'
           : '첫 프로젝트를 생성해보세요!'}
       </p>
-      {!searchQuery && filterTag === 'all' && filterStatus === 'all' && (
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          새 프로젝트
-        </Button>
-      )}
     </div>
   );
 
