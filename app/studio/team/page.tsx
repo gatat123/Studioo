@@ -19,157 +19,173 @@ import {
   Plus,
   Hash,
   AtSign,
-  Smile
+  Smile,
+  UserPlus,
+  Settings
 } from 'lucide-react'
 import { socketClient } from '@/lib/socket/client'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { channelsAPI, type Channel, type ChannelMember, type ChannelMessage } from '@/lib/api/channels'
+import { CreateChannelModal } from '@/components/team/CreateChannelModal'
+import { InviteMemberModal } from '@/components/team/InviteMemberModal'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
-interface TeamMember {
-  id: string
-  username: string
-  nickname: string
-  profileImageUrl?: string
-  status: 'online' | 'offline' | 'away'
-  role: string
-}
-
-interface ChatMessage {
-  id: string
-  userId: string
-  username: string
-  nickname: string
-  profileImageUrl?: string
-  content: string
-  timestamp: Date
-  type: 'text' | 'image' | 'file'
-  channel: string
-}
-
-interface ChatChannel {
-  id: string
-  name: string
-  type: 'general' | 'project' | 'direct'
-  unreadCount: number
-  lastMessage?: ChatMessage
-}
 
 export default function TeamPage() {
   const { toast } = useToast()
-  const [selectedChannel, setSelectedChannel] = useState<ChatChannel | null>(null)
-  const [channels, setChannels] = useState<ChatChannel[]>([
-    { id: '1', name: 'general', type: 'general', unreadCount: 0 },
-    { id: '2', name: 'design-team', type: 'project', unreadCount: 3 },
-    { id: '3', name: 'dev-team', type: 'project', unreadCount: 0 },
-  ])
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null)
+  const [channels, setChannels] = useState<Channel[]>([])
+  const [channelMembers, setChannelMembers] = useState<ChannelMember[]>([])
+  const [messages, setMessages] = useState<ChannelMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [createChannelOpen, setCreateChannelOpen] = useState(false)
+  const [inviteMemberOpen, setInviteMemberOpen] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [hasMore, setHasMore] = useState(false)
+  const [nextCursor, setNextCursor] = useState<string | undefined>()
 
   useEffect(() => {
+    // Load initial channels
+    loadChannels()
+    
     // Connect to Socket.io
     const socket = socketClient.connect()
     
-    // Join team channel
-    socketClient.emit('join:team')
-    
-    // Listen for team events
-    socketClient.on('team:member-joined', (member: TeamMember) => {
-      setTeamMembers(prev => [...prev, member])
-      toast({
-        title: '팀 멤버 참여',
-        description: `${member.nickname}님이 팀에 참여했습니다.`
-      })
-    })
-    
-    socketClient.on('team:member-left', (memberId: string) => {
-      setTeamMembers(prev => prev.filter(m => m.id !== memberId))
-    })
-    
-    socketClient.on('team:message', (message: ChatMessage) => {
-      setMessages(prev => [...prev, message])
-      scrollToBottom()
-    })
-    
-    socketClient.on('team:typing', (data: { userId: string, isTyping: boolean }) => {
-      // Handle typing indicator
-    })
-    
-    // Load initial data
-    loadTeamMembers()
-    loadMessages()
-    
     return () => {
-      socketClient.emit('leave:team')
-      socketClient.off('team:member-joined')
-      socketClient.off('team:member-left')
-      socketClient.off('team:message')
-      socketClient.off('team:typing')
+      if (selectedChannel) {
+        socketClient.emit('leave:channel', { channelId: selectedChannel.id })
+      }
     }
   }, [])
   
-  const loadTeamMembers = async () => {
-    // TODO: Load team members from API
-    setTeamMembers([
-      {
-        id: '1',
-        username: 'john_doe',
-        nickname: 'John',
-        status: 'online',
-        role: 'Designer'
-      },
-      {
-        id: '2',
-        username: 'jane_smith',
-        nickname: 'Jane',
-        status: 'away',
-        role: 'Developer'
-      },
-      {
-        id: '3',
-        username: 'bob_wilson',
-        nickname: 'Bob',
-        status: 'offline',
-        role: 'Manager'
-      }
-    ])
-  }
-  
-  const loadMessages = async () => {
-    // TODO: Load messages from API
+  useEffect(() => {
     if (selectedChannel) {
-      // Load messages for selected channel
+      // Join channel
+      socketClient.emit('join:channel', { channelId: selectedChannel.id })
+      
+      // Listen for channel events
+      socketClient.on(`channel:${selectedChannel.id}:message`, (message: ChannelMessage) => {
+        setMessages(prev => [...prev, message])
+        scrollToBottom()
+      })
+      
+      socketClient.on(`channel:${selectedChannel.id}:member-joined`, (member: ChannelMember) => {
+        setChannelMembers(prev => [...prev, member])
+        toast({
+          title: '새 멤버',
+          description: `${member.user.nickname}님이 채널에 참여했습니다.`
+        })
+      })
+      
+      socketClient.on(`channel:${selectedChannel.id}:member-left`, (userId: string) => {
+        setChannelMembers(prev => prev.filter(m => m.userId !== userId))
+      })
+      
+      socketClient.on(`channel:${selectedChannel.id}:typing`, (data: { userId: string, isTyping: boolean }) => {
+        // Handle typing indicator
+      })
+      
+      // Load channel data
+      loadChannelMembers(selectedChannel.id)
+      loadMessages(selectedChannel.id)
+      
+      return () => {
+        socketClient.emit('leave:channel', { channelId: selectedChannel.id })
+        socketClient.off(`channel:${selectedChannel.id}:message`)
+        socketClient.off(`channel:${selectedChannel.id}:member-joined`)
+        socketClient.off(`channel:${selectedChannel.id}:member-left`)
+        socketClient.off(`channel:${selectedChannel.id}:typing`)
+      }
+    }
+  }, [selectedChannel])
+  
+  const loadChannels = async () => {
+    try {
+      const channelList = await channelsAPI.getChannels()
+      setChannels(channelList)
+      
+      // Auto-select first channel if available
+      if (channelList.length > 0 && !selectedChannel) {
+        setSelectedChannel(channelList[0])
+      }
+    } catch (error) {
+      console.error('Failed to load channels:', error)
+      toast({
+        title: '오류',
+        description: '채널 목록을 불러오는데 실패했습니다',
+        variant: 'destructive'
+      })
     }
   }
   
-  const sendMessage = () => {
+  const loadChannelMembers = async (channelId: string) => {
+    try {
+      const members = await channelsAPI.getMembers(channelId)
+      setChannelMembers(members)
+    } catch (error) {
+      console.error('Failed to load channel members:', error)
+    }
+  }
+  
+  const loadMessages = async (channelId: string, cursor?: string) => {
+    try {
+      setLoading(true)
+      const result = await channelsAPI.getMessages(channelId, 50, cursor)
+      
+      if (cursor) {
+        // Append to existing messages for pagination
+        setMessages(prev => [...result.messages, ...prev])
+      } else {
+        // Replace messages for initial load
+        setMessages(result.messages)
+      }
+      
+      setHasMore(result.hasMore)
+      setNextCursor(result.nextCursor)
+      
+      if (!cursor) {
+        scrollToBottom()
+      }
+    } catch (error) {
+      console.error('Failed to load messages:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+  
+  const sendMessage = async () => {
     if (!newMessage.trim() || !selectedChannel) return
     
-    const message: ChatMessage = {
-      id: Date.now().toString(),
-      userId: 'current-user',
-      username: 'current-username',
-      nickname: 'You',
-      content: newMessage,
-      timestamp: new Date(),
-      type: 'text',
-      channel: selectedChannel.id
+    try {
+      // Send message through API
+      const message = await channelsAPI.sendMessage(selectedChannel.id, {
+        content: newMessage,
+        type: 'text'
+      })
+      
+      // Emit through socket for real-time update to other users
+      socketClient.emit('channel:send-message', {
+        channelId: selectedChannel.id,
+        message
+      })
+      
+      // Optimistically add message
+      setMessages(prev => [...prev, message])
+      setNewMessage('')
+      scrollToBottom()
+    } catch (error) {
+      console.error('Failed to send message:', error)
+      toast({
+        title: '오류',
+        description: '메시지 전송에 실패했습니다',
+        variant: 'destructive'
+      })
     }
-    
-    // Emit message through socket
-    socketClient.emit('team:send-message', {
-      channelId: selectedChannel.id,
-      content: newMessage
-    })
-    
-    // Optimistically add message
-    setMessages(prev => [...prev, message])
-    setNewMessage('')
-    scrollToBottom()
   }
   
   const scrollToBottom = () => {
@@ -179,15 +195,21 @@ export default function TeamPage() {
   }
   
   const handleTyping = () => {
-    if (!isTyping) {
+    if (!isTyping && selectedChannel) {
       setIsTyping(true)
-      socketClient.emit('team:typing', { channelId: selectedChannel?.id, isTyping: true })
+      socketClient.emit('channel:typing', { channelId: selectedChannel.id, isTyping: true })
       
       setTimeout(() => {
         setIsTyping(false)
-        socketClient.emit('team:typing', { channelId: selectedChannel?.id, isTyping: false })
+        if (selectedChannel) {
+          socketClient.emit('channel:typing', { channelId: selectedChannel.id, isTyping: false })
+        }
       }, 2000)
     }
+  }
+  
+  const handleChannelCreated = () => {
+    loadChannels()
   }
   
   const getStatusColor = (status: string) => {
@@ -206,7 +228,11 @@ export default function TeamPage() {
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold">채널</h2>
-            <Button size="icon" variant="ghost">
+            <Button 
+              size="icon" 
+              variant="ghost"
+              onClick={() => setCreateChannelOpen(true)}
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -232,11 +258,15 @@ export default function TeamPage() {
                   className="w-full justify-start"
                   onClick={() => setSelectedChannel(channel)}
                 >
-                  <Hash className="h-4 w-4 mr-2" />
+                  {channel.type === 'private' ? (
+                    <AtSign className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Hash className="h-4 w-4 mr-2" />
+                  )}
                   <span className="flex-1 text-left">{channel.name}</span>
-                  {channel.unreadCount > 0 && (
-                    <Badge variant="default" className="ml-2">
-                      {channel.unreadCount}
+                  {channel._count?.messages && channel._count.messages > 0 && (
+                    <Badge variant="outline" className="ml-2">
+                      {channel._count.messages}
                     </Badge>
                   )}
                 </Button>
@@ -245,32 +275,37 @@ export default function TeamPage() {
           </ScrollArea>
         </div>
         
-        {/* Team Members */}
-        <div className="p-4">
-          <h3 className="font-semibold mb-3 text-sm">팀 멤버 ({teamMembers.length})</h3>
-          <div className="space-y-2">
-            {teamMembers.map((member) => (
-              <div key={member.id} className="flex items-center gap-2">
-                <div className="relative">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={member.profileImageUrl} />
-                    <AvatarFallback className="text-xs">
-                      {member.nickname[0].toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className={cn(
-                    "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background",
-                    getStatusColor(member.status)
-                  )} />
+        {/* Channel Members */}
+        {selectedChannel && (
+          <div className="p-4">
+            <h3 className="font-semibold mb-3 text-sm">채널 멤버 ({channelMembers.length})</h3>
+            <div className="space-y-2">
+              {channelMembers.slice(0, 5).map((member) => (
+                <div key={member.id} className="flex items-center gap-2">
+                  <div className="relative">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={member.user.profileImageUrl} />
+                      <AvatarFallback className="text-xs">
+                        {member.user.nickname[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className={cn(
+                      "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background",
+                      member.user.isActive ? 'bg-green-500' : 'bg-gray-400'
+                    )} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{member.user.nickname}</p>
+                    <p className="text-xs text-muted-foreground truncate">{member.role}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{member.nickname}</p>
-                  <p className="text-xs text-muted-foreground truncate">{member.role}</p>
-                </div>
-              </div>
-            ))}
+              ))}
+              {channelMembers.length > 5 && (
+                <p className="text-xs text-muted-foreground text-center">+{channelMembers.length - 5} 더 보기</p>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
       
       {/* Main Chat Area */}
@@ -284,45 +319,84 @@ export default function TeamPage() {
                   <Hash className="h-5 w-5 text-muted-foreground" />
                   <h2 className="font-semibold">{selectedChannel.name}</h2>
                   <Badge variant="outline">
-                    {teamMembers.filter(m => m.status === 'online').length} 온라인
+                    {channelMembers.filter(m => m.user.isActive).length} 온라인
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button size="icon" variant="ghost">
-                    <Phone className="h-4 w-4" />
+                  <Button 
+                    size="icon" 
+                    variant="ghost"
+                    onClick={() => setInviteMemberOpen(true)}
+                  >
+                    <UserPlus className="h-4 w-4" />
                   </Button>
-                  <Button size="icon" variant="ghost">
-                    <Video className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setInviteMemberOpen(true)}>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        멤버 초대
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>
+                        <Settings className="h-4 w-4 mr-2" />
+                        채널 설정
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </div>
             
             {/* Messages Area */}
             <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+              {hasMore && (
+                <div className="text-center py-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => loadMessages(selectedChannel.id, nextCursor)}
+                    disabled={loading}
+                  >
+                    {loading ? '로딩 중...' : '이전 메시지 보기'}
+                  </Button>
+                </div>
+              )}
               <div className="space-y-4">
-                {messages.filter(m => m.channel === selectedChannel.id).map((message) => (
-                  <div key={message.id} className="flex gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={message.profileImageUrl} />
-                      <AvatarFallback className="text-xs">
-                        {message.nickname[0].toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-2">
-                        <span className="font-medium text-sm">{message.nickname}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(message.timestamp).toLocaleTimeString()}
+                {messages.map((message) => {
+                  if (message.type === 'system') {
+                    return (
+                      <div key={message.id} className="text-center py-2">
+                        <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                          {message.content}
                         </span>
                       </div>
-                      <p className="text-sm mt-1">{message.content}</p>
+                    )
+                  }
+                  
+                  return (
+                    <div key={message.id} className="flex gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={message.sender.profileImageUrl} />
+                        <AvatarFallback className="text-xs">
+                          {message.sender.nickname[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="flex items-baseline gap-2">
+                          <span className="font-medium text-sm">{message.sender.nickname}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(message.createdAt).toLocaleTimeString()}
+                          </span>
+                        </div>
+                        <p className="text-sm mt-1">{message.content}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
                 
                 {messages.length === 0 && (
                   <div className="text-center py-8">
@@ -401,19 +475,19 @@ export default function TeamPage() {
           <TabsContent value="members" className="p-4">
             <ScrollArea className="h-[calc(100vh-120px)]">
               <div className="space-y-3">
-                {teamMembers.map((member) => (
+                {channelMembers.map((member) => (
                   <Card key={member.id}>
                     <CardContent className="p-3">
                       <div className="flex items-center gap-3">
                         <Avatar>
-                          <AvatarImage src={member.profileImageUrl} />
+                          <AvatarImage src={member.user.profileImageUrl} />
                           <AvatarFallback>
-                            {member.nickname[0].toUpperCase()}
+                            {member.user.nickname[0].toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1">
-                          <p className="font-medium text-sm">{member.nickname}</p>
-                          <p className="text-xs text-muted-foreground">@{member.username}</p>
+                          <p className="font-medium text-sm">{member.user.nickname}</p>
+                          <p className="text-xs text-muted-foreground">@{member.user.username}</p>
                           <Badge variant="outline" className="mt-1">
                             {member.role}
                           </Badge>
@@ -445,7 +519,7 @@ export default function TeamPage() {
                 </div>
                 <div>
                   <h4 className="font-medium text-sm mb-1">멤버 수</h4>
-                  <p className="text-sm text-muted-foreground">{teamMembers.length}명</p>
+                  <p className="text-sm text-muted-foreground">{channelMembers.length}명</p>
                 </div>
               </div>
             )}
@@ -453,5 +527,22 @@ export default function TeamPage() {
         </Tabs>
       </div>
     </div>
+    
+    {/* Modals */}
+    <CreateChannelModal 
+      open={createChannelOpen}
+      onOpenChange={setCreateChannelOpen}
+      onChannelCreated={handleChannelCreated}
+    />
+    
+    {selectedChannel && (
+      <InviteMemberModal
+        open={inviteMemberOpen}
+        onOpenChange={setInviteMemberOpen}
+        channelId={selectedChannel.id}
+        channelName={selectedChannel.name}
+      />
+    )}
+    </>
   )
 }

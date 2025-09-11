@@ -1,0 +1,89 @@
+import { apiClient } from './client'
+
+export interface Friend {
+  id: string
+  username: string
+  nickname: string
+  profileImageUrl?: string
+  bio?: string
+  memo?: string
+  lastLoginAt?: string
+  isActive: boolean
+  friendshipId: string
+  createdAt: string
+}
+
+export interface FriendRequest {
+  id: string
+  senderId: string
+  receiverId: string
+  message?: string
+  status: 'pending' | 'accepted' | 'rejected'
+  createdAt: string
+  sender?: {
+    id: string
+    username: string
+    nickname: string
+    profileImageUrl?: string
+  }
+  receiver?: {
+    id: string
+    username: string
+    nickname: string
+    profileImageUrl?: string
+  }
+}
+
+// Friends APIs
+export const friendsAPI = {
+  // Get friends list
+  getFriends: async (): Promise<Friend[]> => {
+    const response = await apiClient.get('/api/friends')
+    return response.data.friends
+  },
+
+  // Search friends
+  searchFriends: async (query: string): Promise<Friend[]> => {
+    const response = await apiClient.get(`/api/friends/search?q=${encodeURIComponent(query)}`)
+    return response.data.friends
+  },
+
+  // Send friend request
+  sendFriendRequest: async (userId: string, message?: string) => {
+    const response = await apiClient.post('/api/friends/request', { userId, message })
+    return response.data
+  },
+
+  // Accept friend request
+  acceptFriendRequest: async (requestId: string) => {
+    const response = await apiClient.post(`/api/friends/requests/${requestId}/accept`)
+    return response.data
+  },
+
+  // Reject friend request
+  rejectFriendRequest: async (requestId: string) => {
+    const response = await apiClient.post(`/api/friends/requests/${requestId}/reject`)
+    return response.data
+  },
+
+  // Get pending friend requests
+  getPendingRequests: async (): Promise<{
+    sent: FriendRequest[]
+    received: FriendRequest[]
+  }> => {
+    const response = await apiClient.get('/api/friends/requests')
+    return response.data
+  },
+
+  // Remove friend
+  removeFriend: async (friendId: string) => {
+    const response = await apiClient.delete(`/api/friends/${friendId}`)
+    return response.data
+  },
+
+  // Update friend memo
+  updateFriendMemo: async (friendId: string, memo: string) => {
+    const response = await apiClient.patch(`/api/friends/${friendId}/memo`, { memo })
+    return response.data
+  }
+}

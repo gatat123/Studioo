@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { X, Send, MoreVertical, ChevronDown } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -254,14 +255,23 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose })
   };
 
   return (
-    <div 
-      className={cn(
-        "fixed bottom-4 right-4 z-50 transition-all duration-300",
-        "w-96 bg-white rounded-lg shadow-2xl border",
-        isMinimized ? "h-14" : "h-[600px]",
-        "flex flex-col"
-      )}
-    >
+    <AnimatePresence>
+      <motion.div
+        initial={{ y: '100%', opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        exit={{ y: '100%', opacity: 0 }}
+        transition={{
+          type: 'spring',
+          stiffness: 300,
+          damping: 30
+        }}
+        className={cn(
+          "fixed bottom-4 right-4 z-50",
+          "w-96 bg-white rounded-lg shadow-2xl border",
+          isMinimized ? "h-14" : "h-[600px]",
+          "flex flex-col"
+        )}
+      >
       {/* Header */}
       <div 
         className="flex items-center justify-between p-3 border-b cursor-pointer select-none"
@@ -410,7 +420,8 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose })
           </div>
         </>
       )}
-    </div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
