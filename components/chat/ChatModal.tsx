@@ -270,13 +270,14 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose })
         className={cn(
           "fixed z-50",
           "bg-white rounded-lg shadow-2xl border",
-          isMinimized ? "h-14 w-80" : "h-[600px] w-[400px]",
+          isMinimized ? "h-14 w-80" : "h-[500px] w-[400px]",
           "flex flex-col"
         )}
         style={{
           position: 'fixed',
-          bottom: '40px',
-          right: '40px'
+          top: '100px',  // 헤더 아래 위치
+          right: '40px',
+          maxHeight: 'calc(100vh - 140px)'
         }}
       >
       {/* Header */}
