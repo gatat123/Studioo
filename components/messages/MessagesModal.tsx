@@ -1,18 +1,19 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MessageSquare, Search, X, ChevronDown } from 'lucide-react'
+import { MessageSquare, Search, X, ChevronDown, UserPlus, MessageCircle } from 'lucide-react'
 import { socketClient } from '@/lib/socket/client'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
 import { Input } from '@/components/ui/input'
 import ChatModal from '@/components/chat/ChatModal'
 import { cn } from '@/lib/utils'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 interface Message {
   id: string
@@ -47,14 +48,34 @@ interface Conversation {
   unreadCount: number
 }
 
-export function MessagesModal() {
+interface Friend {
+  id: string
+  friend: {
+    id: string
+    username: string
+    nickname: string
+    profileImageUrl?: string
+    isActive?: boolean
+  }
+}
+
+interface MessagesModalProps {
+  initialFriend?: any;
+  onFriendSelect?: (friend: any) => void;
+}
+
+export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalProps = {}) {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [totalUnread, setTotalUnread] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedFriend, setSelectedFriend] = useState<any>(null)
+  const [selectedFriend, setSelectedFriend] = useState<any>(initialFriend || null)
   const [currentUserId, setCurrentUserId] = useState<string>('')
   const [isOpen, setIsOpen] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
+  const [activeTab, setActiveTab] = useState<'messages' | 'friends'>('messages')
+  const [friends, setFriends] = useState<Friend[]>([])
+  const [friendSearchQuery, setFriendSearchQuery] = useState('')
+  const searchTimeoutRef = useRef<NodeJS.Timeout>()
 
   useEffect(() => {
     // Get current user ID from localStorage
@@ -66,6 +87,9 @@ export function MessagesModal() {
 
     if (isOpen && !isMinimized) {
       loadConversations()
+      if (activeTab === 'friends') {
+        loadFriends()
+      }
     }
     
     // Socket.io event listeners
@@ -85,7 +109,15 @@ export function MessagesModal() {
       socket.off('new_message')
       socket.off('messages_read')
     }
-  }, [isOpen, isMinimized])
+  }, [isOpen, isMinimized, activeTab])
+
+  // Handle initialFriend prop change
+  useEffect(() => {
+    if (initialFriend) {
+      setSelectedFriend(initialFriend)
+      setIsOpen(false) // Close the messages modal when a friend is selected
+    }
+  }, [initialFriend])
 
   const loadConversations = async () => {
     try {
@@ -108,6 +140,37 @@ export function MessagesModal() {
     } catch (error) {
       console.error('Failed to load conversations:', error)
     }
+  }
+
+  const loadFriends = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/friends`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        setFriends(data.friends || [])
+      }
+    } catch (error) {
+      console.error('Failed to load friends:', error)
+    }
+  }
+
+  const startNewConversation = (friend: any) => {
+    const friendData = {
+      id: friend.id,
+      username: friend.username,
+      nickname: friend.nickname,
+      profileImageUrl: friend.profileImageUrl,
+      isActive: friend.isActive
+    }
+    setSelectedFriend(friendData)
+    setIsOpen(false)
+    onFriendSelect?.(friendData)
   }
 
   const updateConversationWithNewMessage = (message: Message) => {
@@ -190,6 +253,11 @@ export function MessagesModal() {
     conv.lastMessage?.content.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
+  const filteredFriends = friends.filter(f =>
+    f.friend.nickname.toLowerCase().includes(friendSearchQuery.toLowerCase()) ||
+    f.friend.username.toLowerCase().includes(friendSearchQuery.toLowerCase())
+  )
+
   return (
     <>
       {/* Message Button */}
@@ -229,7 +297,7 @@ export function MessagesModal() {
             )}
             style={{
               position: 'fixed',
-              top: '80px',  // Header 아래 위치
+              bottom: '80px',  // 하단에서 80px 위
               right: '16px'
             }}
           >
@@ -240,7 +308,9 @@ export function MessagesModal() {
             >
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-lg">메시지</h3>
-                <Badge variant="secondary">{conversations.length}</Badge>
+                {totalUnread > 0 && (
+                  <Badge variant="destructive">{totalUnread}</Badge>
+                )}
               </div>
               <div className="flex items-center gap-1">
                 <Button
@@ -273,22 +343,38 @@ export function MessagesModal() {
 
             {!isMinimized && (
               <>
-                {/* Search */}
-                <div className="p-3 border-b">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="이름, 메시지 검색"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-                </div>
-                
-                {/* Conversations List */}
-                <ScrollArea className="flex-1">
-                  {filteredConversations.length > 0 ? (
+                {/* Tabs */}
+                <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'messages' | 'friends')} className="flex-1 flex flex-col">
+                  <TabsList className="grid w-full grid-cols-2 mx-3 mt-2" style={{ width: 'calc(100% - 24px)' }}>
+                    <TabsTrigger value="messages" className="relative">
+                      대화
+                      {totalUnread > 0 && (
+                        <Badge className="ml-1 h-4 px-1 text-xs" variant="destructive">
+                          {totalUnread}
+                        </Badge>
+                      )}
+                    </TabsTrigger>
+                    <TabsTrigger value="friends">친구</TabsTrigger>
+                  </TabsList>
+
+                  {/* Messages Tab */}
+                  <TabsContent value="messages" className="flex-1 flex flex-col mt-0">
+                    {/* Search */}
+                    <div className="p-3 border-b">
+                      <div className="relative">
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="이름, 메시지 검색"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          className="pl-9"
+                        />
+                      </div>
+                    </div>
+                    
+                    {/* Conversations List */}
+                    <ScrollArea className="flex-1">
+                      {filteredConversations.length > 0 ? (
                     <div className="divide-y">
                       {filteredConversations.map((conv) => (
                         <button
@@ -337,19 +423,92 @@ export function MessagesModal() {
                           </div>
                         </button>
                       ))}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center">
+                        <MessageSquare className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-30" />
+                        <p className="text-sm text-muted-foreground">
+                          {searchQuery ? '검색 결과가 없습니다' : '아직 대화가 없습니다'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          '새 대화' 탭에서 친구를 선택해 대화를 시작하세요
+                        </p>
+                      </div>
+                    )}
+                  </ScrollArea>
+                </TabsContent>
+
+                {/* Friends Tab */}
+                <TabsContent value="friends" className="flex-1 flex flex-col mt-0">
+                  {/* Search */}
+                  <div className="p-3 border-b">
+                    <div className="relative">
+                      <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="친구 검색..."
+                        value={friendSearchQuery}
+                        onChange={(e) => setFriendSearchQuery(e.target.value)}
+                        className="pl-9"
+                      />
                     </div>
-                  ) : (
-                    <div className="p-8 text-center">
-                      <MessageSquare className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-30" />
-                      <p className="text-sm text-muted-foreground">
-                        {searchQuery ? '검색 결과가 없습니다' : '아직 대화가 없습니다'}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        친구 목록에서 메시지를 보내보세요
-                      </p>
-                    </div>
-                  )}
-                </ScrollArea>
+                  </div>
+                  
+                  {/* Friends List */}
+                  <ScrollArea className="flex-1">
+                    {filteredFriends.length > 0 ? (
+                      <div className="p-2">
+                        {filteredFriends.map((friendship) => {
+                          const hasConversation = conversations.some(c => c.friend.id === friendship.friend.id)
+                          return (
+                            <button
+                              key={friendship.id}
+                              className="w-full p-3 hover:bg-gray-50 transition-colors text-left rounded-lg group"
+                              onClick={() => startNewConversation(friendship.friend)}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="relative">
+                                  <Avatar className="h-10 w-10">
+                                    <AvatarImage src={friendship.friend.profileImageUrl} />
+                                    <AvatarFallback>
+                                      {friendship.friend.nickname[0].toUpperCase()}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  {friendship.friend.isActive && (
+                                    <div className="absolute bottom-0 right-0 h-3 w-3 bg-green-500 border-2 border-white rounded-full" />
+                                  )}
+                                </div>
+                                <div className="flex-1">
+                                  <p className="font-medium text-sm">{friendship.friend.nickname}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {friendship.friend.isActive ? '온라인' : '오프라인'}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {hasConversation && (
+                                    <Badge variant="outline" className="text-xs">대화중</Badge>
+                                  )}
+                                  <MessageCircle className="h-4 w-4 text-muted-foreground group-hover:text-primary" />
+                                </div>
+                              </div>
+                            </button>
+                          )
+                        })
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="p-8 text-center">
+                        <UserPlus className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-30" />
+                        <p className="text-sm text-muted-foreground">
+                          {friendSearchQuery ? '검색 결과가 없습니다' : '친구가 없습니다'}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          먼저 친구를 추가해보세요
+                        </p>
+                      </div>
+                    )}
+                  </ScrollArea>
+                </TabsContent>
+              </Tabs>
               </>
             )}
           </motion.div>

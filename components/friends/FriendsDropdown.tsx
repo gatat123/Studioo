@@ -32,7 +32,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import ChatModal from '@/components/chat/ChatModal';
 
 interface Friend {
   id: string;
@@ -81,9 +80,10 @@ interface FriendsDropdownProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   friendRequestCount?: number;
+  onMessageClick?: (friend: any) => void;
 }
 
-export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCount = 0 }: FriendsDropdownProps) {
+export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCount = 0, onMessageClick }: FriendsDropdownProps) {
   const [friends, setFriends] = useState<Friend[]>([]);
   const [receivedRequests, setReceivedRequests] = useState<FriendRequest[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -93,24 +93,9 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
   const [showAddFriend, setShowAddFriend] = useState(false);
   const [editingMemo, setEditingMemo] = useState<string | null>(null);
   const [memoText, setMemoText] = useState('');
-  const [activeChatFriend, setActiveChatFriend] = useState<Friend | null>(null);
-  const [currentUserId, setCurrentUserId] = useState<string>('');
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // 현재 사용자 ID 가져오기
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      // JWT 토큰 디코딩하여 userId 추출
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        setCurrentUserId(payload.userId);
-      } catch (error) {
-        console.error('Error decoding token:', error);
-      }
-    }
-  }, []);
 
   // 친구 목록 불러오기
   const fetchFriends = async () => {
@@ -306,7 +291,6 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
   const offlineFriends = friends.filter(f => !(f.friend.isOnline ?? f.friend.isActive));
 
   return (
-    <>
     <DropdownMenu open={isOpen} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
@@ -477,7 +461,10 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                               variant="ghost" 
                               size="icon" 
                               className="h-7 w-7"
-                              onClick={() => setActiveChatFriend(friendship)}
+                              onClick={() => {
+                                onMessageClick?.(friendship.friend);
+                                onOpenChange(false);
+                              }}
                             >
                               <MessageCircle className="h-4 w-4" />
                             </Button>
@@ -571,7 +558,10 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                               variant="ghost" 
                               size="icon" 
                               className="h-7 w-7"
-                              onClick={() => setActiveChatFriend(friendship)}
+                              onClick={() => {
+                                onMessageClick?.(friendship.friend);
+                                onOpenChange(false);
+                              }}
                             >
                               <MessageCircle className="h-4 w-4" />
                             </Button>
@@ -677,21 +667,5 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
         </div>
       </DropdownMenuContent>
     </DropdownMenu>
-
-    {/* 채팅 모달 */}
-    {activeChatFriend && (
-      <ChatModal
-        friend={{
-          id: activeChatFriend.friend.id,
-          username: activeChatFriend.friend.username,
-          nickname: activeChatFriend.friend.nickname,
-          profileImageUrl: activeChatFriend.friend.profileImageUrl,
-          isActive: activeChatFriend.friend.isActive || activeChatFriend.friend.isOnline
-        }}
-        currentUserId={currentUserId}
-        onClose={() => setActiveChatFriend(null)}
-      />
-    )}
-  </>
   );
 }

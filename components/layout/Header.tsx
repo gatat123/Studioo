@@ -49,6 +49,7 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string; router: any }> =
   const [isFriendsOpen, setIsFriendsOpen] = useState(false);
   const [channelInvitations, setChannelInvitations] = useState<ChannelInvitation[]>([]);
   const [loadingInvite, setLoadingInvite] = useState(false);
+  const [selectedFriend, setSelectedFriend] = useState<any>(null);
   const { toast } = useToast();
   
   // Get current project filter from URL
@@ -190,10 +191,16 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string; router: any }> =
             isOpen={isFriendsOpen} 
             onOpenChange={setIsFriendsOpen}
             friendRequestCount={friendRequestCount}
+            onMessageClick={(friend) => {
+              setSelectedFriend(friend);
+            }}
           />
 
           {/* Messages Modal - KakaoTalk style */}
-          <MessagesModal />
+          <MessagesModal 
+            initialFriend={selectedFriend}
+            onFriendSelect={(friend) => setSelectedFriend(friend)}
+          />
 
 
           {/* Notifications */}
