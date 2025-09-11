@@ -336,11 +336,12 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
               >
                 <UserPlus className="h-4 w-4" />
               </Button>
-              <Link href="/studio/friends">
+              {/* 설정 아이콘 임시 숨김 */}
+              {/* <Link href="/studio/friends">
                 <Button variant="ghost" size="icon" className="h-7 w-7">
                   <Settings className="h-4 w-4" />
                 </Button>
-              </Link>
+              </Link> */}
             </div>
           </div>
 
@@ -670,7 +671,8 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
           </TabsContent>
         </Tabs>
 
-        <Separator />
+        {/* 모든 친구 관리 버튼 임시 숨김 */}
+        {/* <Separator />
         
         <div className="p-2">
           <Link href="/studio/friends">
@@ -679,7 +681,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
               모든 친구 관리
             </Button>
           </Link>
-        </div>
+        </div> */}
       </DropdownMenuContent>
     </DropdownMenu>
 
