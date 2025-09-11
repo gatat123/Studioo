@@ -69,6 +69,7 @@ const RootLayout: React.FC<RootLayoutProps> = ({
         onMenuClick={handleMenuClick}
         userName={user?.nickname || user?.username || 'Guest'}
         userEmail={user?.email || ''}
+        userProfileImage={user?.profileImageUrl}
         notificationCount={0}
       />
 

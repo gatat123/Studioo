@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Camera, Save } from 'lucide-react'
+import { ArrowLeft, Camera, Save, Trash2 } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import api from '@/lib/api/client'
 
@@ -23,8 +23,10 @@ interface UserProfile {
 export default function ProfilePage() {
   const router = useRouter()
   const { toast } = useToast()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [formData, setFormData] = useState({
     nickname: '',
@@ -81,6 +83,85 @@ export default function ProfilePage() {
       })
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: '오류',
+        description: '이미지 파일만 업로드할 수 있습니다.',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: '오류',
+        description: '파일 크기는 5MB를 초과할 수 없습니다.',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    setUploadingImage(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await api.post('/api/users/profile/image', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+
+      if (response.user) {
+        setProfile(response.user)
+        toast({
+          title: '성공',
+          description: '프로필 사진이 업데이트되었습니다.'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: '오류',
+        description: '프로필 사진 업로드에 실패했습니다.',
+        variant: 'destructive'
+      })
+    } finally {
+      setUploadingImage(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleRemoveImage = async () => {
+    setUploadingImage(true)
+    try {
+      const response = await api.delete('/api/users/profile/image')
+      
+      if (response.user) {
+        setProfile(response.user)
+        toast({
+          title: '성공',
+          description: '프로필 사진이 제거되었습니다.'
+        })
+      }
+    } catch (error) {
+      toast({
+        title: '오류',
+        description: '프로필 사진 제거에 실패했습니다.',
+        variant: 'destructive'
+      })
+    } finally {
+      setUploadingImage(false)
     }
   }
 
@@ -158,13 +239,35 @@ export default function ProfilePage() {
               <Avatar className="h-24 w-24">
                 <AvatarImage src={profile?.profileImageUrl} />
                 <AvatarFallback>
-                  {profile?.username?.[0]?.toUpperCase() || 'U'}
+                  {profile?.nickname?.[0]?.toUpperCase() || profile?.username?.[0]?.toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
-              <Button variant="outline">
-                <Camera className="h-4 w-4 mr-2" />
-                사진 변경
-              </Button>
+              <div className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  {uploadingImage ? '업로드 중...' : '사진 변경'}
+                </Button>
+                {profile?.profileImageUrl && (
+                  <Button 
+                    variant="outline"
+                    onClick={handleRemoveImage}
+                    disabled={uploadingImage}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="grid gap-4">
