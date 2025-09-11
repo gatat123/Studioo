@@ -266,12 +266,17 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose })
           damping: 30
         }}
         className={cn(
-          "fixed bottom-4 right-4 z-50",
+          "fixed z-50",
           "w-96 bg-white rounded-lg shadow-2xl border",
           isMinimized ? "h-14" : "h-[500px]",
-          "flex flex-col",
-          "max-h-[calc(100vh-8rem)]"
+          "flex flex-col"
         )}
+        style={{
+          position: 'fixed',
+          bottom: '16px',
+          right: '16px',
+          maxHeight: 'calc(100vh - 32px)'
+        }}
       >
       {/* Header */}
       <div 
