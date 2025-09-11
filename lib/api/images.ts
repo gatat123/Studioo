@@ -106,7 +106,8 @@ export const imagesAPI = {
    * Set image as current version
    */
   async setCurrentImage(sceneId: string, imageId: string): Promise<Image> {
-    return api.patch(`/api/scenes/${sceneId}/images/${imageId}`, { isCurrent: true });
+    const response = await api.patch(`/api/scenes/${sceneId}/images/${imageId}`, { isCurrent: true });
+    return response.image;
   },
 
   /**
