@@ -528,6 +528,10 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
           friend={selectedFriend}
           currentUserId={currentUserId}
           onClose={() => setSelectedFriend(null)}
+          onBack={() => {
+            setSelectedFriend(null);
+            setIsOpen(true);
+          }}
         />
       )}
     </>

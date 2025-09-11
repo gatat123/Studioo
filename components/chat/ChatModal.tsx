@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Send, MoreVertical, ChevronDown } from 'lucide-react';
+import { X, Send, MoreVertical, ChevronDown, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,9 +47,10 @@ interface ChatModalProps {
   friend: Friend;
   currentUserId: string;
   onClose: () => void;
+  onBack?: () => void;
 }
 
-const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose }) => {
+const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose, onBack }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -256,8 +257,6 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose })
 
   return (
     <AnimatePresence>
-      {/* Semi-transparent backdrop */}
-      <div className="fixed inset-0 bg-black/20 z-40" onClick={onClose} />
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
@@ -285,19 +284,34 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose })
         className="flex items-center justify-between p-3 border-b cursor-pointer select-none"
         onClick={() => setIsMinimized(!isMinimized)}
       >
-        <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={friend.profileImageUrl} />
-            <AvatarFallback>{getInitials(friend.nickname)}</AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-medium text-sm">{friend.nickname}</p>
-            {friend.isActive && !isMinimized && (
-              <p className="text-xs text-green-600">접속중</p>
-            )}
-            {isTyping && !isMinimized && (
-              <p className="text-xs text-gray-500">입력중...</p>
-            )}
+        <div className="flex items-center gap-2">
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => {
+                e.stopPropagation();
+                onBack();
+              }}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          )}
+          <div className="flex items-center gap-3">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={friend.profileImageUrl} />
+              <AvatarFallback>{getInitials(friend.nickname)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium text-sm">{friend.nickname}</p>
+              {friend.isActive && !isMinimized && (
+                <p className="text-xs text-green-600">접속중</p>
+              )}
+              {isTyping && !isMinimized && (
+                <p className="text-xs text-gray-500">입력중...</p>
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-1">

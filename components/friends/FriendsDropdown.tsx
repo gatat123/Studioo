@@ -689,6 +689,10 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
         friend={activeChatFriend}
         currentUserId={currentUserId}
         onClose={() => setActiveChatFriend(null)}
+        onBack={() => {
+          setActiveChatFriend(null);
+          setIsFriendsOpen(true);
+        }}
       />
     )}
     </>
