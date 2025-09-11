@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, Download, ZoomIn, ZoomOut, Move } from 'lucide-react';
+import { Download, ZoomIn, ZoomOut, Move } from 'lucide-react';
 import Image from 'next/image';
 
 interface AnnotationViewModalProps {
@@ -130,13 +130,6 @@ export function AnnotationViewModal({ open, onOpenChange, annotation }: Annotati
                 onClick={handleDownload}
               >
                 <Download className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onOpenChange(false)}
-              >
-                <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
