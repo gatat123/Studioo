@@ -198,18 +198,62 @@ class APIClient {
     formData: FormData,
     options?: RequestOptions
   ): Promise<T> {
-    const { headers = {}, ...restOptions } = options || {};
+    const { headers = {}, token, ...restOptions } = options || {};
     
     // Remove Content-Type to let browser set it with boundary
-    const uploadHeaders = { ...headers };
+    const uploadHeaders: any = { ...headers };
     delete uploadHeaders['Content-Type'];
 
-    return this.request<T>(endpoint, {
-      ...restOptions,
-      method: 'POST',
-      headers: uploadHeaders,
-      body: formData,
-    });
+    // Get authentication token
+    let authToken = token;
+    if (!authToken && typeof window !== 'undefined') {
+      authToken = localStorage.getItem('token') || undefined;
+      
+      if (!authToken) {
+        const cookieToken = document.cookie
+          .split('; ')
+          .find(row => row.startsWith('token='))
+          ?.split('=')[1];
+        authToken = cookieToken || undefined;
+      }
+    }
+
+    if (authToken) {
+      uploadHeaders['Authorization'] = `Bearer ${authToken}`;
+    }
+
+    const url = `${this.baseURL}${endpoint}`;
+    console.log('[API Upload] Uploading to:', url);
+    console.log('[API Upload] FormData entries:', Array.from(formData.entries()).map(([k, v]) => 
+      [k, v instanceof File ? `File(${v.name}, ${v.type}, ${v.size} bytes)` : v]
+    ));
+
+    try {
+      const response = await fetch(url, {
+        ...restOptions,
+        method: 'POST',
+        headers: uploadHeaders,
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('[API Upload] Error response:', response.status, errorData);
+        throw new APIError(
+          response.status,
+          errorData.message || errorData.error || `HTTP ${response.status}`,
+          errorData
+        );
+      }
+
+      const data = await response.json();
+      console.log('[API Upload] Success:', data);
+      return data;
+    } catch (error) {
+      console.error('[API Upload] Request failed:', error);
+      throw error;
+    }
   }
 }
 
