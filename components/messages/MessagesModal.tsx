@@ -492,8 +492,7 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
                               </div>
                             </button>
                           )
-                        })
-                        ))}
+                        })}
                       </div>
                     ) : (
                       <div className="p-8 text-center">
