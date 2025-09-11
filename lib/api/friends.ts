@@ -39,7 +39,11 @@ export const friendsAPI = {
   // Get friends list
   getFriends: async (): Promise<Friend[]> => {
     const response = await apiClient.get('/api/friends')
-    return response.data.friends
+    // Handle both response formats
+    if (Array.isArray(response.data)) {
+      return response.data
+    }
+    return response.data.friends || response.friends || []
   },
 
   // Search friends

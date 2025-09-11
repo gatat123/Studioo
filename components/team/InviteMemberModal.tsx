@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
 import { channelsAPI } from '@/lib/api/channels'
 import { friendsAPI } from '@/lib/api/friends'
 import { useToast } from '@/hooks/use-toast'
@@ -26,34 +27,96 @@ export function InviteMemberModal({ open, onOpenChange, channelId, channelName }
   const [searchQuery, setSearchQuery] = useState('')
   const [message, setMessage] = useState('')
   const [friends, setFriends] = useState<any[]>([])
+  const [searchResults, setSearchResults] = useState<any[]>([])
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [currentMembers, setCurrentMembers] = useState<string[]>([])
+  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (open) {
       loadFriendsAndMembers()
+    } else {
+      // Reset state when modal closes
+      setSelectedUsers([])
+      setMessage('')
+      setSearchQuery('')
+      setSearchResults([])
     }
   }, [open, channelId])
+  
+  // Search users when query changes
+  useEffect(() => {
+    if (searchTimeout) {
+      clearTimeout(searchTimeout)
+    }
+    
+    if (searchQuery.length >= 2) {
+      const timeout = setTimeout(async () => {
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/search?q=${searchQuery}`, {
+            headers: {
+              'Authorization': `Bearer ${localStorage.getItem('token')}`
+            }
+          })
+          
+          if (response.ok) {
+            const data = await response.json()
+            const users = data.users || []
+            // Filter out current members
+            const availableUsers = users.filter((user: any) => !currentMembers.includes(user.id))
+            setSearchResults(availableUsers)
+          }
+        } catch (error) {
+          console.error('Failed to search users:', error)
+        }
+      }, 300)
+      
+      setSearchTimeout(timeout)
+    } else {
+      setSearchResults([])
+    }
+    
+    return () => {
+      if (searchTimeout) {
+        clearTimeout(searchTimeout)
+      }
+    }
+  }, [searchQuery, currentMembers])
 
   const loadFriendsAndMembers = async () => {
     try {
       // Load friends list
-      const friendsList = await friendsAPI.getFriends()
+      const friendsData = await friendsAPI.getFriends()
+      console.log('Friends data:', friendsData)
+      
+      // friendsData might be the array directly or wrapped in an object
+      const friendsList = Array.isArray(friendsData) ? friendsData : ((friendsData as any)?.friends || [])
       setFriends(friendsList)
       
       // Load current channel members to exclude them
       const members = await channelsAPI.getMembers(channelId)
-      setCurrentMembers(members.map(m => m.userId))
+      setCurrentMembers(members.map((m: any) => m.userId))
     } catch (error) {
       console.error('Failed to load data:', error)
+      toast({
+        title: '오류',
+        description: '친구 목록을 불러올 수 없습니다',
+        variant: 'destructive'
+      })
     }
   }
 
   const availableFriends = friends.filter(friend => 
     !currentMembers.includes(friend.id) &&
-    (friend.nickname.toLowerCase().includes(searchQuery.toLowerCase()) ||
-     friend.username.toLowerCase().includes(searchQuery.toLowerCase()))
+    (friend.nickname?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+     friend.username?.toLowerCase().includes(searchQuery.toLowerCase()))
   )
+  
+  // Combine friends and search results
+  const allAvailableUsers = [
+    ...availableFriends,
+    ...searchResults.filter(user => !friends.some(f => f.id === user.id))
+  ]
 
   const toggleUserSelection = (userId: string) => {
     setSelectedUsers(prev => 
@@ -124,33 +187,42 @@ export function InviteMemberModal({ open, onOpenChange, channelId, channelName }
           </div>
           
           <div>
-            <Label className="mb-2">친구 목록 ({availableFriends.length}명)</Label>
+            <Label className="mb-2">
+              {searchQuery.length >= 2 
+                ? `검색 결과 (${allAvailableUsers.length}명)` 
+                : `친구 목록 (${availableFriends.length}명)`}
+            </Label>
             <ScrollArea className="h-[200px] border rounded-lg p-2">
-              {availableFriends.length === 0 ? (
+              {allAvailableUsers.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground text-sm">
-                  초대할 수 있는 친구가 없습니다
+                  {searchQuery.length >= 2 
+                    ? '검색 결과가 없습니다' 
+                    : '초대할 수 있는 친구가 없습니다'}
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {availableFriends.map((friend) => (
+                  {allAvailableUsers.map((user) => (
                     <div
-                      key={friend.id}
+                      key={user.id}
                       className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer hover:bg-accent ${
-                        selectedUsers.includes(friend.id) ? 'bg-accent' : ''
+                        selectedUsers.includes(user.id) ? 'bg-accent' : ''
                       }`}
-                      onClick={() => toggleUserSelection(friend.id)}
+                      onClick={() => toggleUserSelection(user.id)}
                     >
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={friend.profileImageUrl} />
+                        <AvatarImage src={user.profileImageUrl} />
                         <AvatarFallback className="text-xs">
-                          {friend.nickname[0].toUpperCase()}
+                          {(user.nickname || user.username || 'U')[0].toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">{friend.nickname}</p>
-                        <p className="text-xs text-muted-foreground">@{friend.username}</p>
+                        <p className="text-sm font-medium">{user.nickname || user.username}</p>
+                        <p className="text-xs text-muted-foreground">@{user.username}</p>
+                        {friends.some(f => f.id === user.id) && (
+                          <Badge variant="secondary" className="text-xs mt-1">친구</Badge>
+                        )}
                       </div>
-                      {selectedUsers.includes(friend.id) && (
+                      {selectedUsers.includes(user.id) && (
                         <Check className="h-4 w-4 text-primary" />
                       )}
                     </div>
