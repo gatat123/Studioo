@@ -222,8 +222,9 @@ export default function TeamPage() {
   }
 
   return (
-    <div className="flex h-full">
-      {/* Left Sidebar - Channels */}
+    <>
+      <div className="flex h-full">
+        {/* Left Sidebar - Channels */}
       <div className="w-64 border-r bg-muted/30">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
@@ -526,23 +527,23 @@ export default function TeamPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
-    
-    {/* Modals */}
-    <CreateChannelModal 
-      open={createChannelOpen}
-      onOpenChange={setCreateChannelOpen}
-      onChannelCreated={handleChannelCreated}
-    />
-    
-    {selectedChannel && (
-      <InviteMemberModal
-        open={inviteMemberOpen}
-        onOpenChange={setInviteMemberOpen}
-        channelId={selectedChannel.id}
-        channelName={selectedChannel.name}
+      </div>
+      
+      {/* Modals */}
+      <CreateChannelModal 
+        open={createChannelOpen}
+        onOpenChange={setCreateChannelOpen}
+        onChannelCreated={handleChannelCreated}
       />
-    )}
+      
+      {selectedChannel && (
+        <InviteMemberModal
+          open={inviteMemberOpen}
+          onOpenChange={setInviteMemberOpen}
+          channelId={selectedChannel.id}
+          channelName={selectedChannel.name}
+        />
+      )}
     </>
   )
 }
