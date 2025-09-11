@@ -433,7 +433,7 @@ export default function AdminPage() {
                         </TableCell>
                         <TableCell>{user._count?.projects || 0}</TableCell>
                         <TableCell>
-                          <Badge variant={user.isActive ? 'success' : 'secondary'}>
+                          <Badge variant={user.isActive ? 'default' : 'secondary'}>
                             {user.isActive ? '활성' : '비활성'}
                           </Badge>
                         </TableCell>
