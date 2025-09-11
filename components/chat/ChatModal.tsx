@@ -275,9 +275,9 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose })
         )}
         style={{
           position: 'fixed',
-          top: '100px',  // 헤더 아래 위치
+          top: '150px',  // 헤더 아래 위치 (50px 더 아래로)
           right: '40px',
-          maxHeight: 'calc(100vh - 140px)'
+          maxHeight: 'calc(100vh - 190px)'
         }}
       >
       {/* Header */}
