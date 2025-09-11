@@ -213,15 +213,17 @@ export default function TeamPage() {
     })
     
     // Listen for confirmation
-    socketClient.once('channel_message_sent', (data: { message: ChannelMessage, tempId: string }) => {
+    const handleMessageSent = (data: { message: ChannelMessage, tempId: string }) => {
       if (data.tempId === tempId) {
         setMessages(prev => prev.map(msg => 
           msg.id === tempId ? data.message : msg
         ))
+        socketClient.off('channel_message_sent', handleMessageSent)
       }
-    })
+    }
+    socketClient.on('channel_message_sent', handleMessageSent)
     
-    socketClient.once('channel_message_error', (data: { error: string, tempId: string }) => {
+    const handleMessageError = (data: { error: string, tempId: string }) => {
       if (data.tempId === tempId) {
         // Remove optimistic message
         setMessages(prev => prev.filter(msg => msg.id !== tempId))
@@ -230,8 +232,10 @@ export default function TeamPage() {
           description: data.error || '메시지 전송에 실패했습니다',
           variant: 'destructive'
         })
+        socketClient.off('channel_message_error', handleMessageError)
       }
-    })
+    }
+    socketClient.on('channel_message_error', handleMessageError)
   }
   
   const scrollToBottom = () => {
