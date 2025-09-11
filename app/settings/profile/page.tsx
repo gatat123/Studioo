@@ -17,6 +17,7 @@ interface UserProfile {
   username: string
   email: string
   nickname: string
+  bio?: string
   profileImageUrl?: string
 }
 
@@ -31,6 +32,7 @@ export default function ProfilePage() {
   const [formData, setFormData] = useState({
     nickname: '',
     email: '',
+    bio: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
@@ -48,7 +50,8 @@ export default function ProfilePage() {
       setFormData(prev => ({
         ...prev,
         nickname: userData.nickname || '',
-        email: userData.email || ''
+        email: userData.email || '',
+        bio: userData.bio || ''
       }))
     } catch (error) {
       toast({
@@ -64,10 +67,21 @@ export default function ProfilePage() {
   const handleUpdateProfile = async () => {
     setSaving(true)
     try {
-      await api.put('/api/auth/profile', {
+      const response = await api.put('/api/users/profile', {
         nickname: formData.nickname,
-        email: formData.email
+        email: formData.email,
+        bio: formData.bio
       })
+      
+      if (response.user) {
+        setProfile(response.user)
+        setFormData(prev => ({
+          ...prev,
+          nickname: response.user.nickname || '',
+          email: response.user.email || '',
+          bio: response.user.bio || ''
+        }))
+      }
       
       toast({
         title: '성공',
@@ -115,11 +129,7 @@ export default function ProfilePage() {
       const formData = new FormData()
       formData.append('file', file)
 
-      const response = await api.post('/api/users/profile/image', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      })
+      const response = await api.upload('/api/users/profile/image', formData)
 
       if (response.user) {
         setProfile(response.user)
@@ -177,7 +187,7 @@ export default function ProfilePage() {
 
     setSaving(true)
     try {
-      await api.put('/api/auth/password', {
+      await api.put('/api/users/password', {
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword
       })
@@ -299,6 +309,18 @@ export default function ProfilePage() {
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="이메일을 입력하세요"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="bio">자기소개</Label>
+                <textarea
+                  id="bio"
+                  value={formData.bio}
+                  onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                  placeholder="자기소개를 입력하세요"
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  rows={3}
                 />
               </div>
             </div>

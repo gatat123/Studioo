@@ -38,12 +38,32 @@ export interface FriendRequest {
 export const friendsAPI = {
   // Get friends list
   getFriends: async (): Promise<Friend[]> => {
-    const response = await apiClient.get('/api/friends')
-    // Handle both response formats
-    if (Array.isArray(response.data)) {
-      return response.data
+    try {
+      const response = await apiClient.get('/api/friends')
+      console.log('Friends API Response:', response)
+      
+      // The API returns { success: true, friends: [...], receivedRequests: [...], sentRequests: [...] }
+      if (response && response.friends) {
+        // Transform the response to match Friend interface
+        return response.friends.map((friendship: any) => ({
+          id: friendship.friend.id,
+          username: friendship.friend.username,
+          nickname: friendship.friend.nickname,
+          profileImageUrl: friendship.friend.profileImageUrl,
+          bio: friendship.friend.bio,
+          memo: friendship.memo,
+          lastLoginAt: friendship.friend.lastLoginAt,
+          isActive: friendship.friend.isActive || friendship.friend.isOnline,
+          friendshipId: friendship.id,
+          createdAt: friendship.createdAt
+        }))
+      }
+      
+      return []
+    } catch (error) {
+      console.error('Failed to get friends:', error)
+      return []
     }
-    return response.data.friends || response.friends || []
   },
 
   // Search friends

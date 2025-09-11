@@ -16,6 +16,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import FriendsDropdown from '@/components/friends/FriendsDropdown';
+import { ChannelInvitesDropdown } from '@/components/channels/ChannelInvitesDropdown';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -105,6 +106,9 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string; router: any }> =
             onOpenChange={setIsFriendsOpen}
             friendRequestCount={friendRequestCount}
           />
+
+          {/* Channel Invites */}
+          <ChannelInvitesDropdown />
 
           {/* Notifications */}
           <DropdownMenu open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>

@@ -84,6 +84,32 @@ export interface InviteMemberData {
   message?: string
 }
 
+export interface ChannelInvitation {
+  id: string
+  channelId: string
+  inviterId: string
+  inviteeId: string
+  status: 'pending' | 'accepted' | 'rejected' | 'expired'
+  expiresAt?: string
+  acceptedAt?: string
+  createdAt: string
+  channel: {
+    id: string
+    name: string
+    description?: string
+    type: string
+    _count?: {
+      members: number
+    }
+  }
+  inviter: {
+    id: string
+    username: string
+    nickname: string
+    profileImageUrl?: string
+  }
+}
+
 // Channel APIs
 export const channelsAPI = {
   // Get all channels (for current user)
@@ -158,19 +184,19 @@ export const channelsAPI = {
 
   // Accept channel invite
   acceptInvite: async (inviteId: string) => {
-    const response = await apiClient.post(`/api/channels/invites/${inviteId}/accept`)
+    const response = await apiClient.post(`/api/channels/invitations/${inviteId}/accept`)
     return response
   },
 
   // Reject channel invite
   rejectInvite: async (inviteId: string) => {
-    const response = await apiClient.post(`/api/channels/invites/${inviteId}/reject`)
+    const response = await apiClient.post(`/api/channels/invitations/${inviteId}/reject`)
     return response
   },
 
   // Get pending invites
   getPendingInvites: async () => {
-    const response = await apiClient.get('/api/channels/invites')
-    return response.invites || []
+    const response = await apiClient.get('/api/channels/invitations')
+    return response.invitations || []
   }
 }

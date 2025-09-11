@@ -86,11 +86,7 @@ export function InviteMemberModal({ open, onOpenChange, channelId, channelName }
   const loadFriendsAndMembers = async () => {
     try {
       // Load friends list
-      const friendsData = await friendsAPI.getFriends()
-      console.log('Friends data:', friendsData)
-      
-      // friendsData might be the array directly or wrapped in an object
-      const friendsList = Array.isArray(friendsData) ? friendsData : ((friendsData as any)?.friends || [])
+      const friendsList = await friendsAPI.getFriends()
       setFriends(friendsList)
       
       // Load current channel members to exclude them

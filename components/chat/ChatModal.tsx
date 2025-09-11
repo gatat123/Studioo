@@ -257,9 +257,9 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose })
   return (
     <AnimatePresence>
       <motion.div
-        initial={{ y: '100%', opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: '100%', opacity: 0 }}
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9 }}
         transition={{
           type: 'spring',
           stiffness: 300,
@@ -268,8 +268,9 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose })
         className={cn(
           "fixed bottom-4 right-4 z-50",
           "w-96 bg-white rounded-lg shadow-2xl border",
-          isMinimized ? "h-14" : "h-[500px] max-h-[calc(100vh-2rem)]",
-          "flex flex-col"
+          isMinimized ? "h-14" : "h-[500px]",
+          "flex flex-col",
+          "max-h-[calc(100vh-8rem)]"
         )}
       >
       {/* Header */}
