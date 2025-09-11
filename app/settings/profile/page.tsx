@@ -102,7 +102,17 @@ export default function ProfilePage() {
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file) return
+    if (!file) {
+      console.log('[Profile Upload] No file selected')
+      return
+    }
+
+    console.log('[Profile Upload] File selected:', {
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      lastModified: file.lastModified
+    })
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -128,6 +138,13 @@ export default function ProfilePage() {
     try {
       const formData = new FormData()
       formData.append('file', file)
+      
+      // Verify FormData content
+      console.log('[Profile Upload] FormData created with entries:', 
+        Array.from(formData.entries()).map(([k, v]) => 
+          [k, v instanceof File ? `File(${v.name}, ${v.type}, ${v.size} bytes)` : v]
+        )
+      )
 
       const response = await api.upload('/api/users/profile/image', formData)
 
