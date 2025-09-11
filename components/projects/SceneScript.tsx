@@ -70,7 +70,7 @@ export function SceneScript({
     highlights: [],
   })
   const [isEditing, setIsEditing] = useState(false)
-  const [isExpanded, setIsExpanded] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(true) // Default to expanded
   const [isSaving, setIsSaving] = useState(false)
   const [selectedText, setSelectedText] = useState<{ start: number; end: number; text: string } | null>(null)
   const { toast } = useToast()
@@ -217,7 +217,12 @@ export function SceneScript({
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => setIsEditing(!isEditing)}
+                onClick={() => {
+                  setIsEditing(!isEditing)
+                  if (!isExpanded) {
+                    setIsExpanded(true) // Expand when edit is clicked
+                  }
+                }}
               >
                 <Edit3 className="h-4 w-4" />
               </Button>

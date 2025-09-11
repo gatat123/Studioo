@@ -1384,24 +1384,14 @@ export default function ProjectDetailPage() {
                           setSelectedArtVersion(img.version)
                         }
                         
-                        // 씬 데이터 업데이트
-                        const updatedScenes = scenes.map(scene => {
-                          if (scene.id === selectedScene.id) {
-                            const updatedImages = scene.images.map((image: any) => ({
-                              ...image,
-                              isCurrent: image.id === img.id ? true : 
-                                        (image.type === img.type ? false : image.isCurrent)
-                            }))
-                            return { ...scene, images: updatedImages }
-                          }
-                          return scene
-                        })
-                        setScenes(updatedScenes)
+                        // 전체 프로젝트 데이터를 다시 로드하여 이미지 정보 업데이트
+                        await fetchProjectDetails()
                         
-                        // 선택된 씬도 업데이트
-                        const updatedScene = updatedScenes.find(s => s.id === selectedScene.id)
-                        if (updatedScene) {
-                          setSelectedScene(updatedScene)
+                        // 버전 정보 업데이트
+                        if (selectedHistoryType === 'lineart') {
+                          setSelectedLineartVersion(img.version)
+                        } else {
+                          setSelectedArtVersion(img.version)
                         }
                         
                         // 히스토리도 업데이트
