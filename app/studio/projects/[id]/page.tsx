@@ -31,7 +31,10 @@ import {
   RefreshCw,
   PenTool,
   Play,
-  RotateCcw
+  RotateCcw,
+  FileText,
+  Package,
+  Users
 } from 'lucide-react'
 import Link from 'next/link'
 import { projectsAPI, ProjectWithParticipants } from '@/lib/api/projects'
@@ -39,11 +42,16 @@ import { scenesAPI } from '@/lib/api/scenes'
 import { commentsAPI } from '@/lib/api/comments'
 import { imagesAPI } from '@/lib/api/images'
 import { socketClient } from '@/lib/socket/client'
+import api from '@/lib/api/client'
 import { useToast } from '@/hooks/use-toast'
 import type { Scene, Comment, Image } from '@/types'
 import { useUIStore } from '@/store/useUIStore'
 import { AnnotationViewModal } from '@/components/projects/AnnotationViewModal'
 import AnnotationModal from '@/components/annotation-modal'
+import { OverallStoryModal } from '@/components/projects/OverallStoryModal'
+import { SetListModal } from '@/components/projects/SetListModal'
+import { CharacterListModal } from '@/components/projects/CharacterListModal'
+import { SceneScript } from '@/components/projects/SceneScript'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -122,6 +130,15 @@ export default function ProjectDetailPage() {
   const [annotationImage, setAnnotationImage] = useState<any>(null)
   const [annotationText, setAnnotationText] = useState('')
   const [showScenePlay, setShowScenePlay] = useState(false)
+  
+  // New Story/Set/Character states
+  const [showOverallStoryModal, setShowOverallStoryModal] = useState(false)
+  const [showSetListModal, setShowSetListModal] = useState(false)
+  const [showCharacterListModal, setShowCharacterListModal] = useState(false)
+  const [overallStory, setOverallStory] = useState('')
+  const [setList, setSetList] = useState<any[]>([])
+  const [characterList, setCharacterList] = useState<any[]>([])
+  const [showScriptForScene, setShowScriptForScene] = useState<string | null>(null)
 
   useEffect(() => {
     // Minimize sidebar when entering project page with slight delay to ensure it takes effect
@@ -195,9 +212,10 @@ export default function ProjectDetailPage() {
 
   const fetchProjectDetails = async () => {
     try {
-      const [projectData, commentsData] = await Promise.all([
+      const [projectData, commentsData, storyData] = await Promise.all([
         projectsAPI.getProject(projectId),
-        commentsAPI.getProjectComments(projectId)
+        commentsAPI.getProjectComments(projectId),
+        api.get(`/api/projects/${projectId}/story`).catch(() => null)
       ])
       
       console.log('Frontend: Received project data:', {
@@ -240,6 +258,13 @@ export default function ProjectDetailPage() {
       setProject(projectData)
       setScenes(processedScenes)
       setComments(commentsData)
+      
+      // Set story data if available
+      if (storyData?.story) {
+        setOverallStory(storyData.story.overallStory || '')
+        setSetList(storyData.story.setList || [])
+        setCharacterList(storyData.story.characterList || [])
+      }
       
       // Select first scene by default
       if (processedScenes.length > 0) {
@@ -567,17 +592,50 @@ export default function ProjectDetailPage() {
           </div>
         </div>
         
-        <Link href={`/studio/projects/${projectId}/settings`}>
-          <Button variant="outline" size="icon">
-            <Settings className="h-4 w-4" />
-          </Button>
-        </Link>
+        <div className="flex items-center gap-2">
+          {/* Storyboard-specific buttons */}
+          {project.tag === 'storyboard' && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowOverallStoryModal(true)}
+              >
+                <FileText className="h-4 w-4 mr-1" />
+                전체 스토리
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSetListModal(true)}
+              >
+                <Package className="h-4 w-4 mr-1" />
+                세트
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowCharacterListModal(true)}
+              >
+                <Users className="h-4 w-4 mr-1" />
+                캐릭터
+              </Button>
+            </>
+          )}
+          
+          <Link href={`/studio/projects/${projectId}/settings`}>
+            <Button variant="outline" size="icon">
+              <Settings className="h-4 w-4" />
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      {/* Main Content - 3 Column Layout */}
+      {/* Main Content - Different layout based on project type */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - Scene List */}
-        <div className="w-80 border-r bg-card flex flex-col">
+        {/* Left Panel - Scene List (only for storyboard) */}
+        {project.tag === 'storyboard' ? (
+          <div className="w-80 border-r bg-card flex flex-col">
           <div className="p-4 border-b">
             <div className="flex items-center justify-between mb-3">
               <h2 className="font-semibold">씬 목록</h2>
@@ -673,6 +731,7 @@ export default function ProjectDetailPage() {
             </div>
           </ScrollArea>
         </div>
+        ) : null}
 
         {/* Center Panel - Image Viewer */}
         <div className="flex-1 flex flex-col bg-muted/30 min-w-0">
@@ -1491,6 +1550,44 @@ export default function ProjectDetailPage() {
         onOpenChange={setShowAnnotationModal}
         annotation={annotationModalData}
       />
+      
+      {/* Storyboard-specific modals */}
+      {project.tag === 'storyboard' && (
+        <>
+          <OverallStoryModal
+            open={showOverallStoryModal}
+            onOpenChange={setShowOverallStoryModal}
+            projectId={projectId}
+            initialStory={overallStory}
+            isReadOnly={false}
+          />
+          
+          <SetListModal
+            open={showSetListModal}
+            onOpenChange={setShowSetListModal}
+            projectId={projectId}
+            initialSetList={setList}
+            isReadOnly={false}
+          />
+          
+          <CharacterListModal
+            open={showCharacterListModal}
+            onOpenChange={setShowCharacterListModal}
+            projectId={projectId}
+            initialCharacterList={characterList}
+            isReadOnly={false}
+          />
+          
+          {/* Scene Script (bottom panel) */}
+          {selectedScene && (
+            <SceneScript
+              sceneId={selectedScene.id}
+              sceneNumber={selectedScene.sceneNumber || scenes.indexOf(selectedScene) + 1}
+              isReadOnly={false}
+            />
+          )}
+        </>
+      )}
     </div>
   )
 }
