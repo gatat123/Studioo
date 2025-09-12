@@ -100,17 +100,6 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTab, setSelectedTab] = useState('users');
 
-  useEffect(() => {
-    // Check if user is admin
-    if (!currentUser?.isAdmin) {
-      toast.error('관리자 권한이 필요합니다');
-      router.push('/studio');
-      return;
-    }
-
-    void loadData();
-  }, [currentUser, router, loadData]);
-
   const loadData = useCallback(async () => {
     try {
       await Promise.all([
@@ -122,6 +111,17 @@ export default function AdminPage() {
       console.error('Failed to load admin data:', error);
     }
   }, []);
+
+  useEffect(() => {
+    // Check if user is admin
+    if (!currentUser?.isAdmin) {
+      toast.error('관리자 권한이 필요합니다');
+      router.push('/studio');
+      return;
+    }
+
+    void loadData();
+  }, [currentUser, router, loadData]);
 
   const loadUsers = async () => {
     try {
