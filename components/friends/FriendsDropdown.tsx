@@ -7,13 +7,9 @@ import {
   Search, 
   Check, 
   X, 
-  Bell,
   Circle,
-  MessageSquare,
   MoreVertical,
   UserMinus,
-  Settings,
-  Edit2,
   StickyNote,
   MessageCircle
 } from 'lucide-react';
@@ -32,7 +28,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
-import Link from 'next/link';
 import ChatModal from '@/components/chat/ChatModal';
 
 interface Friend {

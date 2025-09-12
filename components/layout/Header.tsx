@@ -3,7 +3,7 @@
 import React, { useState, Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Bell, Menu, User, ChevronDown, LogOut, Settings, UserCircle } from 'lucide-react';
+import { Menu, User, ChevronDown, LogOut, Settings, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,16 +13,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import FriendsDropdown from '@/components/friends/FriendsDropdown';
 import { MessagesModal } from '@/components/messages/MessagesModal';
 import NotificationDropdown from '@/components/notifications/NotificationDropdown';
 import { channelsAPI, type ChannelInvitation } from '@/lib/api/channels';
 import { useToast } from '@/hooks/use-toast';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Hash, Check, X, Users } from 'lucide-react';
 import { socketClient } from '@/lib/socket/client';
 
 interface HeaderProps {

@@ -9,7 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   Table,
   TableBody,
@@ -35,7 +34,6 @@ import {
   Eye,
   Trash2,
   Shield,
-  AlertCircle,
   UserX,
   Mail,
   Calendar,
@@ -100,7 +98,6 @@ export default function AdminPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [channels, setChannels] = useState<Channel[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
   const [selectedTab, setSelectedTab] = useState('users');
 
   useEffect(() => {
@@ -111,11 +108,10 @@ export default function AdminPage() {
       return;
     }
 
-    loadData();
+    void loadData();
   }, [currentUser, router]);
 
   const loadData = async () => {
-    setLoading(true);
     try {
       await Promise.all([
         loadUsers(),
@@ -124,8 +120,6 @@ export default function AdminPage() {
       ]);
     } catch (error) {
       console.error('Failed to load admin data:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
