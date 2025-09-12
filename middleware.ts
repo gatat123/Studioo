@@ -2,7 +2,14 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, hostname } = request.nextUrl;
+  
+  // Production에서 www를 non-www로 리디렉션
+  if (process.env.NODE_ENV === 'production' && hostname === 'www.dustdio.com') {
+    return NextResponse.redirect(
+      new URL(`https://dustdio.com${pathname}`, request.url)
+    );
+  }
   
   // 정적 파일과 API 라우트는 건너뛰기
   if (
