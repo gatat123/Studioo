@@ -99,6 +99,20 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<NodeJS.Timeout>();
 
+  // CustomEvent 리스너 추가 - 친구 요청 알림에서 드롭다운 열기
+  useEffect(() => {
+    const handleOpenFriendsDropdown = () => {
+      onOpenChange(true);
+      setActiveTab('requests'); // 친구 요청 탭으로 자동 전환
+    };
+    
+    window.addEventListener('openFriendsDropdown', handleOpenFriendsDropdown);
+    
+    return () => {
+      window.removeEventListener('openFriendsDropdown', handleOpenFriendsDropdown);
+    };
+  }, [onOpenChange]);
+
   // 현재 사용자 ID 가져오기 및 Socket.io 연결
   useEffect(() => {
     const userData = localStorage.getItem('user');
@@ -255,7 +269,16 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
       });
 
       if (response.ok) {
+        const data = await response.json();
         toast.success('친구 요청을 보냈습니다!');
+        
+        // 소켓으로 친구 요청 알림 전송
+        const socket = socketClient.connect();
+        socket.emit('friend_request_sent', {
+          receiverId: userId,
+          request: data.request
+        });
+        
         await fetchFriends();
         setSearchQuery('');
         setSearchResults([]);

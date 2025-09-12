@@ -48,6 +48,11 @@ export default function NotificationDropdown() {
   useEffect(() => {
     if (!user) return;
 
+    // 브라우저 알림 권한 요청
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+
     // Load initial notifications
     loadNotifications();
 
@@ -139,14 +144,27 @@ export default function NotificationDropdown() {
       setNotifications(prev => [notification, ...prev]);
       setUnreadCount(prev => prev + 1);
 
-      // Show toast notification
-      toast.info('친구 요청', {
-        description: `${data.sender.nickname}님이 친구 요청을 보냈습니다`,
+      // Show persistent toast notification
+      toast.success(`🎉 ${data.sender.nickname}님의 친구 요청`, {
+        description: '친구 요청을 받았습니다! 친구 목록에서 확인하세요.',
+        duration: 10000, // 10초 동안 표시
         action: {
-          label: '확인',
-          onClick: () => setIsOpen(true)
+          label: '친구 목록 열기',
+          onClick: () => {
+            // 친구 목록 드롭다운을 열기 위한 이벤트 발생
+            window.dispatchEvent(new CustomEvent('openFriendsDropdown'));
+          }
         }
       });
+      
+      // 브라우저 알림 권한이 있으면 브라우저 알림도 표시
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('친구 요청', {
+          body: `${data.sender.nickname}님이 친구 요청을 보냈습니다`,
+          icon: data.sender.profileImageUrl || '/default-avatar.png',
+          tag: 'friend-request'
+        });
+      }
     });
 
     return () => {
