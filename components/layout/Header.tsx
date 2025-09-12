@@ -158,11 +158,13 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string; router: any }> =
 
         {/* Logo */}
         <Link href="/studio" className="flex items-center space-x-2 mr-6">
+          {/* 로고 이미지를 public/dustdio-logo.png에 넣으면 아래 주석을 해제하세요 */}
+          {/* <img src="/dustdio-logo.png" alt="DustDio Logo" className="h-8 w-8 rounded-lg object-cover" /> */}
           <div className="h-8 w-8 rounded-lg bg-black flex items-center justify-center">
-            <span className="text-white font-bold text-sm">S</span>
+            <span className="text-white font-bold text-sm">D</span>
           </div>
           <span className="hidden font-semibold sm:inline-block">
-            Studio
+            DustDio
           </span>
         </Link>
 

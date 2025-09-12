@@ -5,7 +5,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-center p-24">
       <div className="z-10 max-w-5xl w-full items-center justify-between text-sm">
         <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
-          Studio Collaboration Platform
+          DustDio Collaboration Platform
         </h1>
         <p className="mt-6 text-lg leading-8 text-gray-600">
           일러스트레이터와 클라이언트를 위한 실시간 협업 플랫폼
