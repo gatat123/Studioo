@@ -8,10 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { 
   Send, 
-  Users, 
   MessageSquare, 
-  Video, 
-  Phone,
   MoreVertical,
   Search,
   Plus,

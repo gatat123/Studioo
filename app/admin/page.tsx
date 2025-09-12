@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -109,9 +109,9 @@ export default function AdminPage() {
     }
 
     void loadData();
-  }, [currentUser, router]);
+  }, [currentUser, router, loadData]);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       await Promise.all([
         loadUsers(),
@@ -121,7 +121,7 @@ export default function AdminPage() {
     } catch (error) {
       console.error('Failed to load admin data:', error);
     }
-  };
+  }, []);
 
   const loadUsers = async () => {
     try {

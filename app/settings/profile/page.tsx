@@ -7,7 +7,6 @@ import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
 import { ArrowLeft, Camera, Save, Trash2 } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import api from '@/lib/api/client'
@@ -39,7 +38,7 @@ export default function ProfilePage() {
   })
 
   useEffect(() => {
-    fetchProfile()
+    void fetchProfile()
   }, [])
 
   const fetchProfile = async () => {

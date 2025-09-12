@@ -49,7 +49,7 @@ export default function StudioPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchProjects();
+      void fetchProjects();
     }
   }, [isAuthenticated]);
   
@@ -63,8 +63,6 @@ export default function StudioPage() {
     }
   }, [isInitializing, isLoading, isAuthenticated, router]);
   
-  // Count projects with updates
-  const projectsWithUpdates = projects.filter(p => p.hasUpdates).length;
   
   // Show loading during initialization
   if (isInitializing || isLoading) {

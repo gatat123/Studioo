@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
@@ -35,7 +35,7 @@ export default function LoginPage() {
     // 네이버 웨일 브라우저 감지
     const userAgent = navigator.userAgent.toLowerCase();
     setIsWhale(userAgent.includes('whale'));
-  }, []);
+  }, [checkAuth]);
   
   useEffect(() => {
     if (isAuthenticated) {

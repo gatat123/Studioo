@@ -32,7 +32,7 @@ export default function ForgotPasswordPage() {
     resolver: zodResolver(forgotPasswordSchema),
   });
 
-  const onSubmit = async (data: ForgotPasswordFormData) => {
+  const onSubmit = async (_data: ForgotPasswordFormData) => {
     setIsLoading(true);
     setError(null);
     
@@ -44,8 +44,8 @@ export default function ForgotPasswordPage() {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       setIsSuccess(true);
-    } catch (err: any) {
-      setError(err?.message || '비밀번호 재설정 요청에 실패했습니다.');
+    } catch (err: unknown) {
+      setError((err as Error)?.message || '비밀번호 재설정 요청에 실패했습니다.');
     } finally {
       setIsLoading(false);
     }

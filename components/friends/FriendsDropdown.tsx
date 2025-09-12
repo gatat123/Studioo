@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Users, 
   UserPlus, 
@@ -19,7 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { socketClient } from '@/lib/socket/client';
+import { socketClient, connectSocket } from '@/lib/socket/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -77,17 +77,16 @@ interface FriendsDropdownProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   friendRequestCount?: number;
-  onMessageClick?: (friend: any) => void;
 }
 
-export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCount = 0, onMessageClick }: FriendsDropdownProps) {
-  const [activeChatFriend, setActiveChatFriend] = useState<any>(null);
+export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCount = 0 }: FriendsDropdownProps) {
+  const [activeChatFriend, setActiveChatFriend] = useState<Friend['friend'] | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string>('');
   const [friends, setFriends] = useState<Friend[]>([]);
   const [receivedRequests, setReceivedRequests] = useState<FriendRequest[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  // Removed unused isSearching state
   const [activeTab, setActiveTab] = useState('friends');
   const [showAddFriend, setShowAddFriend] = useState(false);
   const [editingMemo, setEditingMemo] = useState<string | null>(null);
@@ -109,7 +108,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
     };
   }, [onOpenChange]);
 
-  // 현재 사용자 ID 가져오기 및 Socket.io 연결
+  // 현재 사용자 ID 가져오기
   useEffect(() => {
     const userData = localStorage.getItem('user');
     if (userData) {
@@ -120,68 +119,117 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
         console.error('Error parsing user data:', error);
       }
     }
+  }, []);
 
-    // Socket.io 연결 및 실시간 이벤트 리스너
-    const connectSocket = async () => {
-      const socket = (window as any).socket;
-      if (!socket) return;
+  // Socket.io 실시간 이벤트 리스너 (최적화된 버전)
+  useEffect(() => {
+    // 소켓 연결 확인 및 연결
+    const socket = socketClient.isConnected() ? socketClient.getSocket() : connectSocket();
+    if (!socket) return;
 
-      // 친구 요청 받음
-      socket.on('friend_request_received', (data: any) => {
-        console.log('Friend request received:', data);
-        fetchFriends(); // 친구 목록 새로고침
-        toast.info(`${data.sender?.nickname || '누군가'}님이 친구 요청을 보냈습니다!`);
+    // 친구 요청 받음 - 요청 목록에만 추가
+    const handleFriendRequestReceived = (data: {
+      sender?: { id: string; username: string; nickname: string; profileImageUrl?: string };
+      message?: string;
+      requestId?: string;
+    }) => {
+      console.log('Friend request received:', data);
+      setReceivedRequests(prev => {
+        // 중복 확인
+        const exists = prev.some(req => req.id === data.requestId);
+        if (exists) return prev;
+        
+        return [{
+          id: data.requestId || Date.now().toString(),
+          sender: data.sender,
+          message: data.message,
+          createdAt: new Date().toISOString()
+        }, ...prev];
       });
-
-      // 친구 요청 수락됨
-      socket.on('friend_request_accepted', (data: any) => {
-        console.log('Friend request accepted:', data);
-        fetchFriends(); // 친구 목록 새로고침
-        toast.success(`${data.receiver?.nickname || '누군가'}님이 친구 요청을 수락했습니다!`);
-      });
-
-      // 친구 요청 거절됨
-      socket.on('friend_request_rejected', (data: any) => {
-        console.log('Friend request rejected:', data);
-        fetchFriends(); // 친구 목록 새로고침
-      });
-
-      // 친구 온라인 상태 변경
-      socket.on('friend_online_status', (data: { userId: string; isOnline: boolean }) => {
-        setFriends(prevFriends => 
-          prevFriends.map(f => 
-            f.friend.id === data.userId 
-              ? { ...f, friend: { ...f.friend, isOnline: data.isOnline } }
-              : f
-          )
-        );
-      });
-
-      // 친구 삭제됨
-      socket.on('friend_removed', (data: any) => {
-        console.log('Friend removed:', data);
-        fetchFriends(); // 친구 목록 새로고침
-      });
+      toast.info(`${data.sender?.nickname || '누군가'}님이 친구 요청을 보냈습니다!`);
     };
 
-    connectSocket();
-
-    // Cleanup
-    return () => {
-      const socket = (window as any).socket;
-      if (socket) {
-        socket.off('friend_request_received');
-        socket.off('friend_request_accepted');
-        socket.off('friend_request_rejected');
-        socket.off('friend_online_status');
-        socket.off('friend_removed');
+    // 친구 요청 수락됨 - 친구 목록에 추가, 요청에서 제거
+    const handleFriendRequestAccepted = (data: {
+      acceptedBy?: { id: string; username: string; nickname: string; profileImageUrl?: string };
+    }) => {
+      console.log('Friend request accepted:', data);
+      
+      // 보낸 요청에서 제거 (내가 보낸 요청이 수락된 경우)
+      setReceivedRequests(prev => prev.filter(req => req.sender?.id !== data.acceptedBy?.id));
+      
+      // 친구 목록에 추가
+      if (data.acceptedBy) {
+        setFriends(prev => {
+          const exists = prev.some(f => f.friend.id === data.acceptedBy.id);
+          if (exists) return prev;
+          
+          return [{
+            id: Date.now().toString(),
+            friend: {
+              id: data.acceptedBy.id,
+              username: data.acceptedBy.username,
+              nickname: data.acceptedBy.nickname,
+              profileImageUrl: data.acceptedBy.profileImageUrl,
+              isActive: true,
+              isOnline: true
+            },
+            createdAt: new Date().toISOString()
+          }, ...prev];
+        });
       }
+      
+      toast.success(`${data.acceptedBy?.nickname || '누군가'}님이 친구 요청을 수락했습니다!`);
+    };
+
+    // 친구 요청 거절됨
+    const handleFriendRequestRejected = (data: Record<string, unknown>) => {
+      console.log('Friend request rejected:', data);
+      // 특별한 처리 없음 - 이미 보낸 요청 목록에서 자동 제거됨
+    };
+
+    // 친구 온라인 상태 변경 - 실시간 업데이트
+    const handleFriendPresenceUpdate = (data: { userId: string; status: string }) => {
+      setFriends(prevFriends => 
+        prevFriends.map(f => 
+          f.friend.id === data.userId 
+            ? { ...f, friend: { ...f.friend, isOnline: data.status === 'online' } }
+            : f
+        )
+      );
+    };
+
+    // 친구 삭제됨 - 목록에서 제거
+    const handleFriendRemoved = (data: { removedBy: string }) => {
+      console.log('Friend removed:', data);
+      setFriends(prev => prev.filter(f => f.friend.id !== data.removedBy));
+    };
+
+    // 이벤트 리스너 등록
+    socket.on('friend_request_received', handleFriendRequestReceived);
+    socket.on('friend_request_accepted', handleFriendRequestAccepted);
+    socket.on('friend_request_rejected', handleFriendRequestRejected);
+    socket.on('friend_presence_update', handleFriendPresenceUpdate);
+    socket.on('friend_removed', handleFriendRemoved);
+
+    // Cleanup - 메모리 누수 방지
+    return () => {
+      socket.off('friend_request_received', handleFriendRequestReceived);
+      socket.off('friend_request_accepted', handleFriendRequestAccepted);
+      socket.off('friend_request_rejected', handleFriendRequestRejected);
+      socket.off('friend_presence_update', handleFriendPresenceUpdate);
+      socket.off('friend_removed', handleFriendRemoved);
     };
   }, []);
 
 
-  // 친구 목록 불러오기
-  const fetchFriends = async () => {
+  // 친구 목록 불러오기 (초기 로드 및 필요시에만)
+  const fetchFriends = useCallback(async (force = false) => {
+    // 이미 데이터가 있고 강제 리로드가 아니면 스킵
+    if (!force && friends.length > 0) {
+      return;
+    }
+
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/friends`, {
@@ -198,7 +246,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
     } catch (error) {
       console.error('Error fetching friends:', error);
     }
-  };
+  }, [friends.length]);
 
   // 실시간 검색
   const handleSearch = async (query: string) => {
@@ -207,7 +255,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
       return;
     }
 
-    setIsSearching(true);
+    // Search is now synchronous
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
@@ -225,8 +273,6 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
       }
     } catch (error) {
       console.error('Error searching users:', error);
-    } finally {
-      setIsSearching(false);
     }
   };
 
@@ -269,13 +315,23 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
         toast.success('친구 요청을 보냈습니다!');
         
         // 소켓으로 친구 요청 알림 전송
-        const socket = socketClient.connect();
-        socket.emit('friend_request_sent', {
-          receiverId: userId,
-          request: data.request
-        });
+        const socket = socketClient.getSocket();
+        if (socket) {
+          socket.emit('friend_request_sent', {
+            receiverId: userId,
+            message: data.message,
+            requestId: data.request?.id
+          });
+        }
         
-        await fetchFriends();
+        // 전체 목록 리로드 대신 검색 결과만 업데이트
+        setSearchResults(prev => 
+          prev.map(user => 
+            user.id === userId 
+              ? { ...user, status: 'request_sent' }
+              : user
+          )
+        );
         setSearchQuery('');
         setSearchResults([]);
       } else {
@@ -303,7 +359,28 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
 
       if (response.ok) {
         toast.success(action === 'accept' ? '친구 요청을 수락했습니다!' : '친구 요청을 거절했습니다');
-        await fetchFriends();
+        
+        // 요청 목록에서 제거
+        setReceivedRequests(prev => prev.filter(req => req.id !== requestId));
+        
+        // 수락한 경우에만 친구 목록에 추가
+        if (action === 'accept') {
+          const acceptedRequest = receivedRequests.find(req => req.id === requestId);
+          if (acceptedRequest?.sender) {
+            setFriends(prev => [{
+              id: Date.now().toString(),
+              friend: {
+                id: acceptedRequest.sender.id,
+                username: acceptedRequest.sender.username,
+                nickname: acceptedRequest.sender.nickname,
+                profileImageUrl: acceptedRequest.sender.profileImageUrl,
+                isActive: true,
+                isOnline: true
+              },
+              createdAt: new Date().toISOString()
+            }, ...prev]);
+          }
+        }
       } else {
         toast.error('요청 처리 실패');
       }
@@ -328,7 +405,9 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
 
       if (response.ok) {
         toast.success('친구가 삭제되었습니다');
-        await fetchFriends();
+        
+        // 친구 목록에서 제거
+        setFriends(prev => prev.filter(f => f.friend.id !== friendId));
       } else {
         toast.error('친구 삭제 실패');
       }
@@ -356,7 +435,16 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
 
       if (response.ok) {
         toast.success('메모가 저장되었습니다');
-        await fetchFriends();
+        
+        // 로컬 상태 업데이트
+        setFriends(prev => 
+          prev.map(f => 
+            f.friend.id === friendId 
+              ? { ...f, memo: memoText.trim() || undefined }
+              : f
+          )
+        );
+        
         setEditingMemo(null);
         setMemoText('');
       } else {
@@ -368,11 +456,12 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
     }
   };
 
+  // 드롭다운 열 때 최초 1회만 데이터 로드
   useEffect(() => {
-    if (isOpen) {
-      fetchFriends();
+    if (isOpen && friends.length === 0) {
+      fetchFriends(true);
     }
-  }, [isOpen]);
+  }, [isOpen, friends.length, fetchFriends]);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);

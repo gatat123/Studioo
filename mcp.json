@@ -1,0 +1,295 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/c/Users/a0109/studio"
+      ],
+      "env": {
+        "NODE_OPTIONS": "--no-warnings",
+        "NODE_ENV": "${NODE_ENV}",
+        "DATABASE_URL": "${DATABASE_URL}",
+        "NEXTAUTH_URL": "${NEXTAUTH_URL}",
+        "NEXTAUTH_SECRET": "${NEXTAUTH_SECRET}",
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}",
+        "NODE_ENV": "${NODE_ENV}",
+        "DATABASE_URL": "${DATABASE_URL}",
+        "NEXTAUTH_URL": "${NEXTAUTH_URL}",
+        "NEXTAUTH_SECRET": "${NEXTAUTH_SECRET}",
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    },
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "${DATABASE_URL}"
+      ],
+      "env": {
+        "NODE_ENV": "${NODE_ENV}",
+        "DATABASE_URL": "${DATABASE_URL}",
+        "NEXTAUTH_URL": "${NEXTAUTH_URL}",
+        "NEXTAUTH_SECRET": "${NEXTAUTH_SECRET}",
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    },
+    "brave-search": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-brave-search"
+      ],
+      "env": {
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}",
+        "NODE_ENV": "${NODE_ENV}",
+        "DATABASE_URL": "${DATABASE_URL}",
+        "NEXTAUTH_URL": "${NEXTAUTH_URL}",
+        "NEXTAUTH_SECRET": "${NEXTAUTH_SECRET}",
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}"
+      }
+    },
+    "memory": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-memory"
+      ],
+      "env": {
+        "NODE_ENV": "${NODE_ENV}",
+        "DATABASE_URL": "${DATABASE_URL}",
+        "NEXTAUTH_URL": "${NEXTAUTH_URL}",
+        "NEXTAUTH_SECRET": "${NEXTAUTH_SECRET}",
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-puppeteer"
+      ],
+      "env": {
+        "NODE_ENV": "${NODE_ENV}",
+        "DATABASE_URL": "${DATABASE_URL}",
+        "NEXTAUTH_URL": "${NEXTAUTH_URL}",
+        "NEXTAUTH_SECRET": "${NEXTAUTH_SECRET}",
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    },
+    "git": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-git",
+        "--repository",
+        "/c/Users/a0109/studio"
+      ],
+      "env": {
+        "NODE_ENV": "${NODE_ENV}",
+        "DATABASE_URL": "${DATABASE_URL}",
+        "NEXTAUTH_URL": "${NEXTAUTH_URL}",
+        "NEXTAUTH_SECRET": "${NEXTAUTH_SECRET}",
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    },
+    "claude-db": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-claude-db",
+        "--data-dir",
+        "/c/Users/a0109/studio/.mcp-data"
+      ],
+      "env": {
+        "NODE_ENV": "${NODE_ENV}",
+        "DATABASE_URL": "${DATABASE_URL}",
+        "NEXTAUTH_URL": "${NEXTAUTH_URL}",
+        "NEXTAUTH_SECRET": "${NEXTAUTH_SECRET}",
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sequential-thinking"
+      ],
+      "env": {
+        "NODE_ENV": "${NODE_ENV}",
+        "DATABASE_URL": "${DATABASE_URL}",
+        "NEXTAUTH_URL": "${NEXTAUTH_URL}",
+        "NEXTAUTH_SECRET": "${NEXTAUTH_SECRET}",
+        "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+        "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+      }
+    }
+  },
+  "globalShortcut": "Ctrl+M",
+  "promptRoles": {
+    "frontend": {
+      "name": "Frontend Developer",
+      "description": "React/Next.js 전문가로 UI/UX 개발 담당",
+      "instructions": [
+        "React 및 Next.js 15 App Router 사용",
+        "TypeScript 엄격 모드 적용",
+        "Tailwind CSS와 shadcn/ui 컴포넌트 활용",
+        "Zustand를 사용한 상태 관리",
+        "Socket.io 실시간 통신 구현",
+        "Framer Motion 애니메이션 적용"
+      ]
+    },
+    "backend": {
+      "name": "Backend Developer",
+      "description": "Node.js/Prisma 백엔드 시스템 개발",
+      "instructions": [
+        "Next.js API Routes 사용",
+        "Prisma ORM으로 데이터베이스 관리",
+        "NextAuth.js 인증 시스템",
+        "Socket.io 서버 구현",
+        "Winston 로깅 시스템",
+        "Zod 스키마 검증"
+      ]
+    },
+    "fullstack": {
+      "name": "Fullstack Developer",
+      "description": "전체 시스템 아키텍처 설계 및 구현",
+      "instructions": [
+        "프론트엔드와 백엔드 통합",
+        "API 설계 및 구현",
+        "데이터베이스 스키마 설계",
+        "배포 파이프라인 구성",
+        "성능 최적화",
+        "보안 고려사항 적용"
+      ]
+    },
+    "designer": {
+      "name": "UI/UX Designer",
+      "description": "사용자 경험 및 인터페이스 디자인",
+      "instructions": [
+        "Figma 디자인 시스템 구축",
+        "컴포넌트 라이브러리 설계",
+        "반응형 디자인 구현",
+        "접근성 표준 준수",
+        "다크 모드 지원",
+        "마이크로 인터랙션 설계"
+      ]
+    }
+  },
+  "customTools": {
+    "dev": {
+      "command": "npm run dev",
+      "description": "개발 서버 시작 (프론트엔드 + 백엔드)",
+      "workingDirectory": "/c/Users/a0109/studio"
+    },
+    "build": {
+      "command": "npm run build",
+      "description": "프로덕션 빌드",
+      "workingDirectory": "/c/Users/a0109/studio"
+    },
+    "migrate": {
+      "command": "npm run migrate:dev",
+      "description": "데이터베이스 마이그레이션",
+      "workingDirectory": "/c/Users/a0109/studio/backend"
+    },
+    "studio": {
+      "command": "npx prisma studio",
+      "description": "Prisma Studio 실행",
+      "workingDirectory": "/c/Users/a0109/studio/backend"
+    },
+    "lint": {
+      "command": "npm run lint",
+      "description": "ESLint 실행",
+      "workingDirectory": "/c/Users/a0109/studio"
+    },
+    "typecheck": {
+      "command": "npm run typecheck",
+      "description": "TypeScript 타입 체크",
+      "workingDirectory": "/c/Users/a0109/studio"
+    }
+  },
+  "environmentVariables": {
+    "NODE_ENV": "development",
+    "DATABASE_URL": "${DATABASE_URL}",
+    "NEXTAUTH_URL": "${NEXTAUTH_URL}",
+    "NEXTAUTH_SECRET": "${NEXTAUTH_SECRET}",
+    "JWT_SECRET": "${JWT_SECRET}",
+    "SOCKET_PORT": "${SOCKET_PORT}",
+    "UPLOAD_DIR": "${UPLOAD_DIR}",
+    "MAX_FILE_SIZE": "${MAX_FILE_SIZE}",
+    "ADMIN_EMAIL": "${ADMIN_EMAIL}",
+    "CLIENT_URL": "${CLIENT_URL}",
+    "GITHUB_TOKEN": "${GITHUB_TOKEN}",
+    "BRAVE_API_KEY": "${BRAVE_API_KEY}"
+  },
+  "projectInfo": {
+    "name": "DustDio Collaboration Platform",
+    "type": "fullstack",
+    "framework": {
+      "frontend": "Next.js 15 (App Router)",
+      "backend": "Next.js API Routes + Socket.io",
+      "database": "PostgreSQL with Prisma ORM",
+      "ui": "Tailwind CSS + shadcn/ui",
+      "auth": "NextAuth.js",
+      "realtime": "Socket.io"
+    },
+    "structure": {
+      "root": "/c/Users/a0109/studio",
+      "frontend": "/c/Users/a0109/studio",
+      "backend": "/c/Users/a0109/studio/backend",
+      "components": "/c/Users/a0109/studio/components",
+      "api": "/c/Users/a0109/studio/app/api",
+      "database": "/c/Users/a0109/studio/backend/prisma"
+    }
+  },
+  "quickCommands": {
+    "install": "npm install && cd backend && npm install",
+    "dev:frontend": "npm run dev",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:all": "npm run dev & cd backend && npm run dev",
+    "reset:db": "cd backend && npx prisma migrate reset --force",
+    "seed:db": "cd backend && npx prisma db seed",
+    "test": "npm test",
+    "clean": "rm -rf node_modules .next && cd backend && rm -rf node_modules .next"
+  },
+  "aiAssistants": {
+    "codeReview": {
+      "enabled": true,
+      "rules": [
+        "TypeScript 타입 안전성 검사",
+        "React 최적화 패턴 확인",
+        "보안 취약점 검사",
+        "성능 최적화 제안",
+        "코드 중복 제거"
+      ]
+    },
+    "documentation": {
+      "enabled": true,
+      "format": "markdown",
+      "languages": ["ko", "en"]
+    },
+    "testing": {
+      "enabled": true,
+      "framework": "jest",
+      "coverage": 80
+    }
+  }
+}
