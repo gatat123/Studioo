@@ -39,8 +39,8 @@ export interface APIResponse<T = any> {
  * Base API client with authentication and error handling
  */
 class APIClient {
-  private baseURL: string;
-  private defaultHeaders: HeadersInit;
+  private readonly baseURL: string;
+  private readonly defaultHeaders: HeadersInit;
 
   constructor(baseURL: string = API_BASE_URL) {
     this.baseURL = baseURL;
