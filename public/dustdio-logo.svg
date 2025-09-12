@@ -1,0 +1,32 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- 양 몸통 (베이지색) -->
+  <ellipse cx="100" cy="120" rx="55" ry="50" fill="#d4c5b0" stroke="#6b4c3a" stroke-width="3"/>
+  
+  <!-- 양털 모양 (머리) -->
+  <circle cx="100" cy="80" r="35" fill="#d4c5b0" stroke="#6b4c3a" stroke-width="3"/>
+  <circle cx="75" cy="75" r="20" fill="#d4c5b0" stroke="#6b4c3a" stroke-width="3"/>
+  <circle cx="125" cy="75" r="20" fill="#d4c5b0" stroke="#6b4c3a" stroke-width="3"/>
+  <circle cx="70" cy="95" r="18" fill="#d4c5b0" stroke="#6b4c3a" stroke-width="3"/>
+  <circle cx="130" cy="95" r="18" fill="#d4c5b0" stroke="#6b4c3a" stroke-width="3"/>
+  
+  <!-- 눈 -->
+  <circle cx="85" cy="85" r="8" fill="#6b4c3a"/>
+  <circle cx="115" cy="85" r="8" fill="#6b4c3a"/>
+  <circle cx="87" cy="83" r="2" fill="white"/>
+  <circle cx="117" cy="83" r="2" fill="white"/>
+  
+  <!-- 볼터치 -->
+  <ellipse cx="70" cy="95" rx="8" ry="5" fill="#f4a09c" opacity="0.6"/>
+  <ellipse cx="130" cy="95" rx="8" ry="5" fill="#f4a09c" opacity="0.6"/>
+  
+  <!-- 입 -->
+  <path d="M 95 95 Q 100 100 105 95" fill="none" stroke="#6b4c3a" stroke-width="2" stroke-linecap="round"/>
+  
+  <!-- 팔 -->
+  <path d="M 70 120 Q 50 130 55 145" fill="none" stroke="#6b4c3a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M 130 120 Q 150 130 145 145" fill="none" stroke="#6b4c3a" stroke-width="3" stroke-linecap="round"/>
+  
+  <!-- 다리 -->
+  <rect x="80" y="150" width="12" height="20" rx="6" fill="#d4c5b0" stroke="#6b4c3a" stroke-width="3"/>
+  <rect x="108" y="150" width="12" height="20" rx="6" fill="#d4c5b0" stroke="#6b4c3a" stroke-width="3"/>
+</svg>
