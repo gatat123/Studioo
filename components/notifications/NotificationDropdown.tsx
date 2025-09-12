@@ -60,7 +60,20 @@ export default function NotificationDropdown() {
     const socket = socketClient.connect();
 
     // Listen for new channel messages
-    socket.on('new_channel_message', (data: { message: any }) => {
+    socket.on('new_channel_message', (data: { message: {
+      id: string;
+      content: string;
+      senderId: string;
+      channelId: string;
+      sender: {
+        id: string;
+        nickname: string;
+        profileImageUrl?: string;
+      };
+      channel?: {
+        name: string;
+      };
+    } }) => {
       // Only show notification if message is from another user
       if (data.message.senderId !== user.id) {
         const notification: Notification = {
@@ -94,7 +107,20 @@ export default function NotificationDropdown() {
     });
 
     // Listen for channel invites
-    socket.on('channel_invite_received', (data: { invite: any }) => {
+    socket.on('channel_invite_received', (data: { invite: {
+      id: string;
+      channelId: string;
+      inviterId: string;
+      channel: {
+        id: string;
+        name: string;
+      };
+      inviter: {
+        id: string;
+        nickname: string;
+        profileImageUrl?: string;
+      };
+    } }) => {
       const notification: Notification = {
         id: `invite-${Date.now()}`,
         type: 'channel_invite',
@@ -126,7 +152,14 @@ export default function NotificationDropdown() {
     });
 
     // Listen for friend requests
-    socket.on('friend_request_received', (data: { sender: any, message?: string }) => {
+    socket.on('friend_request_received', (data: { 
+      sender: {
+        id: string;
+        nickname: string;
+        profileImageUrl?: string;
+      };
+      message?: string;
+    }) => {
       const notification: Notification = {
         id: `friend-${Date.now()}`,
         type: 'friend_request',
@@ -230,11 +263,15 @@ export default function NotificationDropdown() {
   };
 
   const handleNotificationClick = (notification: Notification) => {
+    // 채널 초대는 별도 처리
+    if (notification.type === 'channel_invite') {
+      return;
+    }
+    
     markAsRead(notification.id);
 
     switch (notification.type) {
       case 'channel_message':
-      case 'channel_invite':
         router.push('/studio/team');
         break;
       case 'friend_request':
@@ -243,6 +280,35 @@ export default function NotificationDropdown() {
     }
 
     setIsOpen(false);
+  };
+
+  const handleChannelInviteResponse = async (notification: Notification, accept: boolean) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/invitations/${notification.metadata?.inviteId}/${accept ? 'accept' : 'reject'}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        toast.success(accept ? '채널에 참여했습니다!' : '초대를 거절했습니다.');
+        // 알림 제거
+        setNotifications(prev => prev.filter(n => n.id !== notification.id));
+        setUnreadCount(prev => Math.max(0, prev - 1));
+        
+        if (accept) {
+          router.push('/studio/team');
+          setIsOpen(false);
+        }
+      } else {
+        toast.error('처리 중 오류가 발생했습니다.');
+      }
+    } catch (error) {
+      console.error('Failed to respond to invite:', error);
+      toast.error('처리 중 오류가 발생했습니다.');
+    }
   };
 
   const getNotificationIcon = (type: string) => {
@@ -299,10 +365,16 @@ export default function NotificationDropdown() {
                 <DropdownMenuItem
                   key={notification.id}
                   className={cn(
-                    "flex items-start gap-3 p-3 cursor-pointer",
+                    "flex items-start gap-3 p-3",
+                    notification.type === 'channel_invite' ? "cursor-default" : "cursor-pointer",
                     !notification.isRead && "bg-muted/50"
                   )}
                   onClick={() => handleNotificationClick(notification)}
+                  onSelect={(e) => {
+                    if (notification.type === 'channel_invite') {
+                      e.preventDefault();
+                    }
+                  }}
                 >
                   <div className="flex-shrink-0 mt-1">
                     {notification.metadata?.senderAvatar ? (
@@ -331,6 +403,32 @@ export default function NotificationDropdown() {
                         locale: ko
                       })}
                     </p>
+                    {notification.type === 'channel_invite' && (
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleChannelInviteResponse(notification, true);
+                          }}
+                          className="h-7 text-xs"
+                        >
+                          수락
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleChannelInviteResponse(notification, false);
+                          }}
+                          className="h-7 text-xs"
+                        >
+                          거절
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   {!notification.isRead && (
                     <div className="w-2 h-2 bg-blue-500 rounded-full mt-2" />

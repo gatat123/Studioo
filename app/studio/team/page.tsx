@@ -58,7 +58,7 @@ export default function TeamPage() {
         socketClient.emit('leave:channel', { channelId: selectedChannel.id })
       }
     }
-  }, [loadChannels, selectedChannel])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   
   useEffect(() => {
     if (selectedChannel) {
@@ -102,7 +102,7 @@ export default function TeamPage() {
         }
       })
       
-      socketClient.on('user_stopped_typing_channel', (_data: { userId: string }) => {
+      socketClient.on('user_stopped_typing_channel', () => {
         // Hide typing indicator
       })
       
@@ -119,7 +119,7 @@ export default function TeamPage() {
         socketClient.off('user_stopped_typing_channel')
       }
     }
-  }, [selectedChannel, currentUser, loadMessages, toast])
+  }, [selectedChannel, currentUser, toast]) // eslint-disable-line react-hooks/exhaustive-deps
   
   const loadChannels = useCallback(async () => {
     try {
@@ -499,25 +499,28 @@ export default function TeamPage() {
                         </AvatarFallback>
                       </Avatar>
                       <div className={cn(
-                        "max-w-[70%]",
+                        "max-w-[70%] flex flex-col",
                         isOwnMessage && "items-end"
                       )}>
                         <div className={cn(
-                          "flex items-baseline gap-2",
-                          isOwnMessage && "flex-row-reverse"
+                          "flex flex-col",
+                          isOwnMessage && "items-end"
                         )}>
-                          <span className="font-medium text-sm">{message.sender.nickname}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(message.createdAt).toLocaleTimeString()}
+                          <span className="font-medium text-sm mb-1">{message.sender.nickname}</span>
+                          <div className={cn(
+                            "px-3 py-2 rounded-lg inline-block",
+                            isOwnMessage 
+                              ? "bg-primary text-primary-foreground" 
+                              : "bg-muted"
+                          )}>
+                            <p className="text-sm">{message.content}</p>
+                          </div>
+                          <span className="text-xs text-muted-foreground mt-1">
+                            {new Date(message.createdAt).toLocaleTimeString('ko-KR', { 
+                              hour: '2-digit', 
+                              minute: '2-digit'
+                            })}
                           </span>
-                        </div>
-                        <div className={cn(
-                          "mt-1 px-3 py-2 rounded-lg inline-block",
-                          isOwnMessage 
-                            ? "bg-primary text-primary-foreground ml-auto" 
-                            : "bg-muted"
-                        )}>
-                          <p className="text-sm">{message.content}</p>
                         </div>
                       </div>
                     </div>

@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, Filter, Grid3X3, List, Plus, Calendar, Tag } from 'lucide-react';
+import Image from 'next/image';
+import { Search, Filter, Grid3X3, List, Calendar, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import TiltedCard from '@/components/ui/tilted-card';
@@ -16,7 +17,6 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -184,7 +184,7 @@ export function ProjectGrid() {
         {/* Filters and View Options */}
         <div className="flex gap-2">
           {/* Tag Filter */}
-          <Select value={filterTag} onValueChange={(value: any) => setFilterTag(value)}>
+          <Select value={filterTag} onValueChange={(value: 'all' | 'illustration' | 'storyboard') => setFilterTag(value)}>
             <SelectTrigger className="w-[140px]">
               <Tag className="h-4 w-4 mr-2" />
               <SelectValue placeholder="태그" />
@@ -235,7 +235,7 @@ export function ProjectGrid() {
           </DropdownMenu>
 
           {/* Sort */}
-          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+          <Select value={sortBy} onValueChange={(value: 'date' | 'name' | 'deadline') => setSortBy(value)}>
             <SelectTrigger className="w-[120px]">
               <SelectValue />
             </SelectTrigger>
@@ -302,19 +302,19 @@ export function ProjectGrid() {
                 className="relative"
               >
                 <div className="group relative bg-white dark:bg-gray-900 rounded-lg border hover:shadow-lg transition-all h-full w-full">
-                  {project.hasUpdates && (
-                    <div className="absolute -top-2 -right-2 z-10">
-                      <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse" />
-                    </div>
-                  )}
+                  {/* Removed red notification indicator */}
                   
                   <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-t-lg overflow-hidden">
                     {project.thumbnail ? (
-                    <img
-                      src={project.thumbnail}
-                      alt={project.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
+                    <div className="relative w-full h-full">
+                      <Image
+                        src={project.thumbnail}
+                        alt={project.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                      />
+                    </div>
                   ) : (
                     <div className="w-full h-full flex items-center justify-center">
                       <Grid3X3 className="h-12 w-12 text-gray-300" />
@@ -362,11 +362,15 @@ export function ProjectGrid() {
                   {/* Thumbnail */}
                   <div className="w-24 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
                     {project.thumbnail ? (
-                      <img
-                        src={project.thumbnail}
-                        alt={project.name}
-                        className="w-full h-full object-cover"
-                      />
+                      <div className="relative w-full h-full">
+                        <Image
+                          src={project.thumbnail}
+                          alt={project.name}
+                          fill
+                          className="object-cover"
+                          sizes="96px"
+                        />
+                      </div>
                     ) : (
                       <div className="w-full h-full flex items-center justify-center">
                         <Grid3X3 className="h-6 w-6 text-gray-300" />
@@ -380,9 +384,7 @@ export function ProjectGrid() {
                       <h3 className="font-semibold text-gray-900 truncate">
                         {project.name}
                       </h3>
-                      {project.hasUpdates && (
-                        <div className="h-2 w-2 bg-red-500 rounded-full animate-pulse ml-2" />
-                      )}
+                      {/* Removed red notification indicator */}
                     </div>
                     {project.description && (
                       <p className="text-sm text-gray-600 line-clamp-1 mb-2">
