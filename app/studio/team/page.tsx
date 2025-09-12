@@ -21,7 +21,7 @@ import {
 import { socketClient } from '@/lib/socket/client'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import { channelsAPI, type Channel, type ChannelMember, type ChannelMessage } from '@/lib/api/channels'
+import { channelsAPI, type Channel, type ChannelMember, type ChannelMessage, type ChannelInvitation } from '@/lib/api/channels'
 import { useAuthStore } from '@/store/useAuthStore'
 import { CreateChannelModal } from '@/components/team/CreateChannelModal'
 import { InviteMemberModal } from '@/components/team/InviteMemberModal'
@@ -33,6 +33,7 @@ export default function TeamPage() {
   const { user: currentUser } = useAuthStore()
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null)
   const [channels, setChannels] = useState<Channel[]>([])
+  const [pendingInvites, setPendingInvites] = useState<ChannelInvitation[]>([])
   const [channelMembers, setChannelMembers] = useState<ChannelMember[]>([])
   const [messages, setMessages] = useState<ChannelMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
@@ -106,6 +107,15 @@ export default function TeamPage() {
         // Hide typing indicator
       })
       
+      // 초대 수신 이벤트
+      socketClient.on('channel_invite_received', (data: { invite: ChannelInvitation }) => {
+        loadChannels() // 채널 목록 새로고침
+        toast({
+          title: '채널 초대',
+          description: `${data.invite.inviter.nickname}님이 ${data.invite.channel.name} 채널에 초대했습니다.`
+        })
+      })
+      
       // Load channel data
       loadChannelMembers(selectedChannel.id)
       loadMessages(selectedChannel.id)
@@ -117,18 +127,21 @@ export default function TeamPage() {
         socketClient.off('member_left_channel')
         socketClient.off('user_typing_channel')
         socketClient.off('user_stopped_typing_channel')
+        socketClient.off('channel_invite_received')
       }
     }
   }, [selectedChannel, currentUser, toast]) // eslint-disable-line react-hooks/exhaustive-deps
   
   const loadChannels = useCallback(async () => {
     try {
-      const channelList = await channelsAPI.getChannels()
-      setChannels(channelList)
+      const response = await channelsAPI.getChannels()
+      
+      setChannels(response.channels)
+      setPendingInvites(response.pendingInvites)
       
       // Auto-select first channel if available
-      if (channelList.length > 0 && !selectedChannel) {
-        setSelectedChannel(channelList[0])
+      if (response.channels.length > 0 && !selectedChannel) {
+        setSelectedChannel(response.channels[0])
       }
     } catch (error) {
       console.error('Failed to load channels:', error)
@@ -346,6 +359,79 @@ export default function TeamPage() {
           </div>
           
           <div className="flex-1 overflow-y-auto">
+            {/* 대기 중인 초대 */}
+            {pendingInvites.length > 0 && (
+              <div className="mb-4">
+                <h3 className="text-xs font-semibold text-muted-foreground px-2 mb-2">초대받은 채널</h3>
+                <div className="space-y-1">
+                  {pendingInvites.map((invite) => (
+                    <div key={invite.id} className="px-2 py-2 mx-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Hash className="h-4 w-4 text-yellow-600" />
+                          <span className="text-sm font-medium">{invite.channel.name}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {invite.inviter.nickname}님이 초대
+                      </p>
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="h-7 text-xs"
+                          onClick={async () => {
+                            try {
+                              const token = localStorage.getItem('token');
+                              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/invitations/${invite.id}/accept`, {
+                                method: 'POST',
+                                headers: {
+                                  'Authorization': `Bearer ${token}`
+                                }
+                              });
+                              if (response.ok) {
+                                toast({ title: '채널에 참여했습니다!' });
+                                loadChannels();
+                              }
+                            } catch {
+                              toast({ title: '오류', description: '처리 중 오류가 발생했습니다.', variant: 'destructive' });
+                            }
+                          }}
+                        >
+                          수락
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs"
+                          onClick={async () => {
+                            try {
+                              const token = localStorage.getItem('token');
+                              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/invitations/${invite.id}/reject`, {
+                                method: 'POST',
+                                headers: {
+                                  'Authorization': `Bearer ${token}`
+                                }
+                              });
+                              if (response.ok) {
+                                toast({ title: '초대를 거절했습니다.' });
+                                loadChannels();
+                              }
+                            } catch {
+                              toast({ title: '오류', description: '처리 중 오류가 발생했습니다.', variant: 'destructive' });
+                            }
+                          }}
+                        >
+                          거절
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* 채널 목록 */}
             <div className="space-y-1">
               {channels.filter(ch => 
                 ch.name.toLowerCase().includes(searchQuery.toLowerCase())

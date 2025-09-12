@@ -40,7 +40,7 @@ export interface ChannelMessage {
   senderId: string
   content: string
   type: 'text' | 'image' | 'file' | 'system'
-  metadata?: any
+  metadata?: Record<string, unknown>
   editedAt?: string
   deletedAt?: string
   createdAt: string
@@ -62,7 +62,7 @@ export interface ChannelFile {
   fileUrl: string
   fileSize: number
   mimeType: string
-  metadata?: any
+  metadata?: Record<string, unknown>
   createdAt: string
 }
 
@@ -76,7 +76,7 @@ export interface CreateChannelData {
 export interface SendMessageData {
   content: string
   type?: 'text' | 'image' | 'file'
-  metadata?: any
+  metadata?: Record<string, unknown>
 }
 
 export interface InviteMemberData {
@@ -98,8 +98,15 @@ export interface ChannelInvitation {
     name: string
     description?: string
     type: string
+    creator?: {
+      id: string
+      username: string
+      nickname: string
+      profileImageUrl?: string
+    }
     _count?: {
       members: number
+      messages: number
     }
   }
   inviter: {
@@ -110,12 +117,20 @@ export interface ChannelInvitation {
   }
 }
 
+export interface ChannelsResponse {
+  channels: Channel[]
+  pendingInvites: ChannelInvitation[]
+}
+
 // Channel APIs
 export const channelsAPI = {
   // Get all channels (for current user)
-  getChannels: async (): Promise<Channel[]> => {
+  getChannels: async (): Promise<ChannelsResponse> => {
     const response = await apiClient.get('/api/channels')
-    return response.channels || []
+    return {
+      channels: response.channels || [],
+      pendingInvites: response.pendingInvites || []
+    }
   },
 
   // Create a new channel
@@ -144,8 +159,7 @@ export const channelsAPI = {
 
   // Leave channel
   leaveChannel: async (channelId: string) => {
-    const response = await apiClient.delete(`/api/channels/${channelId}/members`)
-    return response
+    return await apiClient.delete(`/api/channels/${channelId}/members`)
   },
 
   // Get channel messages
@@ -158,8 +172,7 @@ export const channelsAPI = {
     params.append('limit', limit.toString())
     if (cursor) params.append('cursor', cursor)
     
-    const response = await apiClient.get(`/api/channels/${channelId}/messages?${params}`)
-    return response
+    return await apiClient.get(`/api/channels/${channelId}/messages?${params}`)
   },
 
   // Send message to channel
@@ -184,14 +197,12 @@ export const channelsAPI = {
 
   // Accept channel invite
   acceptInvite: async (inviteId: string) => {
-    const response = await apiClient.post(`/api/channels/invitations/${inviteId}/accept`)
-    return response
+    return await apiClient.post(`/api/channels/invitations/${inviteId}/accept`)
   },
 
   // Reject channel invite
   rejectInvite: async (inviteId: string) => {
-    const response = await apiClient.post(`/api/channels/invitations/${inviteId}/reject`)
-    return response
+    return await apiClient.post(`/api/channels/invitations/${inviteId}/reject`)
   },
 
   // Get pending invites
