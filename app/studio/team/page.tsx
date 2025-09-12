@@ -1,8 +1,7 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
@@ -52,14 +51,14 @@ export default function TeamPage() {
     loadChannels()
     
     // Connect to Socket.io
-    const socket = socketClient.connect()
+    socketClient.connect()
     
     return () => {
       if (selectedChannel) {
         socketClient.emit('leave:channel', { channelId: selectedChannel.id })
       }
     }
-  }, [])
+  }, [loadChannels, selectedChannel])
   
   useEffect(() => {
     if (selectedChannel) {
@@ -80,7 +79,7 @@ export default function TeamPage() {
       })
       
       // Listen for member joined
-      socketClient.on('member_joined_channel', (data: { userId: string, user: any }) => {
+      socketClient.on('member_joined_channel', (data: { userId: string, user: { nickname: string } }) => {
         if (data.user) {
           loadChannelMembers(selectedChannel.id)
           toast({
@@ -96,14 +95,14 @@ export default function TeamPage() {
       })
       
       // Listen for typing indicators
-      socketClient.on('user_typing_channel', (data: { userId: string, user: any }) => {
+      socketClient.on('user_typing_channel', (data: { userId: string, user: { nickname: string } }) => {
         // Handle typing indicator
         if (data.userId !== currentUser?.id) {
           // Show typing indicator for other users
         }
       })
       
-      socketClient.on('user_stopped_typing_channel', (data: { userId: string }) => {
+      socketClient.on('user_stopped_typing_channel', (_data: { userId: string }) => {
         // Hide typing indicator
       })
       
@@ -120,9 +119,9 @@ export default function TeamPage() {
         socketClient.off('user_stopped_typing_channel')
       }
     }
-  }, [selectedChannel, currentUser])
+  }, [selectedChannel, currentUser, loadMessages, toast])
   
-  const loadChannels = async () => {
+  const loadChannels = useCallback(async () => {
     try {
       const channelList = await channelsAPI.getChannels()
       setChannels(channelList)
@@ -139,7 +138,7 @@ export default function TeamPage() {
         variant: 'destructive'
       })
     }
-  }
+  }, [selectedChannel, toast])
   
   const loadChannelMembers = async (channelId: string) => {
     try {
@@ -150,7 +149,7 @@ export default function TeamPage() {
     }
   }
   
-  const loadMessages = async (channelId: string, cursor?: string) => {
+  const loadMessages = useCallback(async (channelId: string, cursor?: string) => {
     try {
       setLoading(true)
       const result = await channelsAPI.getMessages(channelId, 50, cursor)
@@ -174,7 +173,7 @@ export default function TeamPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
   
   const sendMessage = async () => {
     if (!newMessage.trim() || !selectedChannel) return
@@ -297,7 +296,7 @@ export default function TeamPage() {
         // Emit socket event
         socketClient.emit('leave_channel', { channelId: selectedChannel.id })
       } else {
-        throw new Error('Failed to leave channel')
+        console.error('Failed to leave channel')
       }
     } catch (error) {
       console.error('Leave channel error:', error)
@@ -317,14 +316,7 @@ export default function TeamPage() {
     })
   }
   
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-green-500'
-      case 'away': return 'bg-yellow-500'
-      case 'offline': return 'bg-gray-400'
-      default: return 'bg-gray-400'
-    }
-  }
+  // Removed unused getStatusColor function
 
   return (
     <>
@@ -556,7 +548,7 @@ export default function TeamPage() {
                     setNewMessage(e.target.value)
                     handleTyping()
                   }}
-                  onKeyPress={(e) => {
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault()
                       sendMessage()

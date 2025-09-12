@@ -26,7 +26,7 @@ export default function LoginPage() {
     try {
       await login(formData);
       router.push('/studio');
-    } catch (error) {
+    } catch {
       // Error is handled in the store
     }
   };
@@ -83,7 +83,7 @@ export default function LoginPage() {
             </div>
             
             <div className="flex items-center justify-between">
-              <Link href="/forgot-password" className="text-sm text-blue-600 hover:underline">
+              <Link href="/auth/forgot-password" className="text-sm text-blue-600 hover:underline">
                 비밀번호를 잊으셨나요?
               </Link>
             </div>

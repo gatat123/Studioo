@@ -35,7 +35,7 @@ export default function ProfilePage() {
     if (!isAuthenticated) {
       router.push('/login');
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, router]);
 
   useEffect(() => {
     if (user) {
@@ -80,7 +80,12 @@ export default function ProfilePage() {
         }
       }
 
-      const updateData: any = {
+      const updateData: {
+        bio: string;
+        email: string;
+        currentPassword?: string;
+        newPassword?: string;
+      } = {
         bio: profileData.bio,
         email: profileData.email
       };
