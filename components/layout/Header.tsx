@@ -3,7 +3,8 @@
 import React, { useState, Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Menu, User, ChevronDown, LogOut, Settings, UserCircle } from 'lucide-react';
+import { Menu, User, ChevronDown, LogOut, Settings, UserCircle, Shield } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -17,9 +18,10 @@ import { cn } from '@/lib/utils';
 import FriendsDropdown from '@/components/friends/FriendsDropdown';
 import { MessagesModal } from '@/components/messages/MessagesModal';
 import NotificationDropdown from '@/components/notifications/NotificationDropdown';
-import { channelsAPI, type ChannelInvitation } from '@/lib/api/channels';
+import { type ChannelInvitation } from '@/lib/api/channels';
 import { useToast } from '@/hooks/use-toast';
 import { socketClient } from '@/lib/socket/client';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -31,25 +33,17 @@ interface HeaderProps {
 }
 
 // Inner component that uses useSearchParams
-const HeaderContent: React.FC<HeaderProps & { pathname: string; router: any }> = ({
+const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
   onMenuClick,
   userName,
   userEmail,
   userProfileImage,
-  notificationCount,
   friendRequestCount,
-  pathname,
-  router
+  pathname
 }) => {
-  const searchParams = useSearchParams();
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const { user: currentUser } = useAuthStore();
   const [isFriendsOpen, setIsFriendsOpen] = useState(false);
-  const [channelInvitations, setChannelInvitations] = useState<ChannelInvitation[]>([]);
-  const [loadingInvite, setLoadingInvite] = useState(false);
   const { toast } = useToast();
-  
-  // Get current project filter from URL
-  const currentFilter = searchParams.get('type') || 'all';
 
   const navLinks = [
     { href: '/studio', label: 'Studio' },
@@ -57,81 +51,22 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string; router: any }> =
     { href: '/studio/recent', label: 'Recent' },
   ];
 
-  // Load channel invitations
+  // Listen for new invitations via Socket.io
   useEffect(() => {
-    loadInvitations();
-    
-    // Listen for new invitations via Socket.io
-    socketClient.on('channel:invitation', (invitation: ChannelInvitation) => {
-      setChannelInvitations(prev => [invitation, ...prev]);
+    const handleInvitation = (invitation: ChannelInvitation) => {
       toast({
         title: '새 채널 초대',
         description: `${invitation.inviter.nickname}님이 #${invitation.channel.name} 채널로 초대했습니다.`
       });
-    });
+    };
+    
+    socketClient.on('channel:invitation', handleInvitation);
     
     return () => {
-      socketClient.off('channel:invitation');
+      socketClient.off('channel:invitation', handleInvitation);
     };
-  }, []);
+  }, [toast]);
 
-  const loadInvitations = async () => {
-    try {
-      const data = await channelsAPI.getPendingInvites();
-      setChannelInvitations(data);
-    } catch (error) {
-      console.error('Failed to load invitations:', error);
-    }
-  };
-
-  const handleAcceptInvite = async (invitationId: string) => {
-    setLoadingInvite(true);
-    try {
-      const response = await channelsAPI.acceptInvite(invitationId);
-      
-      // Remove from list
-      setChannelInvitations(prev => prev.filter(inv => inv.id !== invitationId));
-      
-      toast({
-        title: '초대 수락',
-        description: response.message || '채널에 참여했습니다.'
-      });
-      
-      // Redirect to team page to see the new channel
-      router.push('/studio/team');
-    } catch (error: any) {
-      toast({
-        title: '오류',
-        description: error.response?.data?.error || '초대 수락에 실패했습니다.',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoadingInvite(false);
-    }
-  };
-
-  const handleRejectInvite = async (invitationId: string) => {
-    setLoadingInvite(true);
-    try {
-      await channelsAPI.rejectInvite(invitationId);
-      
-      // Remove from list
-      setChannelInvitations(prev => prev.filter(inv => inv.id !== invitationId));
-      
-      toast({
-        title: '초대 거절',
-        description: '초대를 거절했습니다.'
-      });
-    } catch (error: any) {
-      toast({
-        title: '오류',
-        description: error.response?.data?.error || '초대 거절에 실패했습니다.',
-        variant: 'destructive'
-      });
-    } finally {
-      setLoadingInvite(false);
-    }
-  };
 
   const handleSignOut = () => {
     // TODO: Implement sign out logic
@@ -154,7 +89,7 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string; router: any }> =
 
         {/* Logo */}
         <Link href="/studio" className="flex items-center space-x-2 mr-6">
-          <img src="/dustdio-logo.svg" alt="DustDio Logo" className="h-8 w-8 rounded-lg object-cover bg-white p-0.5" />
+          <Image src="/dustdio-logo.svg" alt="DustDio Logo" className="h-8 w-8 rounded-lg object-cover bg-white p-0.5" width={32} height={32} />
           <span className="hidden font-semibold sm:inline-block">
             DustDio
           </span>
@@ -199,10 +134,12 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string; router: any }> =
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center space-x-2">
                 {userProfileImage ? (
-                  <img 
+                  <Image 
                     src={userProfileImage} 
-                    alt={userName}
+                    alt={userName || 'User'}
                     className="h-8 w-8 rounded-full object-cover"
+                    width={32}
+                    height={32}
                   />
                 ) : (
                   <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
@@ -235,6 +172,17 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string; router: any }> =
                   Settings
                 </Link>
               </DropdownMenuItem>
+              {currentUser?.isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="flex items-center text-orange-600">
+                      <Shield className="mr-2 h-4 w-4" />
+                      관리자 대시보드
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
                 <LogOut className="mr-2 h-4 w-4" />
@@ -261,7 +209,7 @@ const Header: React.FC<HeaderProps> = (props) => {
         </div>
       </header>
     }>
-      <HeaderContent {...props} pathname={pathname} router={router} />
+      <HeaderContent {...props} pathname={pathname} />
     </Suspense>
   );
 };
