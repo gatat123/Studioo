@@ -231,7 +231,7 @@ export default function ProjectDetailPage() {
         commentsAPI.getProjectComments(projectId),
         api.get(`/api/projects/${projectId}/story`).catch(() => null)
       ])
-      
+
       console.log('Frontend: Received project data:', {
         projectId,
         hasScenes: !!projectData.scenes,
@@ -242,14 +242,44 @@ export default function ProjectDetailPage() {
           images: s.images
         }))
       });
-      
-      // Use scenes from projectData if available, otherwise fetch separately
+
+      // For illustration projects, create a default scene if none exists
       let scenesData = projectData.scenes || [];
-      if (!scenesData.length) {
-        console.log('Frontend: No scenes in project data, fetching separately');
-        scenesData = await scenesAPI.getScenes(projectId, true);
+
+      if (projectData.tag === 'illustration') {
+        // Illustration projects: Ensure at least one default scene
+        if (!scenesData.length) {
+          try {
+            // Create actual default scene for illustration projects
+            const defaultScene = await scenesAPI.createScene(projectId, {
+              sceneNumber: 1,
+              description: '일러스트',
+              notes: '기본 씬'
+            });
+            scenesData = [defaultScene];
+          } catch {
+            console.log('Could not create default scene, using virtual scene');
+            // Fallback to virtual scene if API fails
+            scenesData = [{
+              id: `${projectId}-default`,
+              projectId,
+              sceneNumber: 1,
+              description: '일러스트',
+              notes: '',
+              images: [],
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            }];
+          }
+        }
+      } else {
+        // Storyboard projects: Fetch scenes if needed
+        if (!scenesData.length) {
+          console.log('Frontend: No scenes in project data, fetching separately');
+          scenesData = await scenesAPI.getScenes(projectId, true);
+        }
       }
-      
+
       // Process scenes to separate line art and art images
       const processedScenes = scenesData.map((scene: Scene) => ({
         ...scene,
@@ -266,21 +296,21 @@ export default function ProjectDetailPage() {
             fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
           })) || []
       }))
-      
+
       console.log('Frontend: Processed scenes:', processedScenes);
-      
+
       setProject(projectData)
       setScenes(processedScenes)
       setComments(commentsData)
-      
-      // Set story data if available
+
+      // Set story data if available (storyboard only)
       if (storyData?.story) {
         setOverallStory(storyData.story.overallStory || '')
         setSetList(storyData.story.setList || [])
         setCharacterList(storyData.story.characterList || [])
       }
-      
-      // Select first scene by default
+
+      // Auto-select scene based on project type
       if (processedScenes.length > 0) {
         setSelectedScene(processedScenes[0])
       }
@@ -298,7 +328,17 @@ export default function ProjectDetailPage() {
 
   const handleAddScene = async () => {
     if (!newSceneName.trim()) return
-    
+
+    // Only allow scene creation for storyboard projects
+    if (project?.tag === 'illustration') {
+      toast({
+        title: '알림',
+        description: '일러스트 프로젝트는 씬을 추가할 수 없습니다.',
+        variant: 'destructive'
+      })
+      return
+    }
+
     setIsAddingScene(true)
     try {
       const newScene = await scenesAPI.createScene(projectId, {
@@ -417,8 +457,15 @@ export default function ProjectDetailPage() {
   const handleDrop = useCallback(async (e: React.DragEvent, type: 'lineart' | 'art') => {
     e.preventDefault()
     setIsDragging(false)
-    
-    if (!selectedScene) {
+
+    // For illustration projects, use the default scene
+    let targetScene = selectedScene
+    if (!targetScene && project?.tag === 'illustration' && scenes.length > 0) {
+      targetScene = scenes[0]
+      setSelectedScene(targetScene)
+    }
+
+    if (!targetScene) {
       toast({
         title: '씬 선택',
         description: '먼저 씬을 선택해주세요.',
@@ -440,13 +487,23 @@ export default function ProjectDetailPage() {
     }
     
     for (const file of imageFiles) {
-      await uploadImage(file, type)
+      await uploadImage(file, type, targetScene)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedScene])
+  }, [selectedScene, project, scenes])
 
-  const uploadImage = async (file: File, type: 'lineart' | 'art') => {
-    if (!selectedScene) return
+  const uploadImage = async (file: File, type: 'lineart' | 'art', targetScene?: SceneWithImages) => {
+    // Use provided targetScene or selectedScene
+    const sceneToUse = targetScene || selectedScene
+
+    // For illustration projects, auto-select first scene if needed
+    if (!sceneToUse && project?.tag === 'illustration' && scenes.length > 0) {
+      const defaultScene = scenes[0]
+      setSelectedScene(defaultScene)
+      return uploadImage(file, type, defaultScene)
+    }
+
+    if (!sceneToUse) return
     
     // Validate file type
     const validTypes = ['image/jpeg', 'image/png', 'image/webp']
@@ -465,7 +522,7 @@ export default function ProjectDetailPage() {
     try {
       // Use the existing images API with proper parameters
       const newImage = await imagesAPI.uploadImage(
-        selectedScene.id,
+        sceneToUse.id,
         file,
         type,
         (progress) => setUploadProgress(progress)
@@ -492,9 +549,9 @@ export default function ProjectDetailPage() {
       })
       
       // Update scenes with new image
-      setScenes(prevScenes => 
+      setScenes(prevScenes =>
         prevScenes.map(scene => {
-          if (scene.id === selectedScene.id) {
+          if (scene.id === sceneToUse.id) {
             const updatedScene = { ...scene }
             
             // Update images array (main array used for display)
@@ -528,7 +585,7 @@ export default function ProjectDetailPage() {
       socketClient.emit('image_uploaded', {
         projectId,
         imageId: projectImage.id,
-        sceneId: selectedScene.id,
+        sceneId: sceneToUse.id,
         filename: projectImage.fileUrl?.split('/').pop() || 'image',
         type
       })
@@ -753,7 +810,7 @@ export default function ProjectDetailPage() {
 
         {/* Center Panel - Image Viewer */}
         <div className="flex-1 flex flex-col bg-muted/30 min-w-0">
-          {selectedScene ? (
+          {(selectedScene || project.tag === 'illustration') ? (
             <>
               {/* Image View Controls */}
               <div className="border-b bg-card px-4 py-2">
@@ -801,7 +858,7 @@ export default function ProjectDetailPage() {
                         variant="outline"
                         onClick={() => {
                           // Get current displayed image
-                          const images = selectedScene.images?.filter((img: Image) => img.type === imageViewMode) || [];
+                          const images = selectedScene?.images?.filter((img: Image) => img.type === imageViewMode) || [];
                           const currentImage = imageViewMode === 'lineart'
                             ? (selectedLineartVersion
                                 ? images.find((img: Image) => (img as ProjectImage).version === selectedLineartVersion)
@@ -829,6 +886,7 @@ export default function ProjectDetailPage() {
                         size="sm"
                         variant="outline"
                         onClick={async () => {
+                          if (!selectedScene) return;
                           setSelectedHistoryType(imageViewMode)
                           const history = await imagesAPI.getImageHistory(selectedScene.id, imageViewMode)
                           // Fix image URLs and add version numbers
@@ -887,11 +945,11 @@ export default function ProjectDetailPage() {
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, 'lineart')}
                       >
-                        {selectedScene.images && selectedScene.images.filter((img: Image) => img.type === 'lineart').length > 0 ? (
+                        {selectedScene?.images && selectedScene.images.filter((img: Image) => img.type === 'lineart').length > 0 ? (
                           <div className="space-y-3">
                             {(() => {
                               // Get lineart images from the images array
-                              const lineartImages = selectedScene.images.filter((img: Image) => img.type === 'lineart');
+                              const lineartImages = selectedScene?.images?.filter((img: Image) => img.type === 'lineart') || [];
                               // Show only the current version image
                               const currentImage = selectedLineartVersion ?
                                 lineartImages.find((img: Image) => (img as ProjectImage).version === selectedLineartVersion) :
@@ -998,11 +1056,11 @@ export default function ProjectDetailPage() {
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, 'art')}
                       >
-                        {selectedScene.images && selectedScene.images.filter((img: Image) => img.type === 'art').length > 0 ? (
+                        {selectedScene?.images && selectedScene.images.filter((img: Image) => img.type === 'art').length > 0 ? (
                           <div className="space-y-3">
                             {(() => {
                               // Get art images from the images array
-                              const artImages = selectedScene.images.filter((img: Image) => img.type === 'art');
+                              const artImages = selectedScene?.images?.filter((img: Image) => img.type === 'art') || [];
                               // Show only the current version image
                               const currentImage = selectedArtVersion ?
                                 artImages.find((img: Image) => (img as ProjectImage).version === selectedArtVersion) :
@@ -1117,7 +1175,9 @@ export default function ProjectDetailPage() {
             <div className="flex-1 flex items-center justify-center">
               <div className="text-center">
                 <Layers className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">왼쪽에서 씬을 선택하세요</p>
+                <p className="text-muted-foreground">
+                  {project.tag === 'storyboard' ? '왼쪽에서 씬을 선택하세요' : '이미지를 업로드하세요'}
+                </p>
               </div>
             </div>
           )}
