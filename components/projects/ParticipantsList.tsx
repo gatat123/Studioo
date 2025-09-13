@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Trash2, Shield, Edit, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -49,7 +49,7 @@ interface Participant {
   avatar?: string
 }
 
-export default function ParticipantsList({ projectId }: ParticipantsListProps) {
+function ParticipantsListContent({ projectId }: ParticipantsListProps) {
   const { toast } = useToast()
   const { user } = useAuthStore()
   const { projects } = useProjectStore()
@@ -268,5 +268,24 @@ export default function ParticipantsList({ projectId }: ParticipantsListProps) {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function ParticipantsList({ projectId }: ParticipantsListProps) {
+  return (
+    <Suspense fallback={
+      <div className="space-y-4">
+        <div className="rounded-md border">
+          <div className="h-12 bg-muted animate-pulse"></div>
+          <div className="p-4 space-y-3">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-16 bg-muted rounded animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+    }>
+      <ParticipantsListContent projectId={projectId} />
+    </Suspense>
   )
 }

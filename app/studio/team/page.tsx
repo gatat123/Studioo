@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,7 +29,7 @@ import { InviteMemberModal } from '@/components/team/InviteMemberModal'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 
-export default function TeamPage() {
+function TeamPageContent() {
   const { toast } = useToast()
   const { user: currentUser } = useAuthStore()
   const searchParams = useSearchParams()
@@ -738,5 +738,29 @@ export default function TeamPage() {
         />
       )}
     </>
+  )
+}
+
+export default function TeamPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-[calc(100vh-4rem)]">
+        <div className="w-64 border-r bg-muted/10 animate-pulse">
+          <div className="p-4">
+            <div className="h-8 bg-muted rounded mb-4"></div>
+            <div className="space-y-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-12 bg-muted rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
+      </div>
+    }>
+      <TeamPageContent />
+    </Suspense>
   )
 }
