@@ -1,9 +1,10 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import Image from 'next/image'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { socketClient } from '@/lib/socket/client'
 import {
   Clock,
   RotateCcw,
@@ -78,10 +79,43 @@ export default function VersionHistory({
   const [sortBy, setSortBy] = useState<'date' | 'author' | 'type'>('date')
   const [filterBy, setFilterBy] = useState<'all' | 'lineart' | 'art'>('all')
   const [isCompareMode, setIsCompareMode] = useState(false)
+  const [localVersions, setLocalVersions] = useState<Version[]>(versions)
+
+  // Update local versions when prop changes
+  useEffect(() => {
+    setLocalVersions(versions)
+  }, [versions])
+
+  // Socket.io listeners for real-time updates
+  useEffect(() => {
+    const socket = socketClient.getSocket()
+    if (!socket) return
+
+    // Listen for version updates
+    const handleVersionUpdate = (data: { version: Version, action: 'add' | 'update' | 'restore' }) => {
+      console.log('Version update received:', data)
+
+      if (data.action === 'add') {
+        setLocalVersions(prev => [data.version, ...prev])
+      } else if (data.action === 'update' || data.action === 'restore') {
+        setLocalVersions(prev => prev.map(v =>
+          v.id === data.version.id ? { ...data.version, isCurrent: true } : { ...v, isCurrent: false }
+        ))
+      }
+    }
+
+    socket.on('version:update', handleVersionUpdate)
+    socket.on('history:update', handleVersionUpdate)
+
+    return () => {
+      socket.off('version:update', handleVersionUpdate)
+      socket.off('history:update', handleVersionUpdate)
+    }
+  }, [])
 
   // Sort and filter versions
   const processedVersions = useMemo(() => {
-    let filtered = versions
+    let filtered = localVersions
 
     // Apply filter
     if (filterBy !== 'all') {
@@ -101,7 +135,7 @@ export default function VersionHistory({
           return 0
       }
     })
-  }, [versions, sortBy, filterBy])
+  }, [localVersions, sortBy, filterBy])
 
   // Handle version selection for comparison
   const handleVersionClick = (version: Version) => {

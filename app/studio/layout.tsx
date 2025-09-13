@@ -10,10 +10,9 @@ export default function StudioLayout({
 }) {
   const pathname = usePathname();
   const isTeamPage = pathname === '/studio/team';
-  
+
   return (
-    <RootLayout 
-      showFooter={!isTeamPage}
+    <RootLayout
       containerClassName={isTeamPage ? 'h-[calc(100vh-4rem)] overflow-hidden' : ''}
     >
       {children}

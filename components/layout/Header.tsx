@@ -170,7 +170,7 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
                 <ChevronDown className="h-4 w-4 hidden md:block" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 border-none">
               <DropdownMenuLabel>
                 <div>
                   <p className="text-sm font-medium">{userName}</p>

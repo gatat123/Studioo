@@ -23,7 +23,7 @@ interface AuthState {
 // Create auth store with persistence
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       user: null,
       isAuthenticated: false,
       isLoading: false,
@@ -140,25 +140,43 @@ export const useAuthStore = create<AuthState>()(
         } catch (error) {
           console.error('Logout error:', error);
         } finally {
-          // Clear state and cookies
+          // Clear state first
           set({
             user: null,
             isAuthenticated: false,
             error: null,
           });
-          
-          // Remove authentication cookie
+
+          // Remove authentication cookie with all possible domains
+          const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
+          const domain = hostname.includes('railway.app') ? `.${hostname.split('.').slice(-3).join('.')}` : undefined;
+
+          // Remove cookie with domain
+          Cookies.remove('token', { domain: domain });
+          // Remove cookie without domain (for localhost)
           Cookies.remove('token');
-          
-          // Clear other stores if needed
+          // Remove cookie with path
+          Cookies.remove('token', { path: '/' });
+
+          // Clear all localStorage items related to auth
           if (typeof window !== 'undefined') {
-            // Clear any other persisted data
+            // Clear zustand stores
+            localStorage.removeItem('auth-storage');
             localStorage.removeItem('project-storage');
             localStorage.removeItem('ui-storage');
-            localStorage.removeItem('auth-storage');
+            localStorage.removeItem('socket-storage');
+            localStorage.removeItem('team-storage');
+            localStorage.removeItem('notification-storage');
+
+            // Clear any token/user related items
             localStorage.removeItem('token');
             localStorage.removeItem('userId');
             localStorage.removeItem('user');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+
+            // Clear session storage as well
+            sessionStorage.clear();
           }
         }
       },
@@ -179,37 +197,30 @@ export const useAuthStore = create<AuthState>()(
 
       // Check authentication status
       checkAuth: async () => {
+        // Skip check if already logged out intentionally
+        const currentState = get();
+        if (currentState.isAuthenticated === false && !Cookies.get('token')) {
+          set({ isLoading: false });
+          return;
+        }
+
         set({ isLoading: true });
-        
+
         try {
-          // Check both cookie and localStorage for token
+          // Only check cookie for token (not localStorage to prevent auto-login)
           const cookieToken = Cookies.get('token');
-          const localToken = localStorage.getItem('token');
-          const token = cookieToken || localToken;
-          
-          if (!token) {
+
+          if (!cookieToken) {
+            // No token means user is not authenticated
             set({
               user: null,
               isAuthenticated: false,
               isLoading: false,
             });
+            // Clear localStorage to ensure clean state
+            localStorage.removeItem('auth-storage');
+            localStorage.removeItem('token');
             return;
-          }
-          
-          // Sync token between cookie and localStorage
-          if (cookieToken && !localToken) {
-            localStorage.setItem('token', cookieToken);
-          } else if (!cookieToken && localToken) {
-            // Extract domain for cookie (for Railway deployment)
-            const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-            const domain = hostname.includes('railway.app') ? `.${hostname.split('.').slice(-3).join('.')}` : undefined;
-            
-            Cookies.set('token', localToken, { 
-              expires: 7,
-              sameSite: 'lax',
-              secure: typeof window !== 'undefined' && window.location.protocol === 'https:',
-              domain: domain
-            });
           }
           
           const sessionUser = await authAPI.getSession();

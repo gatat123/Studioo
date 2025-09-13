@@ -50,11 +50,32 @@ export default function TeamPage() {
   useEffect(() => {
     // Load initial channels
     loadChannels()
-    
+
     // Connect to Socket.io
     socketClient.connect()
-    
+
+    // Listen for user presence updates globally
+    socketClient.on('user_presence_update', (data: { userId: string; status: 'online' | 'offline' }) => {
+      // Update member online status in the member list
+      setChannelMembers(prev => prev.map(member =>
+        member.userId === data.userId
+          ? { ...member, user: { ...member.user, isActive: data.status === 'online' } }
+          : member
+      ))
+    })
+
+    socketClient.on('presence_update', (data: { userId: string; isOnline: boolean }) => {
+      // Alternative presence update event
+      setChannelMembers(prev => prev.map(member =>
+        member.userId === data.userId
+          ? { ...member, user: { ...member.user, isActive: data.isOnline } }
+          : member
+      ))
+    })
+
     return () => {
+      socketClient.off('user_presence_update')
+      socketClient.off('presence_update')
       if (selectedChannel) {
         socketClient.emit('leave:channel', { channelId: selectedChannel.id })
       }
@@ -475,7 +496,7 @@ export default function TeamPage() {
                     </Avatar>
                     <div className={cn(
                       "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background",
-                      member.user.isActive ? 'bg-green-500' : 'bg-gray-400'
+                      member.user.isActive || member.user.isOnline ? 'bg-green-500' : 'bg-gray-400'
                     )} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -503,7 +524,7 @@ export default function TeamPage() {
                   <Hash className="h-5 w-5 text-muted-foreground" />
                   <h2 className="font-semibold">{selectedChannel.name}</h2>
                   <Badge variant="outline">
-                    {channelMembers.filter(m => m.user.isActive).length} 온라인
+                    {channelMembers.filter(m => m.user.isActive || m.user.isOnline).length} 온라인
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
