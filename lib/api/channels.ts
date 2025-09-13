@@ -31,6 +31,7 @@ export interface ChannelMember {
     bio?: string
     lastLoginAt?: string
     isActive: boolean
+    isOnline?: boolean
   }
 }
 
@@ -191,7 +192,7 @@ export const channelsAPI = {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
-    }) as { file: any }
+    }) as { file: { url: string; name: string; size: number } }
     return response.file
   },
 
