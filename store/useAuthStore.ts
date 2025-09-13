@@ -14,7 +14,7 @@ interface AuthState {
   // Actions
   login: (credentials: { username: string; password: string }) => Promise<void>;
   register: (data: { username: string; email: string; password: string; nickname: string }) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   setUser: (user: User) => void;
   clearError: () => void;
   checkAuth: () => Promise<void>;

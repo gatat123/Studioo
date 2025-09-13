@@ -68,9 +68,27 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
   }, [toast]);
 
 
-  const handleSignOut = () => {
-    // TODO: Implement sign out logic
-    console.log('Sign out');
+  const handleSignOut = async () => {
+    try {
+      // Call logout from auth store
+      const { logout } = useAuthStore.getState();
+      await logout();
+
+      // Disconnect socket
+      socketClient.disconnect();
+
+      // The logout function in useAuthStore already handles:
+      // - Clearing state
+      // - Removing cookies and localStorage
+      // - Navigation is handled in authAPI.logout()
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast({
+        title: '로그아웃 실패',
+        description: '로그아웃 중 문제가 발생했습니다.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
