@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Trash2, Shield, Edit, User } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -51,10 +52,12 @@ interface Participant {
 export default function ParticipantsList({ projectId }: ParticipantsListProps) {
   const { toast } = useToast()
   const { user } = useAuthStore()
-  const { projects, updateProjectParticipant, removeProjectParticipant } = useProjectStore()
-  
+  const { projects } = useProjectStore()
+  const searchParams = useSearchParams()
+
   const project = projects.find(p => p.id === projectId)
   const isOwner = project?.creatorId === user?.id
+  const isAdminMode = searchParams.get('admin') === 'true'
 
   // Mock participants data
   const [participants, setParticipants] = useState<Participant[]>([
@@ -134,13 +137,18 @@ export default function ParticipantsList({ projectId }: ParticipantsListProps) {
     const now = new Date()
     const diffTime = Math.abs(now.getTime() - date.getTime())
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    
+
     if (diffDays === 0) return 'Today'
     if (diffDays === 1) return 'Yesterday'
     if (diffDays < 7) return `${diffDays} days ago`
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
     return date.toLocaleDateString()
   }
+
+  // Filter out admin from participants list when in admin mode
+  const displayParticipants = isAdminMode && user?.isAdmin
+    ? participants.filter(p => p.id !== user.id)
+    : participants
 
   return (
     <div className="space-y-4">
@@ -155,7 +163,7 @@ export default function ParticipantsList({ projectId }: ParticipantsListProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {participants.map((participant) => (
+            {displayParticipants.map((participant) => (
               <TableRow key={participant.id}>
                 <TableCell>
                   <div className="flex items-center space-x-3">

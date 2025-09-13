@@ -40,6 +40,7 @@ import {
   Hash
 } from 'lucide-react';
 import { socketClient } from '@/lib/socket/client';
+import { adminAPI } from '@/lib/api/admin';
 
 interface User {
   id: string;
@@ -125,17 +126,8 @@ export default function AdminPage() {
 
   const loadUsers = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/users`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users);
-      }
+      const data = await adminAPI.getUsers();
+      setUsers(data.users || []);
     } catch (error) {
       console.error('Failed to load users:', error);
       toast.error('사용자 목록을 불러오는데 실패했습니다');
@@ -144,17 +136,8 @@ export default function AdminPage() {
 
   const loadProjects = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/projects`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setProjects(data.projects);
-      }
+      const data = await adminAPI.getProjects();
+      setProjects(data.projects || []);
     } catch (error) {
       console.error('Failed to load projects:', error);
       toast.error('프로젝트 목록을 불러오는데 실패했습니다');
@@ -163,17 +146,8 @@ export default function AdminPage() {
 
   const loadChannels = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/channels`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setChannels(data.channels);
-      }
+      const data = await adminAPI.getChannels();
+      setChannels(data.channels || []);
     } catch (error) {
       console.error('Failed to load channels:', error);
       toast.error('채널 목록을 불러오는데 실패했습니다');
@@ -186,20 +160,9 @@ export default function AdminPage() {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/users/${userId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        toast.success('사용자가 삭제되었습니다');
-        setUsers(prev => prev.filter(u => u.id !== userId));
-      } else {
-        throw new Error('Failed to delete user');
-      }
+      await adminAPI.deleteUser(userId);
+      toast.success('사용자가 삭제되었습니다');
+      setUsers(prev => prev.filter(u => u.id !== userId));
     } catch (error) {
       console.error('Delete user error:', error);
       toast.error('사용자 삭제에 실패했습니다');
@@ -212,20 +175,9 @@ export default function AdminPage() {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/projects/${projectId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        toast.success('프로젝트가 삭제되었습니다');
-        setProjects(prev => prev.filter(p => p.id !== projectId));
-      } else {
-        throw new Error('Failed to delete project');
-      }
+      await adminAPI.deleteProject(projectId);
+      toast.success('프로젝트가 삭제되었습니다');
+      setProjects(prev => prev.filter(p => p.id !== projectId));
     } catch (error) {
       console.error('Delete project error:', error);
       toast.error('프로젝트 삭제에 실패했습니다');
@@ -238,20 +190,9 @@ export default function AdminPage() {
     }
 
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/channels/${channelId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (response.ok) {
-        toast.success('채널이 삭제되었습니다');
-        setChannels(prev => prev.filter(c => c.id !== channelId));
-      } else {
-        throw new Error('Failed to delete channel');
-      }
+      await adminAPI.deleteChannel(channelId);
+      toast.success('채널이 삭제되었습니다');
+      setChannels(prev => prev.filter(c => c.id !== channelId));
     } catch (error) {
       console.error('Delete channel error:', error);
       toast.error('채널 삭제에 실패했습니다');
@@ -261,16 +202,10 @@ export default function AdminPage() {
   const viewProject = async (projectId: string) => {
     // Silently join the project as admin (invisible)
     try {
-      const token = localStorage.getItem('token');
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/projects/${projectId}/view`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-      
-      // Open project in new tab
-      window.open(`/studio/projects/${projectId}`, '_blank');
+      await adminAPI.viewProject(projectId);
+
+      // Open project in new tab with admin flag
+      window.open(`/studio/projects/${projectId}?admin=true`, '_blank');
     } catch (error) {
       console.error('View project error:', error);
       toast.error('프로젝트 열기에 실패했습니다');

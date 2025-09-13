@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -31,6 +32,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 export default function TeamPage() {
   const { toast } = useToast()
   const { user: currentUser } = useAuthStore()
+  const searchParams = useSearchParams()
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null)
   const [channels, setChannels] = useState<Channel[]>([])
   const [pendingInvites, setPendingInvites] = useState<ChannelInvitation[]>([])
@@ -481,11 +483,19 @@ export default function TeamPage() {
         </div>
         
         {/* Channel Members */}
-        {selectedChannel && (
-          <div className="p-4">
-            <h3 className="font-semibold mb-3 text-sm">채널 멤버 ({channelMembers.length})</h3>
-            <div className="space-y-2">
-              {channelMembers.slice(0, 5).map((member) => (
+        {selectedChannel && (() => {
+          // Check if admin is viewing as admin (from admin dashboard)
+          const isAdminMode = searchParams.get('channel') === selectedChannel.id && currentUser?.isAdmin
+          // Filter out admin from members if in admin mode
+          const displayMembers = isAdminMode
+            ? channelMembers.filter(m => m.userId !== currentUser?.id)
+            : channelMembers
+
+          return (
+            <div className="p-4">
+              <h3 className="font-semibold mb-3 text-sm">채널 멤버 ({displayMembers.length})</h3>
+              <div className="space-y-2">
+                {displayMembers.slice(0, 5).map((member) => (
                 <div key={member.id} className="flex items-center gap-2">
                   <div className="relative">
                     <Avatar className="h-8 w-8">
@@ -504,13 +514,14 @@ export default function TeamPage() {
                     <p className="text-xs text-muted-foreground truncate">{member.role}</p>
                   </div>
                 </div>
-              ))}
-              {channelMembers.length > 5 && (
-                <p className="text-xs text-muted-foreground text-center">+{channelMembers.length - 5} 더 보기</p>
-              )}
+                ))}
+                {displayMembers.length > 5 && (
+                  <p className="text-xs text-muted-foreground text-center">+{displayMembers.length - 5} 더 보기</p>
+                )}
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
       </div>
       
       {/* Main Chat Area - 50% width reduction */}
@@ -524,7 +535,15 @@ export default function TeamPage() {
                   <Hash className="h-5 w-5 text-muted-foreground" />
                   <h2 className="font-semibold">{selectedChannel.name}</h2>
                   <Badge variant="outline">
-                    {channelMembers.filter(m => m.user.isActive || m.user.isOnline).length} 온라인
+                    {(() => {
+                      const isAdminMode = searchParams.get('channel') === selectedChannel.id && currentUser?.isAdmin
+                      const onlineMembers = channelMembers.filter(m => {
+                        // If admin mode, exclude admin from count
+                        if (isAdminMode && m.userId === currentUser?.id) return false
+                        return m.user.isActive || m.user.isOnline
+                      })
+                      return onlineMembers.length
+                    })()} 온라인
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
