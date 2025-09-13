@@ -1,67 +1,49 @@
-import { apiRequest } from './client';
+import api from './client';
 
 // Admin User Management
 export const adminAPI = {
   // Get all users
   getUsers: async () => {
-    return apiRequest('/api/admin/users', {
-      method: 'GET',
-    });
+    return api.get('/api/admin/users');
   },
 
   // Delete user
   deleteUser: async (userId: string) => {
-    return apiRequest(`/api/admin/users/${userId}`, {
-      method: 'DELETE',
-    });
+    return api.delete(`/api/admin/users/${userId}`);
   },
 
   // Get all projects
   getProjects: async () => {
-    return apiRequest('/api/admin/projects', {
-      method: 'GET',
-    });
+    return api.get('/api/admin/projects');
   },
 
   // View project as admin (invisible)
   viewProject: async (projectId: string) => {
-    return apiRequest(`/api/admin/projects/${projectId}/view`, {
-      method: 'POST',
-    });
+    return api.post(`/api/admin/projects/${projectId}/view`);
   },
 
   // Delete project
   deleteProject: async (projectId: string) => {
-    return apiRequest(`/api/admin/projects/${projectId}`, {
-      method: 'DELETE',
-    });
+    return api.delete(`/api/admin/projects/${projectId}`);
   },
 
   // Get all channels
   getChannels: async () => {
-    return apiRequest('/api/admin/channels', {
-      method: 'GET',
-    });
+    return api.get('/api/admin/channels');
   },
 
   // View channel as admin (invisible)
   viewChannel: async (channelId: string) => {
-    return apiRequest(`/api/admin/channels/${channelId}/view`, {
-      method: 'POST',
-    });
+    return api.post(`/api/admin/channels/${channelId}/view`);
   },
 
   // Delete channel
   deleteChannel: async (channelId: string) => {
-    return apiRequest(`/api/admin/channels/${channelId}`, {
-      method: 'DELETE',
-    });
+    return api.delete(`/api/admin/channels/${channelId}`);
   },
 
   // Get admin statistics
   getStatistics: async () => {
-    return apiRequest('/api/admin/statistics', {
-      method: 'GET',
-    });
+    return api.get('/api/admin/statistics');
   },
 };
