@@ -4,10 +4,10 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
-import { format } from 'date-fns'
-import { Calendar, Copy, Check, Loader2 } from 'lucide-react'
+import { Copy, Check, Loader2 } from 'lucide-react'
 import { useProjectStore } from '@/store/useProjectStore'
 import { useRouter } from 'next/navigation'
+import { useToast } from '@/hooks/use-toast'
 import {
   Dialog,
   DialogContent,
@@ -53,9 +53,9 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(null)
   const router = useRouter()
+  const { toast } = useToast()
   
-  const createProject = useProjectStore((state) => state.createProject)
-  const generateInviteCodeAsync = useProjectStore((state) => state.generateInviteCode)
+  // Removed unused store methods
 
   const {
     register,
@@ -72,7 +72,7 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
     },
   })
 
-  const projectType = watch('type')
+  // Removed unused projectType
   // Generate invite code
   const generateInviteCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -119,7 +119,14 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
       })
 
       if (!response.ok) {
-        throw new Error('Failed to create project')
+        const errorData = await response.json().catch(() => ({ message: 'Failed to create project' }))
+        console.error('Failed to create project:', errorData)
+        toast({
+          title: '프로젝트 생성 실패',
+          description: errorData.message || '프로젝트를 생성하는 중 오류가 발생했습니다.',
+          variant: 'destructive'
+        })
+        return
       }
 
       const responseData = await response.json()
@@ -143,7 +150,11 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
       await fetchProjects();
     } catch (error) {
       console.error('Failed to create project:', error)
-      // TODO: Show error notification
+      toast({
+        title: '프로젝트 생성 실패',
+        description: '프로젝트를 생성하는 중 예기치 않은 오류가 발생했습니다.',
+        variant: 'destructive'
+      })
     } finally {
       setIsLoading(false)
     }
@@ -260,21 +271,27 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
           /* Success State */
           <>
             <DialogHeader>
-              <DialogTitle>Project Created Successfully!</DialogTitle>
+              <DialogTitle className="text-xl">🎉 프로젝트가 성공적으로 생성되었습니다!</DialogTitle>
               <DialogDescription>
-                Your project has been created. Share the invite code below with your collaborators.
+                이제 팀원들과 함께 작업할 수 있습니다.
               </DialogDescription>
             </DialogHeader>
             <div className="py-6">
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-sm text-muted-foreground">Project Name</Label>
-                  <p className="font-medium">{watch('name')}</p>
+              <div className="space-y-6">
+                {/* Project Info */}
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <Label className="text-sm text-muted-foreground">프로젝트 이름</Label>
+                  <p className="font-medium text-lg">{watch('name')}</p>
                 </div>
-                <div>
-                  <Label className="text-sm text-muted-foreground">Invite Code</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <div className="flex-1 p-3 bg-muted rounded-md font-mono text-lg font-semibold text-center">
+
+                {/* Invite Code Section */}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-1 bg-primary rounded-full" />
+                    <Label className="text-base font-semibold">초대 코드</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 p-4 bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary/20 rounded-lg font-mono text-2xl font-bold text-center tracking-wider">
                       {inviteCode}
                     </div>
                     <Button
@@ -282,17 +299,49 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
                       size="icon"
                       variant="outline"
                       onClick={copyInviteCode}
-                      className="shrink-0"
+                      className="shrink-0 h-12 w-12"
                     >
                       {copied ? (
-                        <Check className="h-4 w-4 text-green-500" />
+                        <Check className="h-5 w-5 text-green-500" />
                       ) : (
-                        <Copy className="h-4 w-4" />
+                        <Copy className="h-5 w-5" />
                       )}
                     </Button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Share this code with others to invite them to your project
+                  {copied && (
+                    <p className="text-sm text-green-600 font-medium">
+                      ✓ 초대 코드가 복사되었습니다!
+                    </p>
+                  )}
+                </div>
+
+                {/* How to Guide */}
+                <div className="space-y-3 border-t pt-4">
+                  <Label className="text-sm font-semibold">팀원 초대 방법</Label>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <div className="flex gap-2">
+                      <span className="font-semibold text-primary">1.</span>
+                      <span>위 초대 코드를 복사하세요</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="font-semibold text-primary">2.</span>
+                      <span>팀원에게 초대 코드를 전달하세요</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="font-semibold text-primary">3.</span>
+                      <span>팀원은 스튜디오 홈에서 &quot;프로젝트 참가&quot; 버튼을 클릭합니다</span>
+                    </div>
+                    <div className="flex gap-2">
+                      <span className="font-semibold text-primary">4.</span>
+                      <span>초대 코드를 입력하면 프로젝트에 참여됩니다</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tip */}
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
+                  <p className="text-xs text-blue-700 dark:text-blue-300">
+                    <span className="font-semibold">팁:</span> 프로젝트 설정 페이지에서 언제든지 초대 코드를 확인할 수 있습니다.
                   </p>
                 </div>
               </div>
