@@ -33,6 +33,7 @@ interface SidebarProps {
   isOpen?: boolean;
   onToggle?: () => void;
   isMobile?: boolean;
+  isCollapsed?: boolean;
 }
 
 interface NavigationItem {
@@ -48,11 +49,12 @@ const Sidebar: React.FC<SidebarProps> = ({
   isOpen = true,
   onToggle,
   isMobile = false,
+  isCollapsed: isCollapsedProp = false,
 }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { toast } = useToast();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(isCollapsedProp);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [projects, setProjects] = useState<Project[]>([]);
@@ -231,6 +233,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: <Settings className="h-4 w-4" />,
     },
   ];
+
+  // Sync with prop
+  useEffect(() => {
+    setIsCollapsed(isCollapsedProp);
+  }, [isCollapsedProp]);
 
   const toggleCollapsed = () => {
     setIsCollapsed(!isCollapsed);

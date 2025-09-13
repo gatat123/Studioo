@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useStores';
+import { useUIStore } from '@/store/useUIStore';
 
 interface RootLayoutProps {
   children: React.ReactNode;
@@ -18,9 +19,9 @@ const RootLayout: React.FC<RootLayoutProps> = ({
   containerClassName,
 }) => {
   const { user } = useAuth();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const { isSidebarOpen, setSidebarOpen } = useUIStore();
+  const [isMobile, setIsMobile] = React.useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
 
   // Check if it's a project page
   const isProjectPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/studio/projects/');
@@ -32,9 +33,9 @@ const RootLayout: React.FC<RootLayoutProps> = ({
       setIsMobile(mobile);
       // Auto-close sidebar on mobile
       if (mobile) {
-        setIsSidebarOpen(false);
+        setSidebarOpen(false);
       } else {
-        setIsSidebarOpen(true);
+        setSidebarOpen(true);
       }
     };
 
@@ -47,11 +48,11 @@ const RootLayout: React.FC<RootLayoutProps> = ({
 
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, [isProjectPage, isMobile]);
+  }, [isProjectPage, isMobile, setSidebarOpen]);
 
   const handleMenuClick = () => {
     if (isMobile) {
-      setIsSidebarOpen(!isSidebarOpen);
+      setSidebarOpen(!isSidebarOpen);
     } else {
       setIsSidebarCollapsed(!isSidebarCollapsed);
     }
@@ -85,8 +86,9 @@ const RootLayout: React.FC<RootLayoutProps> = ({
         {showSidebar && (
           <Sidebar
             isOpen={isSidebarOpen}
-            onToggle={isMobile ? () => setIsSidebarOpen(false) : handleSidebarToggle}
+            onToggle={isMobile ? () => setSidebarOpen(false) : handleSidebarToggle}
             isMobile={isMobile}
+            isCollapsed={isSidebarCollapsed}
           />
         )}
 

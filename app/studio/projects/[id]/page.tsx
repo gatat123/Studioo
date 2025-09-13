@@ -45,7 +45,6 @@ import { socketClient } from '@/lib/socket/client'
 import api from '@/lib/api/client'
 import { useToast } from '@/hooks/use-toast'
 import type { Scene, Comment, Image } from '@/types'
-import { useUIStore } from '@/store/useUIStore'
 import { AnnotationViewModal } from '@/components/projects/AnnotationViewModal'
 import AnnotationModal from '@/components/annotation-modal'
 import { OverallStoryModal } from '@/components/projects/OverallStoryModal'
@@ -79,7 +78,6 @@ export default function ProjectDetailPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
-  const { setSidebarOpen } = useUIStore()
   const projectId = params.id as string
   
   // Core states
@@ -141,11 +139,7 @@ export default function ProjectDetailPage() {
   // const [, setShowScriptForScene] = useState<string | null>(null) // Removed unused state
 
   useEffect(() => {
-    // Minimize sidebar when entering project page with slight delay to ensure it takes effect
-    const timer = setTimeout(() => {
-      setSidebarOpen(false)
-    }, 100)
-    
+    // Don't change sidebar state - it's now managed by RootLayout
     fetchProjectDetails()
     
     // Connect to Socket.io and join project room
@@ -195,7 +189,6 @@ export default function ProjectDetailPage() {
     
     // Cleanup on unmount
     return () => {
-      clearTimeout(timer)
       socketClient.leaveProject(projectId)
       socketClient.off('new_comment')
       socketClient.off('new_scene')
