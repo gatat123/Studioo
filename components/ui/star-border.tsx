@@ -6,16 +6,18 @@ import { cn } from '@/lib/utils';
 interface StarBorderProps {
   className?: string;
   children?: React.ReactNode;
-  color?: string;
+  colors?: string[];
   speed?: string;
 }
 
 export default function StarBorder({
   className,
   children,
-  color = 'from-[#8b5cf6] via-[#ec4899] to-[#8b5cf6]',
+  colors = ['#8b5cf6', '#ec4899', '#8b5cf6'],
   speed = '6s'
 }: StarBorderProps) {
+  const gradientColors = colors.join(', ');
+
   return (
     <div className={cn('relative', className)}>
       {/* Animated gradient border */}
@@ -23,7 +25,7 @@ export default function StarBorder({
         className="absolute inset-0 rounded-lg"
         style={{
           padding: '2px',
-          background: `linear-gradient(90deg, ${color})`,
+          background: `linear-gradient(90deg, ${gradientColors})`,
           backgroundSize: '200% 100%',
           animation: `gradient ${speed} linear infinite`,
         }}
@@ -35,7 +37,7 @@ export default function StarBorder({
       <div
         className="absolute inset-0 rounded-lg opacity-30 blur-xl"
         style={{
-          background: `linear-gradient(90deg, ${color})`,
+          background: `linear-gradient(90deg, ${gradientColors})`,
           backgroundSize: '200% 100%',
           animation: `gradient ${speed} linear infinite`,
         }}
@@ -69,18 +71,6 @@ export default function StarBorder({
       <div className="relative z-10">
         {children}
       </div>
-
-      {/* Global styles for animation */}
-      <style jsx global>{`
-        @keyframes gradient {
-          0% {
-            background-position: 0 50%;
-          }
-          100% {
-            background-position: 200% 50%;
-          }
-        }
-      `}</style>
     </div>
   );
 }
