@@ -22,7 +22,15 @@ interface Activity {
   title: string
   description: string
   timestamp: Date
-  metadata?: any
+  metadata?: {
+    projectName?: string
+    fileName?: string
+    fileType?: string
+    sceneName?: string
+    sceneNumber?: number
+    oldSettings?: Record<string, unknown>
+    newSettings?: Record<string, unknown>
+  }
 }
 
 interface ActivityHistoryProps {

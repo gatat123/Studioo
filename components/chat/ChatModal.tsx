@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { X, Send, MoreVertical, ChevronDown, ArrowLeft } from 'lucide-react';
+import { X, Send, ChevronDown, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,7 @@ import { ko } from 'date-fns/locale';
 interface Friend {
   id: string;
   username: string;
-  nickname: string;
+  nickname?: string; // Made optional for compatibility
   profileImageUrl?: string;
   isActive?: boolean;
 }
@@ -61,7 +61,8 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose, o
   const inputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
 
-  // 메시지 내역 불러오기
+  // 메시지 내역 불러오기 (예비용)
+  /*
   const fetchMessages = async () => {
     try {
       setIsLoading(true);
@@ -84,6 +85,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose, o
       setIsLoading(false);
     }
   };
+  */
 
   // 스크롤을 맨 아래로
   const scrollToBottom = () => {
@@ -191,7 +193,12 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose, o
         nickname: '',
         profileImageUrl: undefined
       },
-      receiver: friend
+      receiver: {
+        id: friend.id,
+        username: friend.username,
+        nickname: friend.nickname || friend.username,
+        profileImageUrl: friend.profileImageUrl
+      }
     };
 
     // 임시 메시지 추가

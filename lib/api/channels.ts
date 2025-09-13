@@ -126,7 +126,7 @@ export interface ChannelsResponse {
 export const channelsAPI = {
   // Get all channels (for current user)
   getChannels: async (): Promise<ChannelsResponse> => {
-    const response = await apiClient.get('/api/channels')
+    const response = await apiClient.get('/api/channels') as ChannelsResponse
     return {
       channels: response.channels || [],
       pendingInvites: response.pendingInvites || []
@@ -135,25 +135,25 @@ export const channelsAPI = {
 
   // Create a new channel
   createChannel: async (data: CreateChannelData): Promise<Channel> => {
-    const response = await apiClient.post('/api/channels', data)
+    const response = await apiClient.post('/api/channels', data) as { channel: Channel }
     return response.channel
   },
 
   // Get channel details
   getChannel: async (channelId: string): Promise<Channel> => {
-    const response = await apiClient.get(`/api/channels/${channelId}`)
+    const response = await apiClient.get(`/api/channels/${channelId}`) as { channel: Channel }
     return response.channel
   },
 
   // Get channel members
   getMembers: async (channelId: string): Promise<ChannelMember[]> => {
-    const response = await apiClient.get(`/api/channels/${channelId}/members`)
+    const response = await apiClient.get(`/api/channels/${channelId}/members`) as { members?: ChannelMember[] }
     return response.members || []
   },
 
   // Invite member to channel
   inviteMember: async (channelId: string, data: InviteMemberData) => {
-    const response = await apiClient.post(`/api/channels/${channelId}/members`, data)
+    const response = await apiClient.post(`/api/channels/${channelId}/members`, data) as { invite: ChannelInvitation }
     return response.invite
   },
 
@@ -177,7 +177,7 @@ export const channelsAPI = {
 
   // Send message to channel
   sendMessage: async (channelId: string, data: SendMessageData): Promise<ChannelMessage> => {
-    const response = await apiClient.post(`/api/channels/${channelId}/messages`, data)
+    const response = await apiClient.post(`/api/channels/${channelId}/messages`, data) as { message: ChannelMessage }
     return response.message
   },
 
@@ -191,7 +191,7 @@ export const channelsAPI = {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
-    })
+    }) as { file: any }
     return response.file
   },
 
@@ -207,7 +207,7 @@ export const channelsAPI = {
 
   // Get pending invites
   getPendingInvites: async () => {
-    const response = await apiClient.get('/api/channels/invitations')
+    const response = await apiClient.get('/api/channels/invitations') as { invitations?: ChannelInvitation[] }
     return response.invitations || []
   }
 }

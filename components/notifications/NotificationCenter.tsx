@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Bell, X, Check, Eye, MessageSquare, Upload, Users, Edit } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CardHeader, CardTitle } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -42,7 +42,7 @@ interface NotificationCenterProps {
   userId?: string
 }
 
-export function NotificationCenter({ userId }: NotificationCenterProps) {
+export function NotificationCenter({ }: NotificationCenterProps) {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [isOpen, setIsOpen] = useState(false)
@@ -65,7 +65,21 @@ export function NotificationCenter({ userId }: NotificationCenterProps) {
     }
   }, [])
 
-  const handleNewNotification = (data: any) => {
+  const handleNewNotification = (data: {
+    type: 'comment' | 'upload' | 'mention' | 'participant' | 'annotation' | 'scene'
+    title: string
+    message: string
+    projectId?: string
+    projectName?: string
+    sceneId?: string
+    imageId?: string
+    actor?: {
+      id: string
+      username: string
+      nickname?: string
+      profileImageUrl?: string
+    }
+  }) => {
     const notification: Notification = {
       id: Date.now().toString(),
       type: data.type,

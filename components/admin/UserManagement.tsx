@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -29,15 +28,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { 
-  Search, 
-  MoreHorizontal, 
-  UserCheck, 
-  UserX, 
+import {
+  Search,
+  MoreHorizontal,
+  UserCheck,
+  UserX,
   Shield,
   ShieldOff,
-  Mail,
-  Filter
+  Mail
 } from 'lucide-react';
 
 interface User {

@@ -104,7 +104,7 @@ export interface Image {
   isCurrent: boolean;
   uploadedBy: string;
   uploadedAt: string | Date;
-  metadata?: any;
+  metadata?: unknown;
   scene?: Scene;
   uploader?: User;
   history?: ImageHistory[];
@@ -162,7 +162,7 @@ export interface Annotation {
   width?: number | null;
   height?: number | null;
   content?: string | null;
-  drawingData?: any;
+  drawingData?: Record<string, unknown>;
   color?: string | null;
   createdAt: string;
   updatedAt: string;
@@ -211,14 +211,14 @@ export interface CollaborationLog {
   targetType?: string | null;
   targetId?: string | null;
   description?: string | null;
-  metadata?: any;
+  metadata?: unknown;
   createdAt: string;
   project?: Project;
   user?: User;
 }
 
 // API Response types
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;

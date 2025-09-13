@@ -39,6 +39,7 @@ export default function ProfilePage() {
 
   useEffect(() => {
     void fetchProfile()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchProfile = async () => {
@@ -53,6 +54,7 @@ export default function ProfilePage() {
         bio: userData.bio || ''
       }))
     } catch (error) {
+      console.error('프로필 로드 실패:', error)
       toast({
         title: '오류',
         description: '프로필을 불러오는데 실패했습니다.',
@@ -104,9 +106,10 @@ export default function ProfilePage() {
           variant: 'destructive'
         })
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Profile Update] Error:', error)
-      const errorMessage = error?.response?.data?.error || error?.message || '프로필 업데이트에 실패했습니다.'
+      const errorObj = error as {response?: {data?: {error?: string}}; message?: string}
+      const errorMessage = errorObj?.response?.data?.error || errorObj?.message || '프로필 업데이트에 실패했습니다.'
       toast({
         title: '오류',
         description: errorMessage,
@@ -187,9 +190,10 @@ export default function ProfilePage() {
           variant: 'destructive'
         })
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[Profile Upload] Error:', error)
-      const errorMessage = error?.response?.data?.error || error?.message || '프로필 사진 업로드에 실패했습니다.'
+      const errorObj = error as {response?: {data?: {error?: string}}; message?: string}
+      const errorMessage = errorObj?.response?.data?.error || errorObj?.message || '프로필 사진 업로드에 실패했습니다.'
       toast({
         title: '오류',
         description: errorMessage,
@@ -216,6 +220,7 @@ export default function ProfilePage() {
         })
       }
     } catch (error) {
+      console.error('프로필 사진 제거 실패:', error)
       toast({
         title: '오류',
         description: '프로필 사진 제거에 실패했습니다.',
@@ -255,6 +260,7 @@ export default function ProfilePage() {
         confirmPassword: ''
       }))
     } catch (error) {
+      console.error('비밀번호 변경 실패:', error)
       toast({
         title: '오류',
         description: '비밀번호 변경에 실패했습니다.',

@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
@@ -11,14 +10,12 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  Plus,
   Search,
   LayoutGrid,
   FileText,
   Palette,
   Star,
   Archive,
-  Bell,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -60,8 +57,6 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoadingProjects, setIsLoadingProjects] = useState(true);
-  const [recentProjects, setRecentProjects] = useState<Project[]>([]);
-  const [starredProjects, setStarredProjects] = useState<Project[]>([]);
 
   // Function to fetch projects
   const fetchProjects = async () => {
@@ -71,14 +66,14 @@ const Sidebar: React.FC<SidebarProps> = ({
       setProjects(fetchedProjects);
       
       // Sort by updated date for recent projects
-      const sorted = [...fetchedProjects].sort((a, b) => 
-        new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-      );
-      setRecentProjects(sorted.slice(0, 5)); // Get 5 most recent
-      
+      // const sorted = [...fetchedProjects].sort((a, b) =>
+      //   new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+      // );
+      // setRecentProjects(sorted.slice(0, 5)); // Get 5 most recent
+
       // Filter starred projects (you might need to add a starred field to Project type)
       // For now, we'll just use empty array
-      setStarredProjects([]);
+      // setStarredProjects([]);
     } catch (error) {
       console.error('Failed to fetch projects:', error);
       toast({
@@ -94,6 +89,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   // Initial fetch projects data
   useEffect(() => {
     fetchProjects();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // WebSocket connection for real-time updates
@@ -116,6 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       socket.off('project:deleted', handleProjectUpdate);
       socket.off('project:archived', handleProjectUpdate);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Count projects by type

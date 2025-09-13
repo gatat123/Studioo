@@ -7,11 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Bold,
   Italic,
-  Link,
   Image as ImageIcon,
   Paperclip,
-  Send,
-  Smile
+  Send
 } from 'lucide-react';
 import { Comment } from '@/types/comment';
 import useCommentStore from '@/store/useCommentStore';

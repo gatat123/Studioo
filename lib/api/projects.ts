@@ -44,7 +44,7 @@ export const projectsAPI = {
   /**
    * Join project by invite code
    */
-  async joinByInviteCode(inviteCode: string): Promise<any> {
+  async joinByInviteCode(inviteCode: string): Promise<Project> {
     const response = await api.post('/api/projects/join', { inviteCode });
     return response.data || response;
   },

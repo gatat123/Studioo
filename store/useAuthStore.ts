@@ -23,7 +23,7 @@ interface AuthState {
 // Create auth store with persistence
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set, get) => ({
+    (set) => ({
       user: null,
       isAuthenticated: false,
       isLoading: false,
@@ -42,7 +42,9 @@ export const useAuthStore = create<AuthState>()(
               profileImageUrl: response.user.profileImageUrl || undefined,
               createdAt: response.user.createdAt || new Date().toISOString(),
               updatedAt: response.user.updatedAt || new Date().toISOString(),
-              isActive: response.user.isActive !== undefined ? response.user.isActive : true
+              isActive: response.user.isActive !== undefined ? response.user.isActive : true,
+              // 임시로 특정 사용자를 관리자로 설정 (테스트용)
+              isAdmin: response.user.username === 'gatat123' ? true : response.user.isAdmin
             };
             
             // Set cookie for middleware authentication
@@ -67,12 +69,13 @@ export const useAuthStore = create<AuthState>()(
               error: null,
             });
           }
-        } catch (error: any) {
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : '로그인에 실패했습니다.';
           set({
             user: null,
             isAuthenticated: false,
             isLoading: false,
-            error: error?.message || '로그인에 실패했습니다.',
+            error: errorMessage,
           });
           throw error;
         }
@@ -91,7 +94,9 @@ export const useAuthStore = create<AuthState>()(
               profileImageUrl: response.user.profileImageUrl || undefined,
               createdAt: response.user.createdAt || new Date().toISOString(),
               updatedAt: response.user.updatedAt || new Date().toISOString(),
-              isActive: response.user.isActive !== undefined ? response.user.isActive : true
+              isActive: response.user.isActive !== undefined ? response.user.isActive : true,
+              // 임시로 특정 사용자를 관리자로 설정 (테스트용)
+              isAdmin: response.user.username === 'gatat123' ? true : response.user.isAdmin
             };
             
             // Set cookie for middleware authentication
@@ -116,12 +121,13 @@ export const useAuthStore = create<AuthState>()(
               error: null,
             });
           }
-        } catch (error: any) {
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : '회원가입에 실패했습니다.';
           set({
             user: null,
             isAuthenticated: false,
             isLoading: false,
-            error: error?.message || '회원가입에 실패했습니다.',
+            error: errorMessage,
           });
           throw error;
         }
@@ -215,7 +221,9 @@ export const useAuthStore = create<AuthState>()(
               profileImageUrl: sessionUser.profileImageUrl || undefined,
               createdAt: sessionUser.createdAt || new Date().toISOString(),
               updatedAt: sessionUser.updatedAt || new Date().toISOString(),
-              isActive: sessionUser.isActive !== undefined ? sessionUser.isActive : true
+              isActive: sessionUser.isActive !== undefined ? sessionUser.isActive : true,
+              // 임시로 특정 사용자를 관리자로 설정 (테스트용)
+              isAdmin: sessionUser.username === 'gatat123' ? true : sessionUser.isAdmin
             };
             
             console.log('✅ CheckAuth - User authenticated:', user.username);
@@ -233,6 +241,7 @@ export const useAuthStore = create<AuthState>()(
             });
           }
         } catch (error) {
+          console.error('CheckAuth error:', error);
           set({
             user: null,
             isAuthenticated: false,

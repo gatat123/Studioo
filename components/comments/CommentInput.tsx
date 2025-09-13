@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { MentionsInput, Mention } from 'react-mentions'
 import { Button } from '@/components/ui/button'
 import { Send, Loader2 } from 'lucide-react'
@@ -21,15 +21,10 @@ export function CommentInput({
 }: CommentInputProps) {
   const [value, setValue] = useState('')
   const [users, setUsers] = useState<User[]>([])
-  const [mentions, setMentions] = useState<string[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Fetch users for mention suggestions
-  useEffect(() => {
-    fetchUsers()
-  }, [projectId])
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const response = await fetch(`/api/projects/${projectId}/participants`)
       if (response.ok) {
@@ -39,7 +34,11 @@ export function CommentInput({
     } catch (error) {
       console.error('Failed to fetch users:', error)
     }
-  }
+  }, [projectId])
+
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
 
   const handleSubmit = async () => {
     if (!value.trim() || isSubmitting) return
@@ -47,7 +46,7 @@ export function CommentInput({
     setIsSubmitting(true)
     try {
       // Extract mentions from the value
-      const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g
+      const mentionRegex = /@\[([^\]]+)]\(([^)]+)\)/g
       const extractedMentions: string[] = []
       let match
       
@@ -56,11 +55,10 @@ export function CommentInput({
       }
 
       // Convert mentions format to plain text for display
-      const plainText = value.replace(/@\[([^\]]+)\]\([^)]+\)/g, '@$1')
+      const plainText = value.replace(/@\[([^\]]+)]\([^)]+\)/g, '@$1')
       
       await onSubmit(plainText, extractedMentions)
       setValue('')
-      setMentions([])
     } catch (error) {
       console.error('Failed to submit comment:', error)
     } finally {
@@ -140,7 +138,7 @@ export function CommentInput({
           placeholder={placeholder}
           disabled={loading || isSubmitting}
           allowSuggestionsAboveCursor
-          inputRef={(input: any) => {
+          inputRef={(input: HTMLInputElement | HTMLTextAreaElement | null) => {
             if (input) {
               Object.assign(input.style, mentionInputStyle)
             }

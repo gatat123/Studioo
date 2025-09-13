@@ -96,7 +96,12 @@ class SocketClient {
   }
 
   // Comment real-time updates
-  sendComment(projectId: string, comment: any) {
+  sendComment(projectId: string, comment: {
+    id: string;
+    content: string;
+    userId: string;
+    [key: string]: unknown;
+  }) {
     this.socket?.emit('comment:create', { projectId, comment });
   }
 
@@ -109,16 +114,26 @@ class SocketClient {
   }
 
   // Image upload notification
-  notifyImageUpload(projectId: string, sceneId: string, image: any) {
+  notifyImageUpload(projectId: string, sceneId: string, image: {
+    id: string;
+    fileName: string;
+    fileSize: number;
+    [key: string]: unknown;
+  }) {
     this.socket?.emit('image:upload', { projectId, sceneId, image });
   }
 
   // Annotation real-time updates
-  createAnnotation(imageId: string, annotation: any) {
+  createAnnotation(imageId: string, annotation: {
+    id: string;
+    type: string;
+    data: unknown;
+    [key: string]: unknown;
+  }) {
     this.socket?.emit('annotation:create', { imageId, annotation });
   }
 
-  updateAnnotation(imageId: string, annotationId: string, updates: any) {
+  updateAnnotation(imageId: string, annotationId: string, updates: Record<string, unknown>) {
     this.socket?.emit('annotation:update', { imageId, annotationId, updates });
   }
 
@@ -127,18 +142,18 @@ class SocketClient {
   }
 
   // Custom event emitter
-  emit(event: string, data?: any) {
+  emit(event: string, data?: unknown) {
     console.log(`📤 Emitting Socket.io event: ${event}`, data);
     this.socket?.emit(event, data);
   }
 
   // Custom event listener registration
-  on(event: string, callback: (...args: any[]) => void) {
+  on(event: string, callback: (...args: unknown[]) => void) {
     console.log(`👂 Listening for Socket.io event: ${event}`);
     this.socket?.on(event, callback);
   }
 
-  off(event: string, callback?: (...args: any[]) => void) {
+  off(event: string, callback?: (...args: unknown[]) => void) {
     console.log(`🔇 Removing Socket.io listener: ${event}`);
     this.socket?.off(event, callback);
   }

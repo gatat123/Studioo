@@ -2,7 +2,7 @@
 
 import React, { useState, Suspense, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Menu, User, ChevronDown, LogOut, Settings, UserCircle, Shield } from 'lucide-react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -199,7 +199,6 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
 // Wrapper component with Suspense
 const Header: React.FC<HeaderProps> = (props) => {
   const pathname = usePathname();
-  const router = useRouter();
 
   return (
     <Suspense fallback={

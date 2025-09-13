@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -50,7 +50,11 @@ interface Conversation {
 
 interface Friend {
   id: string
-  friend: {
+  username: string
+  nickname?: string
+  profileImageUrl?: string
+  isActive?: boolean
+  friend?: { // For API response structure compatibility
     id: string
     username: string
     nickname: string
@@ -60,22 +64,22 @@ interface Friend {
 }
 
 interface MessagesModalProps {
-  initialFriend?: any;
-  onFriendSelect?: (friend: any) => void;
+  initialFriend?: Friend;
+  onFriendSelect?: (friend: Friend) => void;
 }
 
 export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalProps = {}) {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [totalUnread, setTotalUnread] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedFriend, setSelectedFriend] = useState<any>(initialFriend || null)
+  const [selectedFriend, setSelectedFriend] = useState<Friend | null>(initialFriend || null)
   const [currentUserId, setCurrentUserId] = useState<string>('')
   const [isOpen, setIsOpen] = useState(false)
   const [isMinimized, setIsMinimized] = useState(false)
   const [activeTab, setActiveTab] = useState<'messages' | 'friends'>('messages')
   const [friends, setFriends] = useState<Friend[]>([])
   const [friendSearchQuery, setFriendSearchQuery] = useState('')
-  const searchTimeoutRef = useRef<NodeJS.Timeout>()
+  // const searchTimeoutRef = useRef<NodeJS.Timeout>() // Not currently used
 
   useEffect(() => {
     // Get current user ID from localStorage
@@ -109,6 +113,7 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
       socket.off('new_message')
       socket.off('messages_read')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, isMinimized, activeTab])
 
   // Handle initialFriend prop change
@@ -167,7 +172,7 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
     }
   }
 
-  const startNewConversation = (friend: any) => {
+  const startNewConversation = (friend: Friend) => {
     const friendData = {
       id: friend.id,
       username: friend.username,
@@ -260,9 +265,9 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
     conv.lastMessage?.content.toLowerCase().includes(searchQuery.toLowerCase())
   )
 
-  const filteredFriends = friends.filter(f =>
-    f.friend.nickname.toLowerCase().includes(friendSearchQuery.toLowerCase()) ||
-    f.friend.username.toLowerCase().includes(friendSearchQuery.toLowerCase())
+  const filteredFriends = friends.filter((f) =>
+    (f.friend?.nickname || f.nickname || '').toLowerCase().includes(friendSearchQuery.toLowerCase()) ||
+    (f.friend?.username || f.username || '').toLowerCase().includes(friendSearchQuery.toLowerCase())
   )
 
   return (
@@ -439,7 +444,7 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
                           {searchQuery ? '검색 결과가 없습니다' : '아직 대화가 없습니다'}
                         </p>
                         <p className="text-xs text-muted-foreground mt-2">
-                          '새 대화' 탭에서 친구를 선택해 대화를 시작하세요
+                          &apos;새 대화&apos; 탭에서 친구를 선택해 대화를 시작하세요
                         </p>
                       </div>
                     )}

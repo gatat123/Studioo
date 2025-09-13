@@ -13,7 +13,7 @@ export class APIError extends Error {
   constructor(
     public status: number,
     message: string,
-    public data?: any
+    public data?: unknown
   ) {
     super(message);
     this.name = 'APIError';
@@ -28,7 +28,7 @@ interface RequestOptions extends RequestInit {
 }
 
 // Generic API response type
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -52,7 +52,7 @@ class APIClient {
   /**
    * Make an authenticated API request
    */
-  private async request<T = any>(
+  private async request<T = unknown>(
     endpoint: string,
     options: RequestOptions = {}
   ): Promise<T> {
@@ -134,14 +134,14 @@ class APIClient {
           }
 
           // Parse and return response
-          const data = await response.json();
-          return data;
+          return await response.json();
         } catch (error) {
           lastError = error as Error;
-          
+
           // Don't retry on client errors (4xx)
           if (error instanceof APIError && error.status >= 400 && error.status < 500) {
-            throw error;
+            console.error('[API Error]', error.message);
+            return Promise.reject(error);
           }
           
           // Wait before retry (exponential backoff)
@@ -158,11 +158,11 @@ class APIClient {
   }
 
   // HTTP methods
-  async get<T = any>(endpoint: string, options?: RequestOptions): Promise<T> {
+  async get<T = unknown>(endpoint: string, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
 
-  async post<T = any>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+  async post<T = unknown>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
@@ -170,7 +170,7 @@ class APIClient {
     });
   }
 
-  async put<T = any>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+  async put<T = unknown>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PUT',
@@ -178,7 +178,7 @@ class APIClient {
     });
   }
 
-  async patch<T = any>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+  async patch<T = unknown>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PATCH',
@@ -186,23 +186,25 @@ class APIClient {
     });
   }
 
-  async delete<T = any>(endpoint: string, options?: RequestOptions): Promise<T> {
+  async delete<T = unknown>(endpoint: string, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 
   /**
    * Upload file with multipart/form-data
    */
-  async upload<T = any>(
+  async upload<T = unknown>(
     endpoint: string,
     formData: FormData,
     options?: RequestOptions
   ): Promise<T> {
     const { headers = {}, token, ...restOptions } = options || {};
-    
+
     // Remove Content-Type to let browser set it with boundary
-    const uploadHeaders: any = { ...headers };
-    delete uploadHeaders['Content-Type'];
+    const uploadHeaders: HeadersInit = { ...headers };
+    if (uploadHeaders && typeof uploadHeaders === 'object' && 'Content-Type' in uploadHeaders) {
+      delete (uploadHeaders as Record<string, string>)['Content-Type'];
+    }
 
     // Get authentication token
     let authToken = token;
@@ -252,7 +254,7 @@ class APIClient {
       return data;
     } catch (error) {
       console.error('[API Upload] Request failed:', error);
-      throw error;
+      return Promise.reject(error);
     }
   }
 }

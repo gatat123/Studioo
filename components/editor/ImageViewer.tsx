@@ -13,12 +13,9 @@ import {
   RotateCcw,
   Maximize2,
   Grid,
-  Move,
-  X,
   Minimize2,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
 import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -61,6 +58,29 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
   const [showGrid, setShowGrid] = useState(false);
   const [isPanning, setIsPanning] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Fullscreen handling functions - declare before useEffect
+  const enterFullscreen = useCallback(() => {
+    if (containerRef.current?.requestFullscreen) {
+      containerRef.current.requestFullscreen();
+      setIsFullscreen(true);
+    }
+  }, []);
+
+  const exitFullscreen = useCallback(() => {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+      setIsFullscreen(false);
+    }
+  }, []);
+
+  const toggleFullscreen = useCallback(() => {
+    if (!isFullscreen) {
+      enterFullscreen();
+    } else {
+      exitFullscreen();
+    }
+  }, [isFullscreen, enterFullscreen, exitFullscreen]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -115,30 +135,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
 
     window.addEventListener('keydown', handleKeyboard);
     return () => window.removeEventListener('keydown', handleKeyboard);
-  }, [compareMode, isFullscreen, showGrid, compareImage]);
-
-  // Fullscreen handling
-  const toggleFullscreen = useCallback(() => {
-    if (!isFullscreen) {
-      enterFullscreen();
-    } else {
-      exitFullscreen();
-    }
-  }, [isFullscreen]);
-
-  const enterFullscreen = () => {
-    if (containerRef.current?.requestFullscreen) {
-      containerRef.current.requestFullscreen();
-      setIsFullscreen(true);
-    }
-  };
-
-  const exitFullscreen = () => {
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-      setIsFullscreen(false);
-    }
-  };
+  }, [compareMode, isFullscreen, showGrid, compareImage, toggleFullscreen, exitFullscreen]);
 
   // Fullscreen change listener
   useEffect(() => {
@@ -417,7 +414,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
             step: 0.5,
           }}
         >
-          {({ zoomIn, zoomOut, resetTransform }) => (
+          {() => (
             <TransformComponent
               wrapperStyle={{
                 width: '100%',
@@ -426,6 +423,7 @@ const ImageViewer: React.FC<ImageViewerProps> = ({
               }}
             >
               <div className="relative">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={primaryImage}
                   alt={alt}

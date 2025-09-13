@@ -11,8 +11,6 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -21,7 +19,6 @@ import {
   Users,
   UserPlus,
   Search,
-  Send,
   Check,
   X,
   Clock,
@@ -87,7 +84,6 @@ export function FriendList() {
   const [searchResults, setSearchResults] = useState<SearchUser[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [requestMessage, setRequestMessage] = useState('');
-  const [selectedUser, setSelectedUser] = useState<SearchUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -175,7 +171,7 @@ export function FriendList() {
           description: data.message || '친구 요청을 보냈습니다.'
         });
         setRequestMessage('');
-        setSelectedUser(null);
+        // setSelectedUser(null); // State not defined
         fetchFriends();
         searchUsers(); // Refresh search results
       } else {
@@ -424,7 +420,7 @@ export function FriendList() {
                       </div>
                       {request.message && (
                         <p className="text-sm text-gray-600 mb-3 pl-12">
-                          "{request.message}"
+                          &quot;{request.message}&quot;
                         </p>
                       )}
                       <div className="flex justify-end space-x-2">
@@ -497,7 +493,7 @@ export function FriendList() {
                   placeholder="닉네임으로 검색..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && searchUsers()}
+                  onKeyDown={(e) => e.key === 'Enter' && searchUsers()}
                 />
                 <Button onClick={searchUsers} disabled={isLoading}>
                   <Search className="h-4 w-4 mr-2" />
@@ -540,7 +536,7 @@ export function FriendList() {
                             <Button
                               size="sm"
                               onClick={() => {
-                                setSelectedUser(user);
+                                // setSelectedUser(user); // State not defined
                                 sendFriendRequest(user.nickname);
                               }}
                             >

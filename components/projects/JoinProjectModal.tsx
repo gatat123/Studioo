@@ -44,11 +44,11 @@ export default function JoinProjectModal({ open, onClose }: JoinProjectModalProp
       
       toast({
         title: '성공',
-        description: `${result.project.name} 프로젝트에 참여했습니다!`
+        description: `${result.name || '프로젝트'}에 참여했습니다!`
       })
-      
+
       // Navigate to the joined project
-      router.push(`/studio/projects/${result.project.id}`)
+      router.push(`/studio/projects/${result.id}`)
       onClose()
       setInviteCode('')
     } catch (error: any) {

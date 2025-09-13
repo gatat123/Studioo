@@ -45,13 +45,13 @@ export default function StudioPage() {
     }, 100);
     
     return () => clearTimeout(timer);
-  }, []);
+  }, [checkAuth]);
 
   useEffect(() => {
     if (isAuthenticated) {
       void fetchProjects();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchProjects]);
   
   useEffect(() => {
     console.log('🎭 Studio - Auth state:', { isInitializing, isLoading, isAuthenticated, user: user?.username });
@@ -61,7 +61,7 @@ export default function StudioPage() {
       console.log('⚠️ Studio - Redirecting to login page');
       router.push('/login');
     }
-  }, [isInitializing, isLoading, isAuthenticated, router]);
+  }, [isInitializing, isLoading, isAuthenticated, router, user?.username]);
   
   
   // Show loading during initialization

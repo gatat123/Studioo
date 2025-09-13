@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { CommentItem } from './CommentItem';
 import { CommentComposer } from './CommentComposer';
 import { CommentSectionProps, SortOption } from '@/types/comment';
@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MessageSquare, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -50,7 +50,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
   const handleLoadMore = async () => {
     try {
       await loadMoreComments();
-    } catch (err) {
+    } catch {
       setError('댓글을 불러오는 중 오류가 발생했습니다.');
     }
   };
@@ -89,7 +89,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
 
       {/* Tabs for filtering */}
       {(projectId || sceneId) && (
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)}>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'all' | 'scene' | 'project')}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="all">전체</TabsTrigger>
             <TabsTrigger value="scene">씬 댓글</TabsTrigger>

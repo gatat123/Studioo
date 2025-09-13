@@ -61,7 +61,6 @@ export function AnnotationTools({
   const [shapes, setShapes] = useState<Shape[]>(initialShapes)
   const [isDrawing, setIsDrawing] = useState(false)
   const [currentShapeId, setCurrentShapeId] = useState<string | null>(null)
-  const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null)
   const [strokeColor, setStrokeColor] = useState('#FF0000')
   const [strokeWidth, setStrokeWidth] = useState(2)
   const [opacity, setOpacity] = useState(1)
@@ -265,17 +264,8 @@ export function AnnotationTools({
     setShowAnnotations(!showAnnotations)
   }
 
-  // Save annotations
-  const handleSaveAnnotations = () => {
-    if (onSave) {
-      onSave(shapes)
-    }
-    // Save to IndexedDB
-    saveToIndexedDB(shapes)
-  }
-
-  // Save to IndexedDB
-  const saveToIndexedDB = async (shapesToSave: Shape[]) => {
+  // Save to IndexedDB - declare before use
+  const saveToIndexedDB = useCallback(async (shapesToSave: Shape[]) => {
     try {
       const db = await openDB()
       const transaction = db.transaction(['annotations'], 'readwrite')
@@ -285,7 +275,16 @@ export function AnnotationTools({
     } catch (error) {
       console.error('Error saving to IndexedDB:', error)
     }
-  }
+  }, [])
+
+  // Save annotations
+  const handleSaveAnnotations = useCallback(() => {
+    if (onSave) {
+      onSave(shapes)
+    }
+    // Save to IndexedDB
+    saveToIndexedDB(shapes)
+  }, [onSave, shapes, saveToIndexedDB])
 
   // Open IndexedDB
   const openDB = (): Promise<IDBDatabase> => {
@@ -305,7 +304,7 @@ export function AnnotationTools({
   }
 
   // Load from IndexedDB
-  const loadFromIndexedDB = async () => {
+  const loadFromIndexedDB = useCallback(async () => {
     try {
       const db = await openDB()
       const transaction = db.transaction(['annotations'], 'readonly')
@@ -321,12 +320,12 @@ export function AnnotationTools({
     } catch (error) {
       console.error('Error loading from IndexedDB:', error)
     }
-  }
+  }, [saveToHistory])
 
   // Load annotations on mount
   useEffect(() => {
     loadFromIndexedDB()
-  }, [])
+  }, [loadFromIndexedDB])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -376,7 +375,7 @@ export function AnnotationTools({
 
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleUndo, handleRedo])
+  }, [handleUndo, handleRedo, handleSaveAnnotations])
 
   const tools = [
     { id: 'select', icon: <span className="text-xs">V</span>, label: 'Select (V)' },

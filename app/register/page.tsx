@@ -50,6 +50,7 @@ export default function RegisterPage() {
       router.push('/studio');
     } catch (error) {
       // Error is handled in the store
+      console.error('Registration failed:', error);
     }
   };
 

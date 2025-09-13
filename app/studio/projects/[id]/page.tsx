@@ -2,6 +2,7 @@
 
 import { useParams, useRouter } from 'next/navigation'
 import { useEffect, useState, useCallback } from 'react'
+import NextImage from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,8 +11,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
-import { 
-  ArrowLeft, 
+import {
+  ArrowLeft,
   Plus,
   Send,
   MoreVertical,
@@ -99,7 +100,7 @@ export default function ProjectDetailPage() {
   const [newSceneName, setNewSceneName] = useState('')
   const [newSceneDescription, setNewSceneDescription] = useState('')
   const [isAddingScene, setIsAddingScene] = useState(false)
-  const [editingSceneId, setEditingSceneId] = useState<string | null>(null)
+  // const [editingSceneId] = useState<string | null>(null) // Removed unused state
   
   // Comment management
   const [newComment, setNewComment] = useState('')
@@ -107,7 +108,7 @@ export default function ProjectDetailPage() {
   
   // Upload states
   const [isDragging, setIsDragging] = useState(false)
-  const [annotationModalData, setAnnotationModalData] = useState<any>(null)
+  const [annotationModalData, setAnnotationModalData] = useState<{image: string; text: string} | null>(null)
   const [showAnnotationModal, setShowAnnotationModal] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
@@ -119,15 +120,15 @@ export default function ProjectDetailPage() {
   const [showHistory, setShowHistory] = useState(false)
   const [showCompare, setShowCompare] = useState(false)
   const [selectedHistoryType, setSelectedHistoryType] = useState<'lineart' | 'art'>('lineart')
-  const [imageHistory, setImageHistory] = useState<any[]>([])
-  const [compareImages, setCompareImages] = useState<{left: any, right: any} | null>(null)
+  const [imageHistory, setImageHistory] = useState<ProjectImage[]>([])
+  const [compareImages, setCompareImages] = useState<{left: ProjectImage, right: ProjectImage} | null>(null)
   const [selectedLineartVersion, setSelectedLineartVersion] = useState<number | null>(null)
   const [selectedArtVersion, setSelectedArtVersion] = useState<number | null>(null)
   
   // Annotation states
   const [showAnnotation, setShowAnnotation] = useState(false)
-  const [annotationImage, setAnnotationImage] = useState<any>(null)
-  const [annotationText, setAnnotationText] = useState('')
+  const [annotationImage, setAnnotationImage] = useState<ProjectImage | null>(null)
+  const [, setAnnotationText] = useState('')
   const [showScenePlay, setShowScenePlay] = useState(false)
   
   // New Story/Set/Character states
@@ -135,9 +136,9 @@ export default function ProjectDetailPage() {
   const [showSetListModal, setShowSetListModal] = useState(false)
   const [showCharacterListModal, setShowCharacterListModal] = useState(false)
   const [overallStory, setOverallStory] = useState('')
-  const [setList, setSetList] = useState<any[]>([])
-  const [characterList, setCharacterList] = useState<any[]>([])
-  const [showScriptForScene, setShowScriptForScene] = useState<string | null>(null)
+  const [setList, setSetList] = useState<Array<{id: string; location: string; items: string[]}>>([])
+  const [characterList, setCharacterList] = useState<Array<{id: string; name: string; age: string; description: string}>>([])
+  // const [, setShowScriptForScene] = useState<string | null>(null) // Removed unused state
 
   useEffect(() => {
     // Minimize sidebar when entering project page with slight delay to ensure it takes effect
@@ -148,11 +149,11 @@ export default function ProjectDetailPage() {
     fetchProjectDetails()
     
     // Connect to Socket.io and join project room
-    const socket = socketClient.connect()
+    socketClient.connect()
     socketClient.joinProject(projectId)
     
     // Set up real-time event listeners
-    socketClient.on('new_comment', (data: any) => {
+    socketClient.on('new_comment', (data: {user?: {nickname?: string}}) => {
       // Refetch comments to get the full comment data with proper structure
       fetchComments()
       toast({
@@ -161,7 +162,7 @@ export default function ProjectDetailPage() {
       })
     })
     
-    socketClient.on('new_scene', (data: any) => {
+    socketClient.on('new_scene', (data: {user?: {nickname?: string}}) => {
       // Refetch scenes to get the full data with proper structure
       fetchProjectDetails()
       toast({
@@ -170,7 +171,7 @@ export default function ProjectDetailPage() {
       })
     })
     
-    socketClient.on('new_image', (data: any) => {
+    socketClient.on('new_image', (data: {uploader?: {nickname?: string}; type?: string}) => {
       // Refetch images for the scene to get the full data
       console.log('Received new_image event:', data)
       fetchProjectDetails() // 전체 프로젝트 데이터를 다시 가져와서 이미지 업데이트
@@ -182,7 +183,7 @@ export default function ProjectDetailPage() {
     })
     
     // Listen for image version changes
-    socketClient.on('image_version_changed', (data: any) => {
+    socketClient.on('image_version_changed', (data: {user?: {username?: string}; imageType?: string}) => {
       console.log('Received image_version_changed event:', data)
       fetchProjectDetails() // 전체 프로젝트 데이터를 다시 가져와서 이미지 업데이트
       
@@ -201,6 +202,7 @@ export default function ProjectDetailPage() {
       socketClient.off('new_image')
       socketClient.off('image_version_changed')
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
 
   const fetchComments = async () => {
@@ -212,14 +214,15 @@ export default function ProjectDetailPage() {
     }
   }
 
-  const fetchSceneImages = async (sceneId: string) => {
-    try {
-      // Refetch the entire project to get updated scene data
-      await fetchProjectDetails()
-    } catch (error) {
-      console.error('Failed to fetch scene images:', error)
-    }
-  }
+  // Removed unused function - images are fetched via fetchProjectDetails
+  // const fetchSceneImages = async () => {
+  //   try {
+  //     // Refetch the entire project to get updated scene data
+  //     await fetchProjectDetails()
+  //   } catch (error) {
+  //     console.error('Failed to fetch scene images:', error)
+  //   }
+  // }
 
   const fetchProjectDetails = async () => {
     try {
@@ -233,7 +236,7 @@ export default function ProjectDetailPage() {
         projectId,
         hasScenes: !!projectData.scenes,
         scenesCount: projectData.scenes?.length,
-        scenes: projectData.scenes?.map((s: any) => ({
+        scenes: projectData.scenes?.map((s: Scene) => ({
           id: s.id,
           imagesCount: s.images?.length,
           images: s.images
@@ -248,18 +251,18 @@ export default function ProjectDetailPage() {
       }
       
       // Process scenes to separate line art and art images
-      const processedScenes = scenesData.map((scene: any) => ({
+      const processedScenes = scenesData.map((scene: Scene) => ({
         ...scene,
-        lineArtImages: scene.images?.filter((img: any) => img.type === 'lineart')
-          .map((img: any) => ({ 
-            ...img, 
-            url: (img.url || img.fileUrl)?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
+        lineArtImages: scene.images?.filter((img: Image) => img.type === 'lineart')
+          .map((img: Image) => ({
+            ...img,
+            url: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
             fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
           })) || [],
-        artImages: scene.images?.filter((img: any) => img.type === 'art' || img.type === 'storyboard')
-          .map((img: any) => ({ 
-            ...img, 
-            url: (img.url || img.fileUrl)?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
+        artImages: scene.images?.filter((img: Image) => img.type === 'art')
+          .map((img: Image) => ({
+            ...img,
+            url: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
             fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
           })) || []
       }))
@@ -353,6 +356,7 @@ export default function ProjectDetailPage() {
         description: '씬이 삭제되었습니다.'
       })
     } catch (error) {
+      console.error('씬 삭제 실패:', error)
       toast({
         title: '오류',
         description: '씬 삭제에 실패했습니다.',
@@ -388,6 +392,7 @@ export default function ProjectDetailPage() {
         description: '댓글이 작성되었습니다.'
       })
     } catch (error) {
+      console.error('댓글 작성 실패:', error)
       toast({
         title: '오류',
         description: '댓글 작성에 실패했습니다.',
@@ -437,6 +442,7 @@ export default function ProjectDetailPage() {
     for (const file of imageFiles) {
       await uploadImage(file, type)
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedScene])
 
   const uploadImage = async (file: File, type: 'lineart' | 'art') => {
@@ -497,7 +503,7 @@ export default function ProjectDetailPage() {
             }
             
             // Mark all existing images of same type as not current
-            updatedScene.images = updatedScene.images.map((img: any) => 
+            updatedScene.images = updatedScene.images.map((img: Image) =>
               img.type === type ? { ...img, isCurrent: false } : img
             )
             
@@ -532,6 +538,7 @@ export default function ProjectDetailPage() {
         description: `${type === 'lineart' ? '선화' : '아트'} 이미지가 업로드되었습니다.`
       })
     } catch (error) {
+      console.error('이미지 업로드 실패:', error)
       toast({
         title: '업로드 실패',
         description: '이미지 업로드에 실패했습니다.',
@@ -659,7 +666,7 @@ export default function ProjectDetailPage() {
                 placeholder="새 씬 이름"
                 value={newSceneName}
                 onChange={(e) => setNewSceneName(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddScene()}
+                onKeyDown={(e) => e.key === 'Enter' && handleAddScene()}
               />
               <Button 
                 onClick={handleAddScene}
@@ -711,7 +718,7 @@ export default function ProjectDetailPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditingSceneId(scene.id)}>
+                          <DropdownMenuItem onClick={() => console.log('Edit scene:', scene.id)}>
                             <Edit className="h-4 w-4 mr-2" />
                             편집
                           </DropdownMenuItem>
@@ -794,14 +801,14 @@ export default function ProjectDetailPage() {
                         variant="outline"
                         onClick={() => {
                           // Get current displayed image
-                          const images = selectedScene.images?.filter((img: any) => img.type === imageViewMode) || [];
-                          const currentImage = imageViewMode === 'lineart' 
-                            ? (selectedLineartVersion 
-                                ? images.find((img: any) => img.version === selectedLineartVersion)
-                                : images.find((img: any) => img.isCurrent) || images[images.length - 1])
+                          const images = selectedScene.images?.filter((img: Image) => img.type === imageViewMode) || [];
+                          const currentImage = imageViewMode === 'lineart'
+                            ? (selectedLineartVersion
+                                ? images.find((img: Image) => (img as ProjectImage).version === selectedLineartVersion)
+                                : images.find((img: Image) => img.isCurrent) || images[images.length - 1])
                             : (selectedArtVersion
-                                ? images.find((img: any) => img.version === selectedArtVersion)
-                                : images.find((img: any) => img.isCurrent) || images[images.length - 1])
+                                ? images.find((img: Image) => (img as ProjectImage).version === selectedArtVersion)
+                                : images.find((img: Image) => img.isCurrent) || images[images.length - 1])
                           
                           if (currentImage) {
                             setAnnotationImage(currentImage)
@@ -825,11 +832,11 @@ export default function ProjectDetailPage() {
                           setSelectedHistoryType(imageViewMode)
                           const history = await imagesAPI.getImageHistory(selectedScene.id, imageViewMode)
                           // Fix image URLs and add version numbers
-                          const fixedHistory = history.map((img: any, index: number) => ({
+                          const fixedHistory = history.map((img: ProjectImage, index: number) => ({
                             ...img,
                             url: img.url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
                             fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-                            version: img.version || history.length - index // Add version if missing
+                            version: (img as ProjectImage).version || history.length - index // Add version if missing
                           }))
                           setImageHistory(fixedHistory)
                           setShowHistory(true)
@@ -880,26 +887,30 @@ export default function ProjectDetailPage() {
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, 'lineart')}
                       >
-                        {selectedScene.images && selectedScene.images.filter((img: any) => img.type === 'lineart').length > 0 ? (
+                        {selectedScene.images && selectedScene.images.filter((img: Image) => img.type === 'lineart').length > 0 ? (
                           <div className="space-y-3">
                             {(() => {
                               // Get lineart images from the images array
-                              const lineartImages = selectedScene.images.filter((img: any) => img.type === 'lineart');
+                              const lineartImages = selectedScene.images.filter((img: Image) => img.type === 'lineart');
                               // Show only the current version image
-                              const currentImage = selectedLineartVersion ? 
-                                lineartImages.find((img: any) => img.version === selectedLineartVersion) :
-                                lineartImages.find((img: any) => img.isCurrent) || lineartImages[lineartImages.length - 1]; // Current or Latest version
+                              const currentImage = selectedLineartVersion ?
+                                lineartImages.find((img: Image) => (img as ProjectImage).version === selectedLineartVersion) :
+                                lineartImages.find((img: Image) => img.isCurrent) || lineartImages[lineartImages.length - 1]; // Current or Latest version
                               
                               if (!currentImage) return null;
                               
                               return (
                                 <div key={currentImage.id} className="relative group">
-                                  <img 
-                                    src={(currentImage as any).url || (currentImage as any).fileUrl} 
-                                    alt="Line art"
-                                    className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all"
-                                    onClick={() => setSelectedImage(currentImage)}
-                                  />
+                                  <div className="relative w-full aspect-video">
+                                    <NextImage
+                                      src={(currentImage as ProjectImage).url || (currentImage as ProjectImage).fileUrl}
+                                      alt="Line art"
+                                      fill
+                                      className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all object-contain"
+                                      onClick={() => setSelectedImage(currentImage)}
+                                      unoptimized
+                                    />
+                                  </div>
                                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                                     <Button
                                       size="icon"
@@ -924,8 +935,8 @@ export default function ProjectDetailPage() {
                                       onClick={() => {
                                         // Download functionality
                                         const link = document.createElement('a')
-                                        link.href = (currentImage as any).url || (currentImage as any).fileUrl
-                                        link.download = `lineart-v${(currentImage as any).version}.png`
+                                        link.href = (currentImage as ProjectImage).url || (currentImage as ProjectImage).fileUrl
+                                        link.download = `lineart-v${(currentImage as ProjectImage).version}.png`
                                         link.click()
                                       }}
                                     >
@@ -987,26 +998,30 @@ export default function ProjectDetailPage() {
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, 'art')}
                       >
-                        {selectedScene.images && selectedScene.images.filter((img: any) => img.type === 'art').length > 0 ? (
+                        {selectedScene.images && selectedScene.images.filter((img: Image) => img.type === 'art').length > 0 ? (
                           <div className="space-y-3">
                             {(() => {
                               // Get art images from the images array
-                              const artImages = selectedScene.images.filter((img: any) => img.type === 'art');
+                              const artImages = selectedScene.images.filter((img: Image) => img.type === 'art');
                               // Show only the current version image
-                              const currentImage = selectedArtVersion ? 
-                                artImages.find((img: any) => img.version === selectedArtVersion) :
-                                artImages.find((img: any) => img.isCurrent) || artImages[artImages.length - 1]; // Current or Latest version
+                              const currentImage = selectedArtVersion ?
+                                artImages.find((img: Image) => (img as ProjectImage).version === selectedArtVersion) :
+                                artImages.find((img: Image) => img.isCurrent) || artImages[artImages.length - 1]; // Current or Latest version
                               
                               if (!currentImage) return null;
                               
                               return (
                                 <div key={currentImage.id} className="relative group">
-                                  <img 
-                                    src={(currentImage as any).url || (currentImage as any).fileUrl} 
-                                    alt="Art"
-                                    className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all"
-                                    onClick={() => setSelectedImage(currentImage)}
-                                  />
+                                  <div className="relative w-full aspect-video">
+                                    <NextImage
+                                      src={(currentImage as ProjectImage).url || (currentImage as ProjectImage).fileUrl}
+                                      alt="Art"
+                                      fill
+                                      className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all object-contain"
+                                      onClick={() => setSelectedImage(currentImage)}
+                                      unoptimized
+                                    />
+                                  </div>
                                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
                                     <Button
                                       size="icon"
@@ -1031,8 +1046,8 @@ export default function ProjectDetailPage() {
                                       onClick={() => {
                                         // Download functionality
                                         const link = document.createElement('a')
-                                        link.href = (currentImage as any).url || (currentImage as any).fileUrl
-                                        link.download = `art-v${(currentImage as any).version}.png`
+                                        link.href = (currentImage as ProjectImage).url || (currentImage as ProjectImage).fileUrl
+                                        link.download = `art-v${(currentImage as ProjectImage).version}.png`
                                         link.click()
                                       }}
                                     >
@@ -1200,7 +1215,7 @@ export default function ProjectDetailPage() {
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   className="flex-1 min-h-[80px] max-h-[120px] resize-none"
-                  onKeyPress={(e) => {
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter' && e.ctrlKey) {
                       handleSubmitComment()
                     }
@@ -1230,12 +1245,17 @@ export default function ProjectDetailPage() {
           onClick={() => setSelectedImage(null)}
         >
           <div className="relative max-w-[90vw] max-h-[90vh]">
-            <img 
-              src={selectedImage.url || selectedImage.fileUrl} 
-              alt="Image viewer"
-              className="max-w-full max-h-full object-contain"
-              onClick={(e) => e.stopPropagation()}
-            />
+            <div className="relative w-full h-full">
+              <NextImage
+                src={selectedImage.url || selectedImage.fileUrl}
+                alt="Image viewer"
+                width={1920}
+                height={1080}
+                className="object-contain"
+                onClick={(e) => e.stopPropagation()}
+                unoptimized
+              />
+            </div>
             <Button
               className="absolute top-4 right-4"
               size="icon"
@@ -1296,19 +1316,25 @@ export default function ProjectDetailPage() {
             onMouseLeave={() => setIsDraggingImage(false)}
             style={{ cursor: isDraggingImage ? 'grabbing' : (zoomLevel > 100 ? 'grab' : 'default') }}
           >
-            <img 
-              src={selectedImage.url || selectedImage.fileUrl} 
-              alt="Preview"
-              className="max-w-full max-h-[90vh] object-contain"
-              style={{ 
-                transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${zoomLevel / 100})`,
+            <div className="relative max-w-full max-h-[90vh]" style={{
+              transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${zoomLevel / 100})`,
+            }}>
+              <NextImage
+                src={selectedImage.url || selectedImage.fileUrl}
+                alt="Preview"
+                width={1920}
+                height={1080}
+                className="object-contain"
+                style={{
                 transition: isDraggingImage ? 'none' : 'transform 0.2s',
                 cursor: isDraggingImage ? 'grabbing' : (zoomLevel > 100 ? 'grab' : 'default'),
                 userSelect: 'none'
               }}
               draggable={false}
-            />
-            
+                unoptimized
+              />
+            </div>
+
             {/* Controls Overlay */}
             <div className="absolute top-4 right-4 flex items-center gap-2">
               <div className="bg-background/90 backdrop-blur-sm px-3 py-1 rounded-lg flex items-center gap-2">
@@ -1377,14 +1403,17 @@ export default function ProjectDetailPage() {
           </div>
           <ScrollArea className="h-[calc(80vh-80px)]">
             <div className="p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
-              {imageHistory.map((img: any) => (
+              {imageHistory.map((img: ProjectImage) => (
                 <div key={img.id} className="space-y-2">
-                  <img 
-                    src={img.url || img.fileUrl}
-                    alt={`Version ${img.version}`}
-                    className="w-full rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                    onClick={async () => {
-                      try {
+                  <div className="relative w-full aspect-video">
+                    <NextImage
+                      src={img.url || img.fileUrl}
+                      alt={`Version ${img.version}`}
+                      fill
+                      className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow object-cover"
+                      unoptimized
+                      onClick={async () => {
+                        try {
                         // API 호출하여 현재 버전 설정
                         await imagesAPI.setCurrentImage(selectedScene.id, img.id)
                         
@@ -1428,6 +1457,7 @@ export default function ProjectDetailPage() {
                       }
                     }}
                   />
+                  </div>
                   <div className="text-xs space-y-1">
                     <div className="flex items-center gap-2">
                       <p className="font-medium">버전 {img.version}</p>
@@ -1471,21 +1501,29 @@ export default function ProjectDetailPage() {
             <div className="space-y-2">
               <h3 className="font-medium text-center">이전 버전</h3>
               {compareImages.left && (
-                <img 
-                  src={compareImages.left.url || compareImages.left.fileUrl}
-                  alt="Left comparison"
-                  className="w-full h-[calc(100%-40px)] object-contain rounded-lg"
-                />
+                <div className="relative w-full h-[calc(100%-40px)]">
+                  <NextImage
+                    src={compareImages.left.url || compareImages.left.fileUrl}
+                    alt="Left comparison"
+                    fill
+                    className="object-contain rounded-lg"
+                    unoptimized
+                  />
+                </div>
               )}
             </div>
             <div className="space-y-2">
               <h3 className="font-medium text-center">현재 버전</h3>
               {compareImages.right && (
-                <img 
-                  src={compareImages.right.url || compareImages.right.fileUrl}
-                  alt="Right comparison"
-                  className="w-full h-[calc(100%-40px)] object-contain rounded-lg"
-                />
+                <div className="relative w-full h-[calc(100%-40px)]">
+                  <NextImage
+                    src={compareImages.right.url || compareImages.right.fileUrl}
+                    alt="Right comparison"
+                    fill
+                    className="object-contain rounded-lg"
+                    unoptimized
+                  />
+                </div>
               )}
             </div>
           </div>
@@ -1535,6 +1573,7 @@ export default function ProjectDetailPage() {
                 description: '주석이 저장되었습니다.'
               })
             } catch (error) {
+              console.error('주석 저장 실패:', error)
               toast({
                 title: '오류',
                 description: '주석 저장에 실패했습니다.',

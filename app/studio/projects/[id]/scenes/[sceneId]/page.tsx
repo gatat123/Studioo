@@ -8,9 +8,18 @@ import SceneSidebar from '@/components/scenes/SceneSidebar'
 import SceneToolbar from '@/components/scenes/SceneToolbar'
 import SceneDescription from '@/components/scenes/SceneDescription'
 import { AnnotationTools } from '@/components/editor/AnnotationTools'
-import { useProjectStore } from '@/store/projectStore'
 import { Loader2 } from 'lucide-react'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+
+interface Scene {
+  id: string
+  name: string
+  description: string
+  images: {
+    lineart: string | null
+    art: string | null
+  }
+}
 
 export default function SceneEditorPage() {
   const params = useParams()
@@ -20,12 +29,9 @@ export default function SceneEditorPage() {
   const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(false)
   const [isRightSidebarOpen, setIsRightSidebarOpen] = useState(true)
   const [isLoading, setIsLoading] = useState(true)
-  const [currentScene, setCurrentScene] = useState<any>(null)
+  const [currentScene, setCurrentScene] = useState<Scene | null>(null)
   const [activeTab, setActiveTab] = useState('view')
-  const [annotationMode, setAnnotationMode] = useState(false)
   
-  const { getProject } = useProjectStore()
-  const project = getProject(projectId)
 
   useEffect(() => {
     // 씬 데이터 로드 시뮬레이션

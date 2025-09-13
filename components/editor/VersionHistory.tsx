@@ -1,18 +1,18 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import Image from 'next/image'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { 
-  Clock, 
-  RotateCcw, 
-  Eye, 
-  Filter, 
+import {
+  Clock,
+  RotateCcw,
+  Eye,
+  Filter,
   ChevronDown,
   User,
   Calendar,
   ArrowUpDown,
-  Loader2,
   Check
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -89,7 +89,7 @@ export default function VersionHistory({
     }
 
     // Apply sort
-    const sorted = [...filtered].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'date':
           return b.timestamp.getTime() - a.timestamp.getTime()
@@ -101,8 +101,6 @@ export default function VersionHistory({
           return 0
       }
     })
-
-    return sorted
   }, [versions, sortBy, filterBy])
 
   // Handle version selection for comparison
@@ -264,10 +262,13 @@ export default function VersionHistory({
               <div className="flex gap-3">
                 {/* Thumbnail */}
                 <div className="relative w-20 h-20 flex-shrink-0 rounded overflow-hidden bg-muted">
-                  <img
+                  <Image
                     src={version.thumbnailUrl}
                     alt={`Version ${version.versionNumber}`}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="80px"
+                    unoptimized
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                   <span className="absolute bottom-1 left-1 text-white text-xs font-semibold">

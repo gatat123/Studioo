@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -53,11 +52,16 @@ interface Conversation {
 }
 
 export function MessagesDropdown() {
-  const router = useRouter()
+  // const router = useRouter() // Commented out as it's not being used
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [totalUnread, setTotalUnread] = useState(0)
   const [searchQuery, setSearchQuery] = useState('')
-  const [selectedFriend, setSelectedFriend] = useState<any>(null)
+  const [selectedFriend, setSelectedFriend] = useState<{
+    id: string
+    username: string
+    nickname: string
+    profileImageUrl?: string
+  } | null>(null)
   const [currentUserId, setCurrentUserId] = useState<string>('')
   const [isOpen, setIsOpen] = useState(false)
 
@@ -88,6 +92,7 @@ export function MessagesDropdown() {
       socket.off('new_message')
       socket.off('messages_read')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadConversations = async () => {

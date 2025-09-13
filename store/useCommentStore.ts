@@ -31,7 +31,7 @@ const generateMockComments = (): Comment[] => {
     { id: '3', username: 'bob_wilson', nickname: 'Bob', profileImage: '/avatars/user3.jpg' },
   ];
 
-  const comments: Comment[] = [
+  return [
     {
       id: '1',
       content: '이 씬의 구도가 정말 좋네요! 캐릭터의 표정이 잘 살아있습니다.',
@@ -76,8 +76,6 @@ const generateMockComments = (): Comment[] => {
       replies: []
     }
   ];
-
-  return comments;
 };
 
 const useCommentStore = create<CommentState>()(
@@ -157,7 +155,7 @@ const useCommentStore = create<CommentState>()(
           set({ sortBy });
           // Re-sort comments
           const { comments } = get();
-          let sorted = [...comments];
+          const sorted = [...comments];
           
           switch (sortBy) {
             case 'newest':

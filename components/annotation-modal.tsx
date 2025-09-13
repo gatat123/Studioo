@@ -5,17 +5,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+// Select components removed - not used in current implementation
 import { X, Download, Eraser, PenTool, Type, Circle, Square } from 'lucide-react';
 
 interface AnnotationModalProps {
-  image: any;
+  image: {id: string; url?: string; fileUrl?: string; type?: string};
   onClose: () => void;
   onSave: (canvasDataUrl: string, text: string) => void;
 }
@@ -335,7 +329,7 @@ export default function AnnotationModal({ image, onClose, onSave }: AnnotationMo
                       <Input
                         value={textInput}
                         onChange={(e) => setTextInput(e.target.value)}
-                        onKeyPress={(e) => {
+                        onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             addText();
                           }

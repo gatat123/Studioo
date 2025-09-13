@@ -37,7 +37,7 @@ export function ChannelInvitesDropdown() {
     return () => {
       socketClient.off('channel:invitation')
     }
-  }, [])
+  }, [toast])
 
   const loadInvitations = async () => {
     try {
@@ -58,15 +58,15 @@ export function ChannelInvitesDropdown() {
       
       toast({
         title: '초대 수락',
-        description: response.message || '채널에 참여했습니다.'
+        description: (response as {message?: string}).message || '채널에 참여했습니다.'
       })
       
       // Redirect to team page to see the new channel
       router.push('/studio/team')
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: '오류',
-        description: error.response?.data?.error || '초대 수락에 실패했습니다.',
+        description: error instanceof Error && 'response' in error && typeof error.response === 'object' && error.response && 'data' in error.response && typeof error.response.data === 'object' && error.response.data && 'error' in error.response.data ? String(error.response.data.error) : '초대 수락에 실패했습니다.',
         variant: 'destructive'
       })
     } finally {
@@ -86,10 +86,10 @@ export function ChannelInvitesDropdown() {
         title: '초대 거절',
         description: '초대를 거절했습니다.'
       })
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: '오류',
-        description: error.response?.data?.error || '초대 거절에 실패했습니다.',
+        description: error instanceof Error && 'response' in error && typeof error.response === 'object' && error.response && 'data' in error.response && typeof error.response.data === 'object' && error.response.data && 'error' in error.response.data ? String(error.response.data.error) : '초대 거절에 실패했습니다.',
         variant: 'destructive'
       })
     } finally {

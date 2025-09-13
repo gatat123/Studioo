@@ -29,13 +29,11 @@ import { cn } from '@/lib/utils';
 interface CommentItemProps {
   comment: Comment;
   isReply?: boolean;
-  onReply?: (commentId: string) => void;
 }
 
 export const CommentItem: React.FC<CommentItemProps> = ({
   comment,
-  isReply = false,
-  onReply
+  isReply = false
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);

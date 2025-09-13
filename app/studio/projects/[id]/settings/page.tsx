@@ -67,13 +67,23 @@ const projectFormSchema = z.object({
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>
 
+interface Project {
+  id: string
+  name: string
+  description?: string
+  tag?: 'illustration' | 'storyboard'
+  deadline?: string | Date
+  status?: 'active' | 'completed' | 'archived'
+  inviteCode?: string
+}
+
 export default function ProjectSettingsPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
   const projectId = params.id as string
   
-  const [project, setProject] = useState<any>(null)
+  const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
   const [inviteCode, setInviteCode] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
@@ -94,7 +104,10 @@ export default function ProjectSettingsPage() {
     const fetchProject = async () => {
       try {
         const data = await projectsAPI.getProject(projectId)
-        setProject(data)
+        setProject({
+          ...data,
+          deadline: data.deadline ? String(data.deadline) : undefined
+        })
         setInviteCode(data.inviteCode || '')
         form.reset({
           name: data.name,
@@ -117,7 +130,7 @@ export default function ProjectSettingsPage() {
     }
     
     fetchProject()
-  }, [projectId, router, form])
+  }, [projectId, router, form, toast])
 
   const onSubmit = async (data: ProjectFormValues) => {
     if (!project) return
@@ -354,7 +367,6 @@ export default function ProjectSettingsPage() {
                               disabled={(date) =>
                                 date < new Date()
                               }
-                              initialFocus
                             />
                           </PopoverContent>
                         </Popover>
