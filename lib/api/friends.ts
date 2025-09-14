@@ -41,16 +41,21 @@ export const friendsAPI = {
     try {
       const response = await apiClient.get('/api/friends') as {
         success?: boolean
-        friends?: any[]
-        receivedRequests?: any[]
-        sentRequests?: any[]
+        friends?: Array<{
+          id: string
+          friend: Friend & { isOnline?: boolean }
+          memo?: string
+          createdAt: string
+        }>
+        receivedRequests?: FriendRequest[]
+        sentRequests?: FriendRequest[]
       }
       console.log('Friends API Response:', response)
 
       // The API returns { success: true, friends: [...], receivedRequests: [...], sentRequests: [...] }
       if (response && response.friends) {
         // Transform the response to match Friend interface
-        return response.friends.map((friendship: any) => ({
+        return response.friends.map((friendship) => ({
           id: friendship.friend.id,
           username: friendship.friend.username,
           nickname: friendship.friend.nickname,
@@ -79,19 +84,19 @@ export const friendsAPI = {
 
   // Send friend request
   sendFriendRequest: async (userId: string, message?: string) => {
-    const response = await apiClient.post('/api/friends/request', { userId, message }) as { data: any }
+    const response = await apiClient.post('/api/friends/request', { userId, message }) as { data: FriendRequest }
     return response.data
   },
 
   // Accept friend request
   acceptFriendRequest: async (requestId: string) => {
-    const response = await apiClient.post(`/api/friends/requests/${requestId}/accept`) as { data: any }
+    const response = await apiClient.post(`/api/friends/requests/${requestId}/accept`) as { data: Friend }
     return response.data
   },
 
   // Reject friend request
   rejectFriendRequest: async (requestId: string) => {
-    const response = await apiClient.post(`/api/friends/requests/${requestId}/reject`) as { data: any }
+    const response = await apiClient.post(`/api/friends/requests/${requestId}/reject`) as { data: { success: boolean } }
     return response.data
   },
 
@@ -100,19 +105,21 @@ export const friendsAPI = {
     sent: FriendRequest[]
     received: FriendRequest[]
   }> => {
-    const response = await apiClient.get('/api/friends/requests') as { data: { sent: FriendRequest[], received: FriendRequest[] } }
+    const response = await apiClient.get('/api/friends/requests') as {
+      data: { sent: FriendRequest[], received: FriendRequest[] }
+    }
     return response.data
   },
 
   // Remove friend
   removeFriend: async (friendId: string) => {
-    const response = await apiClient.delete(`/api/friends/${friendId}`) as { data: any }
+    const response = await apiClient.delete(`/api/friends/${friendId}`) as { data: { success: boolean } }
     return response.data
   },
 
   // Update friend memo
   updateFriendMemo: async (friendId: string, memo: string) => {
-    const response = await apiClient.patch(`/api/friends/${friendId}/memo`, { memo }) as { data: any }
+    const response = await apiClient.patch(`/api/friends/${friendId}/memo`, { memo }) as { data: { success: boolean } }
     return response.data
   }
 }

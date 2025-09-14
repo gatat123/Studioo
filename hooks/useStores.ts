@@ -16,6 +16,7 @@ export const useAuth = () => {
     if (typeof window !== 'undefined') {
       checkAuth();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Empty dependency array to run only once
 
   const requireAuth = (redirectTo: string = '/login') => {

@@ -130,7 +130,7 @@ export default function StudioPage() {
                     <DropdownMenuItem
                       className="text-red-600"
                       onClick={() => {
-                        useAuthStore.getState().logout();
+                        void useAuthStore.getState().logout();
                         router.push('/login');
                       }}
                     >

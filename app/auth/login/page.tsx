@@ -31,7 +31,7 @@ export default function LoginPage() {
   
   // Check if already authenticated and detect Whale browser
   useEffect(() => {
-    checkAuth();
+    void checkAuth();
     // 네이버 웨일 브라우저 감지
     const userAgent = navigator.userAgent.toLowerCase();
     setIsWhale(userAgent.includes('whale'));

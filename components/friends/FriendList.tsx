@@ -172,8 +172,8 @@ export function FriendList() {
         });
         setRequestMessage('');
         // setSelectedUser(null); // State not defined
-        fetchFriends();
-        searchUsers(); // Refresh search results
+        void fetchFriends();
+        void searchUsers(); // Refresh search results
       } else {
         toast({
           title: '오류',
@@ -212,7 +212,7 @@ export function FriendList() {
           title: '성공',
           description: action === 'accept' ? '친구 요청을 수락했습니다.' : '친구 요청을 거절했습니다.'
         });
-        fetchFriends();
+        void fetchFriends();
       } else {
         toast({
           title: '오류',
@@ -247,7 +247,7 @@ export function FriendList() {
           title: '성공',
           description: '친구 요청을 취소했습니다.'
         });
-        fetchFriends();
+        void fetchFriends();
       }
     } catch (error) {
       console.error('Failed to cancel friend request:', error);
@@ -276,7 +276,7 @@ export function FriendList() {
           title: '성공',
           description: '친구를 삭제했습니다.'
         });
-        fetchFriends();
+        void fetchFriends();
       }
     } catch (error) {
       console.error('Failed to remove friend:', error);

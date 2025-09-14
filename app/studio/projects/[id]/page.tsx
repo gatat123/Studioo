@@ -140,7 +140,7 @@ export default function ProjectDetailPage() {
 
   useEffect(() => {
     // Don't change sidebar state - it's now managed by RootLayout
-    fetchProjectDetails()
+    void fetchProjectDetails()
     
     // Connect to Socket.io and join project room
     socketClient.connect()
@@ -149,7 +149,7 @@ export default function ProjectDetailPage() {
     // Set up real-time event listeners
     socketClient.on('new_comment', (data: {user?: {nickname?: string}}) => {
       // Refetch comments to get the full comment data with proper structure
-      fetchComments()
+      void fetchComments()
       toast({
         title: '새 댓글',
         description: `${data.user?.nickname || 'Someone'}님이 댓글을 작성했습니다.`
