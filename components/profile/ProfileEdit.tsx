@@ -23,9 +23,19 @@ const profileSchema = z.object({
 
 type ProfileFormValues = z.infer<typeof profileSchema>
 
+interface User {
+  id: string
+  username: string
+  nickname: string
+  displayName?: string
+  email: string
+  bio?: string
+  avatar?: string | null
+}
+
 interface ProfileEditProps {
-  user: any
-  onUpdate: (user: any) => void
+  user: User
+  onUpdate: (user: User) => void
 }
 
 export function ProfileEdit({ user, onUpdate }: ProfileEditProps) {
@@ -38,7 +48,7 @@ export function ProfileEdit({ user, onUpdate }: ProfileEditProps) {
     resolver: zodResolver(profileSchema),
     defaultValues: {
       username: user.username,
-      nickname: user.displayName || user.nickname,
+      nickname: user.displayName || user.nickname || '',
       email: user.email,
       bio: user.bio || ''
     }

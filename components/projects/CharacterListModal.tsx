@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
-import { Plus, Save, Trash2, Edit3, X, Check, User } from 'lucide-react'
+import { Plus, Trash2, Edit3, X, Check, User } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import api from '@/lib/api/client'
 
@@ -48,7 +48,7 @@ export function CharacterListModal({
     if (open) {
       loadCharacterList()
     }
-  }, [open, projectId])
+  }, [open, projectId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadCharacterList = async () => {
     try {

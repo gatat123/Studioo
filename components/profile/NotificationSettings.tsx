@@ -16,7 +16,13 @@ interface NotificationSettingsProps {
     comments: boolean
     mentions: boolean
   }
-  onUpdate: (settings: any) => void
+  onUpdate: (settings: {
+    email: boolean
+    push: boolean
+    projectUpdates: boolean
+    comments: boolean
+    mentions: boolean
+  }) => void
 }
 
 export function NotificationSettings({ settings, onUpdate }: NotificationSettingsProps) {
@@ -38,7 +44,7 @@ export function NotificationSettings({ settings, onUpdate }: NotificationSetting
       
       onUpdate(localSettings)
       toast.success('알림 설정이 저장되었습니다')
-    } catch (error) {
+    } catch {
       toast.error('설정 저장에 실패했습니다')
     } finally {
       setLoading(false)

@@ -30,7 +30,7 @@ interface PasswordChangeProps {
   userId: string
 }
 
-export function PasswordChange({ userId }: PasswordChangeProps) {
+export function PasswordChange({ }: PasswordChangeProps) {
   const [loading, setLoading] = useState(false)
   const [showCurrent, setShowCurrent] = useState(false)
   const [showNew, setShowNew] = useState(false)
@@ -45,7 +45,7 @@ export function PasswordChange({ userId }: PasswordChangeProps) {
     }
   })
 
-  const onSubmit = async (data: PasswordFormValues) => {
+  const onSubmit = async () => {
     setLoading(true)
     try {
       // TODO: 실제 API 호출로 교체
@@ -53,7 +53,7 @@ export function PasswordChange({ userId }: PasswordChangeProps) {
       
       toast.success('비밀번호가 성공적으로 변경되었습니다')
       form.reset()
-    } catch (error) {
+    } catch {
       toast.error('비밀번호 변경에 실패했습니다')
     } finally {
       setLoading(false)

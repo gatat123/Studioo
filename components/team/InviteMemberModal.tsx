@@ -12,7 +12,22 @@ import { Badge } from '@/components/ui/badge'
 import { channelsAPI } from '@/lib/api/channels'
 import { friendsAPI } from '@/lib/api/friends'
 import { useToast } from '@/hooks/use-toast'
-import { Search, UserPlus, Check } from 'lucide-react'
+import { Search, Check } from 'lucide-react'
+
+interface User {
+  id: string
+  username: string
+  nickname?: string
+  avatar?: string
+  email?: string
+}
+
+interface Member {
+  userId: string
+  username: string
+  nickname?: string
+  avatar?: string
+}
 
 interface InviteMemberModalProps {
   open: boolean
@@ -26,8 +41,8 @@ export function InviteMemberModal({ open, onOpenChange, channelId, channelName }
   const [loading, setLoading] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [message, setMessage] = useState('')
-  const [friends, setFriends] = useState<any[]>([])
-  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [friends, setFriends] = useState<User[]>([])
+  const [searchResults, setSearchResults] = useState<User[]>([])
   const [selectedUsers, setSelectedUsers] = useState<string[]>([])
   const [currentMembers, setCurrentMembers] = useState<string[]>([])
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout | null>(null)
@@ -42,7 +57,7 @@ export function InviteMemberModal({ open, onOpenChange, channelId, channelName }
       setSearchQuery('')
       setSearchResults([])
     }
-  }, [open, channelId])
+  }, [open, channelId]) // eslint-disable-line react-hooks/exhaustive-deps
   
   // Search users when query changes
   useEffect(() => {
@@ -63,7 +78,7 @@ export function InviteMemberModal({ open, onOpenChange, channelId, channelName }
             const data = await response.json()
             const users = data.users || []
             // Filter out current members
-            const availableUsers = users.filter((user: any) => !currentMembers.includes(user.id))
+            const availableUsers = users.filter((user: User) => !currentMembers.includes(user.id))
             setSearchResults(availableUsers)
           }
         } catch (error) {
@@ -81,7 +96,7 @@ export function InviteMemberModal({ open, onOpenChange, channelId, channelName }
         clearTimeout(searchTimeout)
       }
     }
-  }, [searchQuery, currentMembers])
+  }, [searchQuery, currentMembers]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadFriendsAndMembers = async () => {
     try {
@@ -91,7 +106,7 @@ export function InviteMemberModal({ open, onOpenChange, channelId, channelName }
       
       // Load current channel members to exclude them
       const members = await channelsAPI.getMembers(channelId)
-      setCurrentMembers(members.map((m: any) => m.userId))
+      setCurrentMembers(members.map((m: Member) => m.userId))
     } catch (error) {
       console.error('Failed to load data:', error)
       toast({
@@ -150,10 +165,10 @@ export function InviteMemberModal({ open, onOpenChange, channelId, channelName }
       setSelectedUsers([])
       setMessage('')
       setSearchQuery('')
-    } catch (error: any) {
+    } catch {
       toast({
         title: '오류',
-        description: error.response?.data?.error || '초대 전송에 실패했습니다',
+        description: '초대 전송에 실패했습니다',
         variant: 'destructive'
       })
     } finally {

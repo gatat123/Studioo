@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
-import { Save, Edit3, X, Check } from 'lucide-react'
+import { Edit3, X, Check } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import api from '@/lib/api/client'
 

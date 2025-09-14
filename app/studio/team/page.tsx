@@ -414,7 +414,7 @@ function TeamPageContent() {
                               });
                               if (response.ok) {
                                 toast({ title: '채널에 참여했습니다!' });
-                                loadChannels();
+                                await loadChannels();
                               }
                             } catch {
                               toast({ title: '오류', description: '처리 중 오류가 발생했습니다.', variant: 'destructive' });
@@ -438,7 +438,7 @@ function TeamPageContent() {
                               });
                               if (response.ok) {
                                 toast({ title: '초대를 거절했습니다.' });
-                                loadChannels();
+                                await loadChannels();
                               }
                             } catch {
                               toast({ title: '오류', description: '처리 중 오류가 발생했습니다.', variant: 'destructive' });
