@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, Suspense } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { Trash2, Shield, Edit, User } from 'lucide-react'
+import { Trash2, Shield, Edit, User, Crown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Table,
@@ -33,77 +33,117 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
-import { useProjectStore } from '@/store/useProjectStore'
 import { useAuthStore } from '@/store/useAuthStore'
+import { projectsAPI } from '@/lib/api/projects'
+import type { ProjectParticipant } from '@/types'
 
 interface ParticipantsListProps {
   projectId: string
 }
 
-interface Participant {
-  id: string
-  username: string
-  email: string
-  role: 'owner' | 'editor' | 'viewer'
-  joinedAt: string
-  avatar?: string
-}
-
 function ParticipantsListContent({ projectId }: ParticipantsListProps) {
   const { toast } = useToast()
-  const { user } = useAuthStore()
-  const { projects } = useProjectStore()
+  const { user: currentUser } = useAuthStore()
   const searchParams = useSearchParams()
+  const [participants, setParticipants] = useState<ProjectParticipant[]>([])
+  const [loading, setLoading] = useState(true)
+  const [project, setProject] = useState<any>(null)
 
-  const project = projects.find(p => p.id === projectId)
-  const isOwner = project?.creatorId === user?.id
   const isAdminMode = searchParams.get('admin') === 'true'
 
-  // Mock participants data
-  const [participants, setParticipants] = useState<Participant[]>([
-    {
-      id: '1',
-      username: user?.username || 'current_user',
-      email: user?.email || 'user@example.com',
-      role: 'owner',
-      joinedAt: new Date().toISOString(),
-    },
-    {
-      id: '2',
-      username: 'jane_artist',
-      email: 'jane@example.com',
-      role: 'editor',
-      joinedAt: new Date(Date.now() - 86400000 * 7).toISOString(),
-    },
-    {
-      id: '3',
-      username: 'bob_reviewer',
-      email: 'bob@example.com',
-      role: 'viewer',
-      joinedAt: new Date(Date.now() - 86400000 * 3).toISOString(),
-    },
-  ])
+  useEffect(() => {
+    const loadParticipants = async () => {
+      try {
+        // Get project details first
+        const projectData = await projectsAPI.getProject(projectId)
+        setProject(projectData)
 
-  const handleRoleChange = (participantId: string, newRole: string) => {
-    setParticipants(prev =>
-      prev.map(p =>
-        p.id === participantId ? { ...p, role: newRole as Participant['role'] } : p
+        // Get participants
+        const participantsData = await projectsAPI.getParticipants(projectId)
+        setParticipants(participantsData)
+      } catch (error) {
+        console.error('Failed to load participants:', error)
+        toast({
+          title: 'Error',
+          description: 'Failed to load project members',
+          variant: 'destructive',
+        })
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadParticipants()
+  }, [projectId, toast])
+
+  const isOwner = project?.creatorId === currentUser?.id
+  const currentParticipant = participants.find(p => p.userId === currentUser?.id)
+  const canManageMembers = isOwner || currentParticipant?.role === 'owner'
+
+  const handleRoleChange = async (participant: ProjectParticipant, newRole: string) => {
+    if (!canManageMembers) {
+      toast({
+        title: 'Permission Denied',
+        description: 'You do not have permission to change member roles.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      const updatedParticipant = await projectsAPI.updateParticipantRole(
+        projectId,
+        participant.userId,
+        newRole as 'owner' | 'editor' | 'viewer' | 'member'
       )
-    )
-    
-    toast({
-      title: 'Role Updated',
-      description: 'Participant role has been updated successfully.',
-    })
+
+      setParticipants(prev =>
+        prev.map(p =>
+          p.id === participant.id ? { ...p, role: newRole as any } : p
+        )
+      )
+
+      toast({
+        title: 'Role Updated',
+        description: `${participant.user?.nickname || 'Member'}'s role has been updated to ${newRole}.`,
+      })
+    } catch (error) {
+      console.error('Failed to update role:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to update member role.',
+        variant: 'destructive',
+      })
+    }
   }
 
-  const handleRemoveParticipant = (participantId: string) => {
-    setParticipants(prev => prev.filter(p => p.id !== participantId))
-    
-    toast({
-      title: 'Participant Removed',
-      description: 'The participant has been removed from the project.',
-    })
+  const handleRemoveParticipant = async (participant: ProjectParticipant) => {
+    if (!canManageMembers) {
+      toast({
+        title: 'Permission Denied',
+        description: 'You do not have permission to remove members.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    try {
+      await projectsAPI.removeParticipant(projectId, participant.userId)
+
+      setParticipants(prev => prev.filter(p => p.id !== participant.id))
+
+      toast({
+        title: 'Member Removed',
+        description: `${participant.user?.nickname || 'Member'} has been removed from the project.`,
+      })
+    } catch (error) {
+      console.error('Failed to remove participant:', error)
+      toast({
+        title: 'Error',
+        description: 'Failed to remove member from project.',
+        variant: 'destructive',
+      })
+    }
   }
 
   const getRoleBadgeVariant = (role: string) => {
@@ -122,11 +162,13 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'owner':
-        return <Shield className="h-3 w-3" />
+        return <Crown className="h-3 w-3" />
       case 'editor':
         return <Edit className="h-3 w-3" />
       case 'viewer':
         return <User className="h-3 w-3" />
+      case 'member':
+        return <Shield className="h-3 w-3" />
       default:
         return <User className="h-3 w-3" />
     }
@@ -146,9 +188,21 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
   }
 
   // Filter out admin from participants list when in admin mode
-  const displayParticipants = isAdminMode && user?.isAdmin
-    ? participants.filter(p => p.id !== user.id)
+  const displayParticipants = isAdminMode && currentUser?.isAdmin
+    ? participants.filter(p => p.userId !== currentUser.id)
     : participants
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-md border">
+          <div className="p-8 text-center">
+            <div className="animate-pulse">Loading members...</div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4">
@@ -159,7 +213,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
               <TableHead>Member</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Joined</TableHead>
-              {isOwner && <TableHead className="text-right">Actions</TableHead>}
+              {canManageMembers && <TableHead className="text-right">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -168,22 +222,22 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
                 <TableCell>
                   <div className="flex items-center space-x-3">
                     <Avatar>
-                      <AvatarImage src={participant.avatar} />
+                      <AvatarImage src={participant.user?.profileImageUrl} />
                       <AvatarFallback>
-                        {participant.username.slice(0, 2).toUpperCase()}
+                        {(participant.user?.nickname || participant.user?.username || 'U').slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">{participant.username}</p>
-                      <p className="text-sm text-gray-500">{participant.email}</p>
+                      <p className="font-medium">{participant.user?.nickname || participant.user?.username || 'Unknown'}</p>
+                      <p className="text-sm text-gray-500">{participant.user?.email || 'No email'}</p>
                     </div>
                   </div>
                 </TableCell>
                 <TableCell>
-                  {isOwner && participant.role !== 'owner' ? (
+                  {canManageMembers && participant.role !== 'owner' && participant.userId !== project?.creatorId ? (
                     <Select
                       defaultValue={participant.role}
-                      onValueChange={(value) => handleRoleChange(participant.id, value)}
+                      onValueChange={(value) => handleRoleChange(participant, value)}
                     >
                       <SelectTrigger className="w-32">
                         <SelectValue />
@@ -201,6 +255,12 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
                             Viewer
                           </div>
                         </SelectItem>
+                        <SelectItem value="member">
+                          <div className="flex items-center gap-2">
+                            <Shield className="h-3 w-3" />
+                            Member
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   ) : (
@@ -208,6 +268,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
                       <div className="flex items-center gap-1">
                         {getRoleIcon(participant.role)}
                         {participant.role}
+                        {participant.userId === project?.creatorId && ' (Creator)'}
                       </div>
                     </Badge>
                   )}
@@ -215,9 +276,9 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
                 <TableCell className="text-gray-500">
                   {formatJoinDate(participant.joinedAt)}
                 </TableCell>
-                {isOwner && (
+                {canManageMembers && (
                   <TableCell className="text-right">
-                    {participant.role !== 'owner' && (
+                    {participant.role !== 'owner' && participant.userId !== project?.creatorId && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -230,16 +291,16 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Remove Participant</AlertDialogTitle>
+                            <AlertDialogTitle>Remove Member</AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to remove {participant.username} from this project?
+                              Are you sure you want to remove {participant.user?.nickname || 'this member'} from the project?
                               They will lose access to all project resources.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction
-                              onClick={() => handleRemoveParticipant(participant.id)}
+                              onClick={() => handleRemoveParticipant(participant)}
                               className="bg-red-600 hover:bg-red-700"
                             >
                               Remove

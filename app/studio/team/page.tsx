@@ -190,7 +190,25 @@ function TeamPageContent() {
   const loadChannelMembers = async (channelId: string) => {
     try {
       const members = await channelsAPI.getMembers(channelId)
-      setChannelMembers(members)
+      // Initialize all members as offline, Socket.io will update actual status
+      const membersWithOfflineStatus = members.map(member => ({
+        ...member,
+        user: {
+          ...member.user,
+          isActive: false, // Start with offline status
+          isOnline: false
+        }
+      }))
+      setChannelMembers(membersWithOfflineStatus)
+
+      // Request presence status for all members after loading
+      if (socketClient.socket?.connected) {
+        // @ts-expect-error - Custom event not in typed events
+        socketClient.socket?.emit('request_presence_status', {
+          channelId,
+          userIds: members.map(m => m.userId)
+        })
+      }
     } catch (error) {
       console.error('Failed to load channel members:', error)
     }
@@ -525,7 +543,9 @@ function TeamPageContent() {
                     </Avatar>
                     <div className={cn(
                       "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background",
-                      member.user.isActive || member.user.isOnline ? 'bg-green-500' : 'bg-gray-400'
+                      // Current user is always online
+                      member.userId === currentUser?.id ? 'bg-green-500' :
+                      (member.user.isActive || member.user.isOnline ? 'bg-green-500' : 'bg-gray-400')
                     )} />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -559,6 +579,8 @@ function TeamPageContent() {
                       const onlineMembers = channelMembers.filter(m => {
                         // If admin mode, exclude admin from count
                         if (isAdminMode && m.userId === currentUser?.id) return false
+                        // Current user is always online
+                        if (m.userId === currentUser?.id) return true
                         return m.user.isActive || m.user.isOnline
                       })
                       return onlineMembers.length

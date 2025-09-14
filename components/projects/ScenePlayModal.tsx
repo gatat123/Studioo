@@ -67,25 +67,30 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
     loadScenesData()
   }, [scenes, imageType])
 
-  // Handle scroll events
+  // Handle scroll events with improved calculation
   const handleScroll = useCallback(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current || sceneImages.length === 0) return
 
     const container = containerRef.current
     const scrollTop = container.scrollTop
     const scrollHeight = container.scrollHeight - container.clientHeight
 
-    // Calculate scene transition progress
-    const sceneHeight = scrollHeight / Math.max(sceneImages.length - 1, 1)
-    const newSceneIndex = Math.min(
-      Math.floor(scrollTop / sceneHeight),
-      sceneImages.length - 1
-    )
+    // If no scrollable height, stay at first scene
+    if (scrollHeight <= 0) {
+      setCurrentSceneIndex(0)
+      setScrollProgress(0)
+      return
+    }
 
-    // Calculate progress within current scene transition (0 to 1)
-    const sceneProgress = (scrollTop % sceneHeight) / sceneHeight
+    // Calculate which scene we're on based on scroll position
+    const scrollPercentage = scrollTop / scrollHeight
+    const exactScene = scrollPercentage * (sceneImages.length - 1)
+    const newSceneIndex = Math.floor(exactScene)
 
-    setCurrentSceneIndex(newSceneIndex)
+    // Calculate progress between scenes (0 to 1)
+    const sceneProgress = exactScene - newSceneIndex
+
+    setCurrentSceneIndex(Math.min(newSceneIndex, sceneImages.length - 1))
     setScrollProgress(sceneProgress)
   }, [sceneImages.length])
 
@@ -158,15 +163,13 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
       {/* Scrollable Container with Extended Height */}
       <div
         ref={containerRef}
-        className="h-full w-full overflow-y-auto overflow-x-hidden scrollbar-hide"
+        className="h-full w-full overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
         style={{
-          scrollBehavior: 'smooth',
-          // Add extra scroll height for smooth transitions
-          paddingBottom: '200vh'
+          scrollBehavior: 'smooth'
         }}
       >
-        {/* Extended scroll area */}
-        <div style={{ height: `${sceneImages.length * 100}vh` }}>
+        {/* Extended scroll area for smooth transitions */}
+        <div style={{ height: `${Math.max(sceneImages.length, 1) * 200}vh` }}>
           {/* Fixed position scenes container */}
           <div className="fixed inset-0 flex items-center justify-center">
             {sceneImages.map(({ scene, image, script }, index) => {
