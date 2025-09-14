@@ -26,6 +26,7 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
   const [scrollProgress, setScrollProgress] = useState(0)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const animationFrameRef = useRef<number | null>(null)
 
   // Load scenes with images and scripts
   useEffect(() => {
@@ -67,49 +68,87 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
     loadScenesData()
   }, [scenes, imageType])
 
-  // Handle scroll events with improved calculation
+  // Handle scroll events with improved calculation and performance
   const handleScroll = useCallback(() => {
     if (!containerRef.current || sceneImages.length === 0) return
 
-    const container = containerRef.current
-    const scrollTop = container.scrollTop
-    const scrollHeight = container.scrollHeight - container.clientHeight
-
-    // If no scrollable height, stay at first scene
-    if (scrollHeight <= 0) {
-      setCurrentSceneIndex(0)
-      setScrollProgress(0)
-      return
+    // Cancel any pending animation frame
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current)
     }
 
-    // Calculate which scene we're on based on scroll position
-    const scrollPercentage = scrollTop / scrollHeight
-    const exactScene = scrollPercentage * (sceneImages.length - 1)
-    const newSceneIndex = Math.floor(exactScene)
+    // Use requestAnimationFrame for smooth performance
+    animationFrameRef.current = requestAnimationFrame(() => {
+      if (!containerRef.current) return
 
-    // Calculate progress between scenes (0 to 1)
-    const sceneProgress = exactScene - newSceneIndex
+      const container = containerRef.current
+      const scrollTop = container.scrollTop
+      const scrollHeight = container.scrollHeight - container.clientHeight
 
-    setCurrentSceneIndex(Math.min(newSceneIndex, sceneImages.length - 1))
-    setScrollProgress(sceneProgress)
+      // Debug log
+      console.log('Scroll Debug:', {
+        scrollTop,
+        scrollHeight,
+        clientHeight: container.clientHeight,
+        totalHeight: container.scrollHeight
+      })
+
+      // If no scrollable height, stay at first scene
+      if (scrollHeight <= 0) {
+        setCurrentSceneIndex(0)
+        setScrollProgress(0)
+        return
+      }
+
+      // Calculate which scene we're on based on scroll position
+      const sceneHeight = scrollHeight / (sceneImages.length - 1 || 1)
+      const exactScene = scrollTop / sceneHeight
+      const newSceneIndex = Math.floor(exactScene)
+
+      // Calculate progress between scenes (0 to 1)
+      const sceneProgress = exactScene - newSceneIndex
+
+      // Update state with clamped values
+      setCurrentSceneIndex(Math.max(0, Math.min(newSceneIndex, sceneImages.length - 1)))
+      setScrollProgress(Math.max(0, Math.min(1, sceneProgress)))
+
+      console.log('Scene Info:', {
+        currentIndex: newSceneIndex,
+        progress: sceneProgress,
+        totalScenes: sceneImages.length
+      })
+    })
   }, [sceneImages.length])
 
   useEffect(() => {
     const container = containerRef.current
     if (!container) return
 
-    container.addEventListener('scroll', handleScroll)
-    return () => container.removeEventListener('scroll', handleScroll)
+    // Add passive option for better scroll performance
+    container.addEventListener('scroll', handleScroll, { passive: true })
+
+    // Trigger initial calculation
+    handleScroll()
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll)
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+      }
+    }
   }, [handleScroll])
 
-  // Calculate opacity for fade transitions
+  // Calculate opacity for fade transitions with improved logic
   const calculateOpacity = (index: number) => {
     if (index === currentSceneIndex) {
-      // Current scene fading out
-      return 1 - scrollProgress * 0.5
-    } else if (index === currentSceneIndex + 1) {
-      // Next scene fading in
-      return scrollProgress
+      // Current scene - fade out as we scroll
+      return Math.max(0, 1 - scrollProgress * 0.7)
+    } else if (index === currentSceneIndex + 1 && index < sceneImages.length) {
+      // Next scene - fade in as we scroll
+      return Math.min(1, scrollProgress * 1.2)
+    } else if (index === currentSceneIndex - 1 && scrollProgress < 0.1) {
+      // Previous scene - show slightly when scrolling back
+      return Math.min(0.3, (0.1 - scrollProgress) * 3)
     }
     return 0
   }
@@ -163,13 +202,16 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
       {/* Scrollable Container with Extended Height */}
       <div
         ref={containerRef}
-        className="h-full w-full overflow-y-auto overflow-x-hidden [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+        className="h-full w-full overflow-y-auto overflow-x-hidden"
         style={{
-          scrollBehavior: 'smooth'
+          scrollBehavior: 'smooth',
+          // Custom scrollbar styles
+          scrollbarWidth: 'thin',
+          scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent'
         }}
       >
-        {/* Extended scroll area for smooth transitions */}
-        <div style={{ height: `${Math.max(sceneImages.length, 1) * 200}vh` }}>
+        {/* Extended scroll area for smooth transitions - reduced height for better control */}
+        <div style={{ height: `${Math.max(sceneImages.length * 100, 100)}vh` }}>
           {/* Fixed position scenes container */}
           <div className="fixed inset-0 flex items-center justify-center">
             {sceneImages.map(({ scene, image, script }, index) => {
@@ -179,11 +221,13 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
               return (
                 <div
                   key={scene.id}
-                  className="absolute inset-0 flex items-center justify-center transition-opacity duration-1000"
+                  className="absolute inset-0 flex items-center justify-center"
                   style={{
                     opacity,
                     pointerEvents: isVisible ? 'auto' : 'none',
-                    zIndex: index === currentSceneIndex ? 10 : index === currentSceneIndex + 1 ? 5 : 1
+                    zIndex: index === currentSceneIndex ? 10 : index === currentSceneIndex + 1 ? 5 : 1,
+                    transition: 'opacity 0.5s ease-in-out',
+                    willChange: 'opacity'
                   }}
                 >
                   <div className="w-full max-w-6xl mx-auto px-8">
@@ -273,12 +317,20 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
         </div>
       </div>
 
-      {/* Scroll Hint */}
-      {currentSceneIndex === 0 && scrollProgress === 0 && (
+      {/* Scroll Hint with improved visibility */}
+      {currentSceneIndex === 0 && scrollProgress < 0.1 && sceneImages.length > 1 && (
         <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 animate-bounce">
-          <div className="text-white/60 text-sm">스크롤하여 다음 씬 보기</div>
+          <div className="bg-white/10 backdrop-blur px-4 py-2 rounded-full">
+            <div className="text-white/80 text-sm font-medium">↓ 스크롤하여 다음 씬 보기</div>
+          </div>
         </div>
       )}
+
+      {/* Debug Info - Remove in production */}
+      <div className="absolute top-32 right-4 z-30 bg-black/50 text-white text-xs p-2 rounded">
+        <div>현재 씬: {currentSceneIndex + 1}/{sceneImages.length}</div>
+        <div>진행도: {(scrollProgress * 100).toFixed(0)}%</div>
+      </div>
     </div>
   )
 }
