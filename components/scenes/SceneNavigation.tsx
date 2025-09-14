@@ -27,8 +27,8 @@ interface SceneNavigationProps {
 export default function SceneNavigation({ projectId, currentSceneId }: SceneNavigationProps) {
   const router = useRouter()
   const [scenes, setScenes] = useState<Scene[]>([])
-  const [canScrollLeft, setCanScrollLeft] = useState(false)
-  const [canScrollRight, setCanScrollRight] = useState(false)
+  const [canScrollLeft] = useState(false)
+  const [canScrollRight] = useState(false)
 
   useEffect(() => {
     // TODO: API 호출로 실제 씬 목록 로드

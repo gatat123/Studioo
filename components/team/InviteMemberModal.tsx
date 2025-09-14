@@ -19,15 +19,17 @@ interface User {
   username: string
   nickname?: string
   avatar?: string
+  profileImageUrl?: string
   email?: string
 }
 
-interface Member {
-  userId: string
-  username: string
-  nickname?: string
-  avatar?: string
-}
+// Member interface is not used anymore after fixing the type issue
+// interface Member {
+//   userId: string
+//   username: string
+//   nickname?: string
+//   avatar?: string
+// }
 
 interface InviteMemberModalProps {
   open: boolean
@@ -106,7 +108,7 @@ export function InviteMemberModal({ open, onOpenChange, channelId, channelName }
       
       // Load current channel members to exclude them
       const members = await channelsAPI.getMembers(channelId)
-      setCurrentMembers(members.map((m: Member) => m.userId))
+      setCurrentMembers(members.map((m) => m.userId))
     } catch (error) {
       console.error('Failed to load data:', error)
       toast({

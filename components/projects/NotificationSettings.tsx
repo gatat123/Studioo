@@ -21,7 +21,7 @@ interface NotificationSetting {
   emailEnabled: boolean
 }
 
-export default function NotificationSettings({ projectId }: NotificationSettingsProps) {
+export default function NotificationSettings({ }: NotificationSettingsProps) {
   const { toast } = useToast()
 
   const [settings, setSettings] = useState<NotificationSetting[]>([

@@ -32,7 +32,7 @@ export function ThemeSettings({ currentTheme, onUpdate }: ThemeSettingsProps) {
       
       onUpdate(selectedTheme)
       toast.success('테마 설정이 저장되었습니다')
-    } catch (error) {
+    } catch {
       toast.error('테마 설정 저장에 실패했습니다')
     } finally {
       setLoading(false)

@@ -13,7 +13,7 @@ export interface CreateAnnotationDto {
   width?: number;
   height?: number;
   content?: string;
-  drawingData?: any;
+  drawingData?: unknown;
   color?: string;
 }
 
@@ -23,7 +23,7 @@ export interface UpdateAnnotationDto {
   width?: number;
   height?: number;
   content?: string;
-  drawingData?: any;
+  drawingData?: unknown;
   color?: string;
 }
 

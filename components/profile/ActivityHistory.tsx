@@ -112,7 +112,8 @@ export function ActivityHistory({ userId }: ActivityHistoryProps) {
       case 'settings_changed':
         return <Settings className="h-4 w-4" />
       case 'scene_created':
-        return <Image className="h-4 w-4" />
+        // eslint-disable-next-line jsx-a11y/alt-text
+        return <Image className="h-4 w-4" aria-hidden="true" />
       default:
         return <FileEdit className="h-4 w-4" />
     }

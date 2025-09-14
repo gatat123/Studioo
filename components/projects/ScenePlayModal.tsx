@@ -68,7 +68,7 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
           blurAmount={0}
           useWindowScroll={false}
         >
-          {sceneImages.map(({ scene, image }, index) => (
+          {sceneImages.map(({ scene, image }) => (
             <ScrollStackItem key={scene.id} itemClassName="scene-card">
               <div className="relative bg-white dark:bg-gray-900 rounded-xl overflow-hidden shadow-2xl w-full max-w-5xl mx-auto">
                 {/* Scene Number Badge */}
@@ -81,11 +81,14 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
                 {/* Image Container */}
                 <div className="bg-gray-100 dark:bg-gray-800 relative" style={{ height: '500px' }}>
                   {image ? (
-                    <img
-                      src={(image as any).url || (image as any).fileUrl}
-                      alt={`Scene ${scene.sceneNumber}`}
-                      className="w-full h-full object-contain"
-                    />
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={(image as {url?: string; fileUrl?: string}).url || (image as {url?: string; fileUrl?: string}).fileUrl}
+                        alt={`Scene ${scene.sceneNumber}`}
+                        className="w-full h-full object-contain"
+                      />
+                    </>
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center text-gray-500">

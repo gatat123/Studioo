@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
-import { Plus, Save, Trash2, Edit3, X, Check } from 'lucide-react'
+import { Plus, Trash2, Edit3, X, Check } from 'lucide-react'
 import { useToast } from '@/components/ui/use-toast'
 import api from '@/lib/api/client'
 
@@ -47,6 +47,7 @@ export function SetListModal({
     if (open) {
       loadSetList()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, projectId])
 
   const loadSetList = async () => {
@@ -70,7 +71,7 @@ export function SetListModal({
     setEditingId(newSet.id)
   }
 
-  const handleUpdateSet = (id: string, field: 'location' | 'items', value: any) => {
+  const handleUpdateSet = (id: string, field: 'location' | 'items', value: string | string[]) => {
     setSetList(setList.map(set => 
       set.id === id 
         ? { ...set, [field]: value }

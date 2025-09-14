@@ -62,6 +62,7 @@ export function SceneScript({
 
   useEffect(() => {
     loadScript()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sceneId])
 
   const loadScript = async () => {
@@ -279,7 +280,7 @@ export function SceneScript({
                     {selectedText && (
                       <div className="flex items-center gap-1">
                         <span className="text-xs text-muted-foreground mr-2">
-                          "{selectedText.text}" 강조:
+                          &quot;{selectedText.text}&quot; 강조:
                         </span>
                         {Object.entries(HIGHLIGHT_COLORS).map(([color, config]) => (
                           <Button

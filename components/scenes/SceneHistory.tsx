@@ -25,7 +25,7 @@ interface SceneHistoryProps {
 
 export default function SceneHistory({ sceneId }: SceneHistoryProps) {
   const [history, setHistory] = useState<HistoryItem[]>([])
-  const [selectedVersion, setSelectedVersion] = useState<string | null>(null)
+  const [/*selectedVersion, setSelectedVersion*/] = useState<string | null>(null)
 
   useEffect(() => {
     // TODO: API 호출로 히스토리 로드
@@ -94,7 +94,8 @@ export default function SceneHistory({ sceneId }: SceneHistoryProps) {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Image className="h-4 w-4 text-muted-foreground" />
+              {/* eslint-disable-next-line jsx-a11y/alt-text */}
+              <Image className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <Badge variant={getTypeColor(item.type)}>
                 {item.type === 'lineart' ? '선화' : '아트'} v{item.version}
               </Badge>
