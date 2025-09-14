@@ -171,11 +171,12 @@ export default function ProjectSettingsPage() {
         title: '설정 업데이트',
         description: '프로젝트 설정이 저장되었습니다.',
       })
-    } catch (error: any) {
+    } catch (error) {
       console.error('프로젝트 업데이트 실패:', error)
 
       // Check if it's a permission error
-      if (error?.status === 403) {
+      const errorWithStatus = error as { status?: number }
+      if (errorWithStatus?.status === 403) {
         toast({
           title: '권한 없음',
           description: '프로젝트를 수정할 권한이 없습니다.',
