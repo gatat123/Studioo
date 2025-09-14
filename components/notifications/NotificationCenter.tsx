@@ -58,10 +58,12 @@ export function NotificationCenter({ }: NotificationCenterProps) {
     }
 
     // Listen for real-time notifications
-    socketClient.on('notification:new', handleNewNotification)
+    // @ts-expect-error - Custom event not in typed events
+    socketClient.socket?.on('notification:new', handleNewNotification)
 
     return () => {
-      socketClient.off('notification:new', handleNewNotification)
+      // @ts-expect-error - Custom event not in typed events
+      socketClient.socket?.off('notification:new', handleNewNotification)
     }
   }, [])
 

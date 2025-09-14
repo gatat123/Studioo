@@ -26,7 +26,8 @@ export function ChannelInvitesDropdown() {
     loadInvitations()
     
     // Listen for new invitations via Socket.io
-    socketClient.on('channel:invitation', (invitation: ChannelInvitation) => {
+    // @ts-expect-error - Custom event not in typed events
+    socketClient.socket?.on('channel:invitation', (invitation: ChannelInvitation) => {
       setInvitations(prev => [invitation, ...prev])
       toast({
         title: '새 채널 초대',

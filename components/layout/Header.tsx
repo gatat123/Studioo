@@ -60,10 +60,12 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
       });
     };
     
-    socketClient.on('channel:invitation', handleInvitation);
-    
+    // @ts-expect-error - Custom event not in typed events
+    socketClient.socket?.on('channel:invitation', handleInvitation);
+
     return () => {
-      socketClient.off('channel:invitation', handleInvitation);
+      // @ts-expect-error - Custom event not in typed events
+      socketClient.socket?.off('channel:invitation', handleInvitation);
     };
   }, [toast]);
 

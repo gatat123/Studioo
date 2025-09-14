@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Plus, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { ProjectGrid } from '@/components/projects/ProjectGrid';
 import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
 import JoinProjectModal from '@/components/projects/JoinProjectModal';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import type { Project } from '@/types';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProjectStore } from '@/store/useProjectStore';
 import {
@@ -19,8 +20,40 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Settings, LogOut } from 'lucide-react';
+import { User, Settings, LogOut, Shield } from 'lucide-react';
 import Link from 'next/link';
+
+// 통계 컴포넌트 메모이제이션
+const StudioStats = memo(function StudioStats({ projects }: { projects: Project[] }) {
+  const stats = useMemo(() => ({
+    active: projects.filter((p) => p.status === 'active').length,
+    completed: projects.filter((p) => p.status === 'completed').length,
+    total: projects.length
+  }), [projects]);
+
+  return (
+    <div className="flex gap-6 mt-4">
+      <div>
+        <span className="text-2xl font-bold text-gray-900">
+          {stats.active}
+        </span>
+        <span className="text-gray-600 ml-2">진행중</span>
+      </div>
+      <div>
+        <span className="text-2xl font-bold text-gray-900">
+          {stats.completed}
+        </span>
+        <span className="text-gray-600 ml-2">완료</span>
+      </div>
+      <div>
+        <span className="text-2xl font-bold text-gray-900">
+          {stats.total}
+        </span>
+        <span className="text-gray-600 ml-2">전체</span>
+      </div>
+    </div>
+  );
+});
 
 export default function StudioPage() {
   const router = useRouter();
@@ -29,6 +62,12 @@ export default function StudioPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+
+  // Callbacks 메모이제이션
+  const handleLogout = useCallback(() => {
+    void useAuthStore.getState().logout();
+    router.push('/login');
+  }, [router]);
   
   useEffect(() => {
     // Debug: Check localStorage and cookies
@@ -69,7 +108,10 @@ export default function StudioPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          {/* 부드러운 스핀 애니메이션을 위해 will-change 및 transform 사용 */}
+        <div className="w-12 h-12 mx-auto">
+          <div className="w-full h-full border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin will-change-transform" />
+        </div>
           <p className="mt-4 text-gray-600">로딩중...</p>
         </div>
       </div>
@@ -89,11 +131,11 @@ export default function StudioPage() {
                   {user?.nickname || user?.username}님의 작업 공간
                 </p>
               </div>
-              
+
               <div className="flex items-center gap-3">
                 {/* Notifications */}
                 <NotificationCenter userId={user?.id} />
-                
+
                 {/* Profile Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -126,29 +168,37 @@ export default function StudioPage() {
                         <span>설정</span>
                       </Link>
                     </DropdownMenuItem>
+                    {user?.isAdmin && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem asChild>
+                          <Link href="/admin">
+                            <Shield className="mr-2 h-4 w-4" />
+                            <span>관리자 대시보드</span>
+                          </Link>
+                        </DropdownMenuItem>
+                      </>
+                    )}
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       className="text-red-600"
-                      onClick={() => {
-                        void useAuthStore.getState().logout();
-                        router.push('/login');
-                      }}
+                      onClick={handleLogout}
                     >
                       <LogOut className="mr-2 h-4 w-4" />
                       <span>로그아웃</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                
+
                 {/* Join Project Button */}
-                <Button 
+                <Button
                   variant="outline"
                   onClick={() => setShowJoinModal(true)}
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
                   초대 코드로 참여
                 </Button>
-                
+
                 {/* Create Project Button */}
                 <Button onClick={() => setShowCreateModal(true)}>
                   <Plus className="h-4 w-4 mr-2" />
@@ -156,28 +206,9 @@ export default function StudioPage() {
                 </Button>
               </div>
             </div>
-            
+
             {/* Stats */}
-            <div className="flex gap-6 mt-4">
-              <div>
-                <span className="text-2xl font-bold text-gray-900">
-                  {projects.filter(p => p.status === 'active').length}
-                </span>
-                <span className="text-gray-600 ml-2">진행중</span>
-              </div>
-              <div>
-                <span className="text-2xl font-bold text-gray-900">
-                  {projects.filter(p => p.status === 'completed').length}
-                </span>
-                <span className="text-gray-600 ml-2">완료</span>
-              </div>
-              <div>
-                <span className="text-2xl font-bold text-gray-900">
-                  {projects.length}
-                </span>
-                <span className="text-gray-600 ml-2">전체</span>
-              </div>
-            </div>
+            <StudioStats projects={projects} />
           </div>
 
           {/* Project Grid Component */}

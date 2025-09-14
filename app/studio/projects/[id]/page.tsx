@@ -7,20 +7,16 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
+// import { Avatar, AvatarFallback } from '@/components/ui/avatar' // Currently unused
 import {
   ArrowLeft,
   Plus,
-  Send,
   MoreVertical,
   Trash2,
   Edit,
   Upload,
   Image as ImageIcon,
-  MessageSquare,
   Layers,
   Settings,
   Download,
@@ -51,6 +47,8 @@ import { OverallStoryModal } from '@/components/projects/OverallStoryModal'
 import { SetListModal } from '@/components/projects/SetListModal'
 import { CharacterListModal } from '@/components/projects/CharacterListModal'
 import { SceneScript } from '@/components/projects/SceneScript'
+import { HistorySection } from '@/components/projects/HistorySection'
+import { SOCKET_EVENTS } from '@/lib/socket/events'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -100,9 +98,10 @@ export default function ProjectDetailPage() {
   const [isAddingScene, setIsAddingScene] = useState(false)
   // const [editingSceneId] = useState<string | null>(null) // Removed unused state
   
-  // Comment management
-  const [newComment, setNewComment] = useState('')
-  const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  // Comment management - removed as it's handled by HistorySection
+  // const [newComment, setNewComment] = useState('')
+  // const [isSubmittingComment, setIsSubmittingComment] = useState(false)
+  // const [showHistorySection, setShowHistorySection] = useState(false)
   
   // Upload states
   const [isDragging, setIsDragging] = useState(false)
@@ -146,14 +145,23 @@ export default function ProjectDetailPage() {
     socketClient.connect()
     socketClient.joinProject(projectId)
     
-    // Set up real-time event listeners
-    socketClient.on('new_comment', (data: {user?: {nickname?: string}}) => {
+    // Set up real-time event listeners with new event system
+    socketClient.on(SOCKET_EVENTS.COMMENT_NEW, () => {
       // Refetch comments to get the full comment data with proper structure
       void fetchComments()
-      toast({
-        title: '새 댓글',
-        description: `${data.user?.nickname || 'Someone'}님이 댓글을 작성했습니다.`
-      })
+      // Toast is now handled by HistorySection
+    })
+
+    socketClient.on(SOCKET_EVENTS.HISTORY_UPDATE, (data: { projectId: string; type: string; action: string }) => {
+      // Handle history updates
+      if (data.projectId === projectId) {
+        // Refresh relevant data based on update type
+        if (data.type === 'comment') {
+          void fetchComments()
+        } else if (data.type === 'scene' || data.type === 'image') {
+          void fetchProjectDetails()
+        }
+      }
     })
     
     socketClient.on('new_scene', (data: {user?: {nickname?: string}}) => {
@@ -190,7 +198,8 @@ export default function ProjectDetailPage() {
     // Cleanup on unmount
     return () => {
       socketClient.leaveProject(projectId)
-      socketClient.off('new_comment')
+      socketClient.off(SOCKET_EVENTS.COMMENT_NEW)
+      socketClient.off(SOCKET_EVENTS.HISTORY_UPDATE)
       socketClient.off('new_scene')
       socketClient.off('new_image')
       socketClient.off('image_version_changed')
@@ -352,9 +361,10 @@ export default function ProjectDetailPage() {
       setNewSceneDescription('')
       
       // Emit Socket.io event for real-time update
-      socketClient.emit('scene_created', {
+      socketClient.emit(SOCKET_EVENTS.SCENE_CREATE, {
         projectId,
-        scene: processedScene
+        scene: processedScene,
+        user: { id: localStorage.getItem('userId'), nickname: localStorage.getItem('userNickname') }
       })
       
       toast({
@@ -398,42 +408,9 @@ export default function ProjectDetailPage() {
     }
   }
 
-  const handleSubmitComment = async () => {
-    if (!newComment.trim()) return
-    
-    setIsSubmittingComment(true)
-    try {
-      const comment = await commentsAPI.createComment({
-        projectId,
-        sceneId: selectedScene?.id,
-        content: newComment
-      })
-      setComments([...comments, comment])
-      setNewComment('')
-      
-      // Emit Socket.io event for real-time update
-      socketClient.emit('comment_created', {
-        commentId: comment.id,
-        projectId,
-        sceneId: selectedScene?.id,
-        content: comment.content,
-        parentCommentId: comment.parentCommentId
-      })
-      
-      toast({
-        title: '댓글 작성',
-        description: '댓글이 작성되었습니다.'
-      })
-    } catch (error) {
-      console.error('댓글 작성 실패:', error)
-      toast({
-        title: '오류',
-        description: '댓글 작성에 실패했습니다.',
-        variant: 'destructive'
-      })
-    } finally {
-      setIsSubmittingComment(false)
-    }
+  // Comment submission is now handled by HistorySection component
+  const handleCommentsUpdate = (updatedComments: Comment[]) => {
+    setComments(updatedComments)
   }
 
   // Drag and Drop handlers
@@ -575,12 +552,12 @@ export default function ProjectDetailPage() {
       )
       
       // Emit Socket.io event for real-time update
-      socketClient.emit('image_uploaded', {
+      socketClient.emit(SOCKET_EVENTS.IMAGE_UPLOAD, {
         projectId,
-        imageId: projectImage.id,
         sceneId: sceneToUse.id,
-        filename: projectImage.fileUrl?.split('/').pop() || 'image',
-        type
+        image: projectImage,
+        type,
+        user: { id: localStorage.getItem('userId'), nickname: localStorage.getItem('userNickname') }
       })
       
       toast({
@@ -830,17 +807,19 @@ export default function ProjectDetailPage() {
                     >
                       모두
                     </Button>
-                    
-                    {/* Play Button */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowScenePlay(true)}
-                      className="ml-2"
-                      title="씬 플레이 모드"
-                    >
-                      <Play className="h-4 w-4" />
-                    </Button>
+
+                    {/* Play Button - Only for storyboard projects */}
+                    {project.tag === 'storyboard' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowScenePlay(true)}
+                        className="ml-2"
+                        title="씬 플레이 모드"
+                      >
+                        <Play className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                   
                   {/* Action buttons for selected view mode */}
@@ -1176,118 +1155,18 @@ export default function ProjectDetailPage() {
           )}
         </div>
 
-        {/* Right Panel - Comments */}
+        {/* Right Panel - History Section with integrated comments */}
         <div className="w-96 border-l bg-card flex flex-col h-full overflow-hidden">
-          <div className="p-4 border-b flex-shrink-0">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold">댓글</h2>
-              <Badge variant="outline">{comments.length}</Badge>
-            </div>
-          </div>
-          
-          {/* Comment List */}
-          <ScrollArea className="flex-1">
-            <div className="p-4 space-y-4">
-              {comments.length > 0 ? (
-                comments
-                  .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) // 오래된 댓글이 위로, 최신이 아래로
-                  .map((comment) => {
-                  const isAnnotation = comment.content?.startsWith('[ANNOTATION]')
-                  const annotationData = comment.metadata
-                  let displayText = comment.content
-                  
-                  if (isAnnotation) {
-                    displayText = comment.content.substring(12) || '주석을 남겼습니다'
-                  }
-                  
-                  return (
-                    <div key={comment.id} className="flex gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="text-xs">
-                          {comment.user?.username?.[0]?.toUpperCase() || comment.author?.username?.[0]?.toUpperCase() || 'U'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 space-y-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium">
-                            {comment.user?.nickname || comment.user?.username || comment.author?.nickname || comment.author?.username || 'Unknown'}
-                          </p>
-                          {isAnnotation && (
-                            <Badge variant="secondary" className="text-xs">
-                              <PenTool className="h-3 w-3 mr-1" />
-                              주석
-                            </Badge>
-                          )}
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(comment.createdAt).toLocaleTimeString()}
-                          </p>
-                        </div>
-                        {isAnnotation ? (
-                          <div
-                            className="cursor-pointer hover:bg-accent/50 rounded p-2 transition-colors"
-                            onClick={() => {
-                              if (annotationData?.annotationImage) {
-                                // Show annotation image in modal
-                                setAnnotationModalData({
-                                  image: annotationData.annotationImage,
-                                  text: displayText
-                                })
-                                setShowAnnotationModal(true)
-                              }
-                            }}
-                          >
-                            <p className="text-sm text-blue-600 dark:text-blue-400">
-                              {displayText} (클릭하여 보기)
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="text-sm">{displayText}</p>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })
-              ) : (
-                <div className="text-center py-8">
-                  <MessageSquare className="h-12 w-12 mx-auto mb-3 text-muted-foreground opacity-30" />
-                  <p className="text-sm text-muted-foreground">아직 댓글이 없습니다</p>
-                  <p className="text-xs text-muted-foreground mt-1">첫 댓글을 작성해보세요</p>
-                </div>
-              )}
-            </div>
-          </ScrollArea>
-          
-          <Separator />
-          
-          {/* Comment Input - Fixed at bottom with improved layout */}
-          <div className="mt-auto border-t bg-background">
-            <div className="p-4">
-              <div className="flex items-end gap-2">
-                <Textarea
-                  placeholder={selectedScene ? `씬 ${selectedScene.sceneNumber}에 댓글 작성...` : "댓글을 입력하세요..."}
-                  value={newComment}
-                  onChange={(e) => setNewComment(e.target.value)}
-                  className="flex-1 min-h-[80px] max-h-[120px] resize-none"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && e.ctrlKey) {
-                      handleSubmitComment()
-                    }
-                  }}
-                />
-                <Button 
-                  onClick={handleSubmitComment}
-                  disabled={isSubmittingComment || !newComment.trim()}
-                  size="lg"
-                  className="h-[80px] px-4"
-                >
-                  <Send className="h-5 w-5" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Ctrl+Enter로 전송
-              </p>
-            </div>
-          </div>
+          <HistorySection
+            projectId={projectId}
+            sceneId={selectedScene?.id}
+            comments={comments}
+            onCommentsUpdate={handleCommentsUpdate}
+            onAnnotationClick={(annotation) => {
+              setAnnotationModalData(annotation)
+              setShowAnnotationModal(true)
+            }}
+          />
         </div>
       </div>
 

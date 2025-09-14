@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
-import { authAPI } from '../api/auth';
+import { authAPI } from '@/lib/api/auth';
+import { SOCKET_EVENTS, type SocketEventMap } from '@/lib/socket/events';
 
 class SocketClient {
   private socket: Socket | null = null;
@@ -95,22 +96,51 @@ class SocketClient {
     this.socket?.emit('typing:stop', { projectId, location });
   }
 
-  // Comment real-time updates
+  // Comment real-time updates with new event system
   sendComment(projectId: string, comment: {
     id: string;
     content: string;
     userId: string;
     [key: string]: unknown;
   }) {
-    this.socket?.emit('comment:create', { projectId, comment });
+    this.emit(SOCKET_EVENTS.COMMENT_NEW, {
+      projectId,
+      comment: { ...comment, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as unknown as Parameters<SocketEventMap[typeof SOCKET_EVENTS.COMMENT_NEW]>[0]['comment'],
+      sceneId: undefined
+    });
   }
 
   updateComment(projectId: string, commentId: string, content: string) {
-    this.socket?.emit('comment:update', { projectId, commentId, content });
+    this.emit(SOCKET_EVENTS.COMMENT_UPDATE, {
+      projectId,
+      comment: { id: commentId, content, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as unknown as Parameters<SocketEventMap[typeof SOCKET_EVENTS.COMMENT_UPDATE]>[0]['comment'],
+      sceneId: undefined
+    });
   }
 
   deleteComment(projectId: string, commentId: string) {
-    this.socket?.emit('comment:delete', { projectId, commentId });
+    this.emit(SOCKET_EVENTS.COMMENT_DELETE, { projectId, commentId });
+  }
+
+  // History update notification
+  sendHistoryUpdate(projectId: string, type: 'comment' | 'scene' | 'image' | 'annotation', action: 'create' | 'update' | 'delete', data: {
+    id: string;
+    content?: string;
+    user?: unknown;
+    metadata?: Record<string, unknown>;
+  }) {
+    this.emit(SOCKET_EVENTS.HISTORY_UPDATE, {
+      projectId,
+      type,
+      action,
+      data: {
+        id: data.id,
+        content: data.content,
+        user: data.user,
+        timestamp: new Date().toISOString(),
+        metadata: data.metadata
+      }
+    });
   }
 
   // Image upload notification
@@ -141,21 +171,21 @@ class SocketClient {
     this.socket?.emit('annotation:delete', { imageId, annotationId });
   }
 
-  // Custom event emitter
-  emit(event: string, data?: unknown) {
+  // Custom event emitter with type safety
+  emit<K extends keyof SocketEventMap>(event: K | string, data?: K extends keyof SocketEventMap ? Parameters<SocketEventMap[K]>[0] : unknown) {
     console.log(`📤 Emitting Socket.io event: ${event}`, data);
-    this.socket?.emit(event, data);
+    this.socket?.emit(event as string, data);
   }
 
-  // Custom event listener registration
-  on(event: string, callback: (...args: unknown[]) => void) {
+  // Custom event listener registration with type safety
+  on<K extends keyof SocketEventMap>(event: K | string, callback: K extends keyof SocketEventMap ? SocketEventMap[K] : (...args: unknown[]) => void) {
     console.log(`👂 Listening for Socket.io event: ${event}`);
-    this.socket?.on(event, callback);
+    this.socket?.on(event as string, callback as (...args: unknown[]) => void);
   }
 
-  off(event: string, callback?: (...args: unknown[]) => void) {
+  off<K extends keyof SocketEventMap>(event: K | string, callback?: K extends keyof SocketEventMap ? SocketEventMap[K] : (...args: unknown[]) => void) {
     console.log(`🔇 Removing Socket.io listener: ${event}`);
-    this.socket?.off(event, callback);
+    this.socket?.off(event as string, callback as (...args: unknown[]) => void);
   }
 
   // Get socket instance

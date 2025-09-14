@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import AdminSidebar from '@/components/admin/AdminSidebar';
 
 export default function AdminLayout({
   children,
@@ -10,33 +11,58 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, checkAuth } = useAuthStore();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Check if user is authenticated and is an admin
-    if (!isAuthenticated) {
-      router.push('/auth/login');
-      return;
-    }
+    const verifyAdmin = async () => {
+      setIsLoading(true);
 
-    // Check if user has admin privileges
-    // In real app, this would check the actual user role from the auth store
-    // For now, we'll check if username is 'admin' for demo purposes
-    if (user?.username !== 'admin') {
-      // Redirect non-admin users to studio
-      router.push('/studio');
-      return;
-    }
-  }, [isAuthenticated, user, router]);
+      // Check authentication first
+      if (!isAuthenticated) {
+        await checkAuth();
+      }
 
-  // Show loading state while checking auth
-  if (!isAuthenticated || user?.username !== 'admin') {
+      // Get the latest user state
+      const currentUser = useAuthStore.getState().user;
+
+      // Check if user is admin
+      if (!currentUser || !currentUser.isAdmin) {
+        // Redirect non-admin users to studio
+        router.push('/studio');
+        return;
+      }
+
+      setIsLoading(false);
+    };
+
+    verifyAdmin();
+  }, [isAuthenticated, checkAuth, router]);
+
+  if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-500">Checking permissions...</div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  return <>{children}</>;
+  // Double-check admin status
+  if (!user?.isAdmin) {
+    return null;
+  }
+
+  return (
+    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+      {/* Admin Sidebar */}
+      <AdminSidebar />
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto">
+        <div className="container mx-auto px-6 py-8">
+          {children}
+        </div>
+      </main>
+    </div>
+  );
 }
