@@ -202,12 +202,12 @@ function TeamPageContent() {
       setChannelMembers(membersWithOfflineStatus)
 
       // Request presence status for all members after loading
-      if (socketClient.socket?.connected) {
-        // @ts-expect-error - Custom event not in typed events
-        socketClient.socket?.emit('request_presence_status', {
+      if (socketClient.isConnected()) {
+        // Request presence status through public emit method
+        socketClient.emit('request_presence_status' as never, {
           channelId,
           userIds: members.map(m => m.userId)
-        })
+        } as never)
       }
     } catch (error) {
       console.error('Failed to load channel members:', error)

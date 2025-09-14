@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Image from 'next/image';
-import Link from 'next/link';
 import {
   Heart,
   Eye,
@@ -15,14 +13,11 @@ import {
   Edit,
   MapPin,
   Link as LinkIcon,
-  Instagram,
-  Twitter,
-  Github,
-  Linkedin,
-  Globe,
-  Mail,
+  Instagram as InstagramIcon,
+  X,
+  Github as GithubIcon,
+  Linkedin as LinkedinIcon,
   ChevronDown,
-  ExternalLink,
   Settings,
   Plus,
 } from 'lucide-react';
@@ -30,13 +25,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -97,17 +91,22 @@ interface PortfolioProfile {
   isOwner: boolean;
 }
 
-export default function PortfolioPage({ params }: { params: { username: string } }) {
+export default function PortfolioPage({ params }: { params: Promise<{ username: string }> }) {
   const { toast } = useToast();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'latest' | 'popular' | 'views'>('latest');
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [selectedProject, setSelectedProject] = useState<PortfolioProject | null>(null);
+  const [username, setUsername] = useState<string>('');
+
+  useEffect(() => {
+    params.then((p) => setUsername(p.username));
+  }, [params]);
 
   // Mock data
   const [profile] = useState<PortfolioProfile>({
-    username: params.username,
+    username: username || 'user',
     displayName: '김디자인',
     bio: '크리에이티브 디렉터 | UI/UX 디자이너 | 10년차 디자인 전문가\n사용자 중심의 아름답고 직관적인 디자인을 추구합니다.',
     avatar: '/api/placeholder/150/150',
@@ -198,7 +197,7 @@ export default function PortfolioPage({ params }: { params: { username: string }
     }
   });
 
-  const handleLikeProject = (projectId: string) => {
+  const handleLikeProject = () => {
     // API call would go here
     toast({
       title: '좋아요',
@@ -319,29 +318,29 @@ export default function PortfolioPage({ params }: { params: { username: string }
               <div className="flex items-center gap-2 mb-4">
                 {profile.social.instagram && (
                   <Button variant="ghost" size="icon" asChild>
-                    <a href={`https://instagram.com/${profile.social.instagram}`} target="_blank">
-                      <Instagram className="w-4 h-4" />
+                    <a href={`https://instagram.com/${profile.social.instagram}`} target="_blank" rel="noopener noreferrer">
+                      <InstagramIcon className="w-4 h-4" />
                     </a>
                   </Button>
                 )}
                 {profile.social.twitter && (
                   <Button variant="ghost" size="icon" asChild>
-                    <a href={`https://twitter.com/${profile.social.twitter}`} target="_blank">
-                      <Twitter className="w-4 h-4" />
+                    <a href={`https://twitter.com/${profile.social.twitter}`} target="_blank" rel="noopener noreferrer">
+                      <X className="w-4 h-4" />
                     </a>
                   </Button>
                 )}
                 {profile.social.github && (
                   <Button variant="ghost" size="icon" asChild>
-                    <a href={`https://github.com/${profile.social.github}`} target="_blank">
-                      <Github className="w-4 h-4" />
+                    <a href={`https://github.com/${profile.social.github}`} target="_blank" rel="noopener noreferrer">
+                      <GithubIcon className="w-4 h-4" />
                     </a>
                   </Button>
                 )}
                 {profile.social.linkedin && (
                   <Button variant="ghost" size="icon" asChild>
-                    <a href={`https://linkedin.com/in/${profile.social.linkedin}`} target="_blank">
-                      <Linkedin className="w-4 h-4" />
+                    <a href={`https://linkedin.com/in/${profile.social.linkedin}`} target="_blank" rel="noopener noreferrer">
+                      <LinkedinIcon className="w-4 h-4" />
                     </a>
                   </Button>
                 )}
@@ -476,7 +475,7 @@ export default function PortfolioPage({ params }: { params: { username: string }
                             className="w-8 h-8"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleLikeProject(project.id);
+                              handleLikeProject();
                             }}
                           >
                             <Heart className={cn("w-4 h-4", project.isLiked && "fill-current text-red-500")} />
@@ -561,7 +560,7 @@ export default function PortfolioPage({ params }: { params: { username: string }
                                 size="icon"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  handleLikeProject(project.id);
+                                  handleLikeProject();
                                 }}
                               >
                                 <Heart className={cn("w-4 h-4", project.isLiked && "fill-current text-red-500")} />

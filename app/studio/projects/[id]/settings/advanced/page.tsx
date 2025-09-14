@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Download,
@@ -12,11 +12,6 @@ import {
   HardDrive,
   FileJson,
   FileArchive,
-  Users,
-  History,
-  Activity,
-  CheckCircle,
-  XCircle,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,10 +51,11 @@ interface BackupItem {
   createdBy: string;
 }
 
-export default function AdvancedSettingsPage({ params }: { params: { id: string } }) {
+export default function AdvancedSettingsPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { toast } = useToast();
-  const projectId = params.id;
+  const resolvedParams = use(params);
+  const projectId = resolvedParams.id;
 
   // Export options
   const [exportFormat, setExportFormat] = useState<'json' | 'zip'>('zip');
@@ -111,6 +107,7 @@ export default function AdvancedSettingsPage({ params }: { params: { id: string 
         });
       }, 2000);
     } catch (error) {
+      console.error('Failed to export project:', error);
       toast({
         title: '내보내기 실패',
         description: '프로젝트 내보내기 중 오류가 발생했습니다.',
@@ -144,6 +141,7 @@ export default function AdvancedSettingsPage({ params }: { params: { id: string 
         setImportFile(null);
       }, 2000);
     } catch (error) {
+      console.error('Failed to import project:', error);
       toast({
         title: '가져오기 실패',
         description: '프로젝트 가져오기 중 오류가 발생했습니다.',
@@ -167,6 +165,7 @@ export default function AdvancedSettingsPage({ params }: { params: { id: string 
         });
       }, 2000);
     } catch (error) {
+      console.error('Failed to create backup:', error);
       toast({
         title: '백업 실패',
         description: '백업 생성 중 오류가 발생했습니다.',
@@ -175,7 +174,7 @@ export default function AdvancedSettingsPage({ params }: { params: { id: string 
     }
   };
 
-  const handleRestore = async (backupId: string) => {
+  const handleRestore = async () => {
     try {
       toast({
         title: '복원 중',
@@ -190,6 +189,7 @@ export default function AdvancedSettingsPage({ params }: { params: { id: string 
         });
       }, 2000);
     } catch (error) {
+      console.error('Failed to restore project:', error);
       toast({
         title: '복원 실패',
         description: '프로젝트 복원 중 오류가 발생했습니다.',
@@ -219,6 +219,7 @@ export default function AdvancedSettingsPage({ params }: { params: { id: string 
         router.push('/studio');
       }, 2000);
     } catch (error) {
+      console.error('Failed to delete project:', error);
       toast({
         title: '삭제 실패',
         description: '프로젝트 삭제 중 오류가 발생했습니다.',
@@ -250,6 +251,7 @@ export default function AdvancedSettingsPage({ params }: { params: { id: string 
         setTransferEmail('');
       }, 2000);
     } catch (error) {
+      console.error('Failed to transfer ownership:', error);
       toast({
         title: '이전 실패',
         description: '소유권 이전 중 오류가 발생했습니다.',
@@ -335,7 +337,7 @@ export default function AdvancedSettingsPage({ params }: { params: { id: string 
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleRestore(backup.id)}
+                        onClick={() => handleRestore()}
                       >
                         복원
                       </Button>

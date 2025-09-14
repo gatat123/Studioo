@@ -47,7 +47,13 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
   const searchParams = useSearchParams()
   const [participants, setParticipants] = useState<ProjectParticipant[]>([])
   const [loading, setLoading] = useState(true)
-  const [project, setProject] = useState<any>(null)
+  interface Project {
+    id: string
+    creatorId: string
+    name: string
+  }
+
+  const [project, setProject] = useState<Project | null>(null)
 
   const isAdminMode = searchParams.get('admin') === 'true'
 
@@ -91,7 +97,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
     }
 
     try {
-      const updatedParticipant = await projectsAPI.updateParticipantRole(
+      await projectsAPI.updateParticipantRole(
         projectId,
         participant.userId,
         newRole as 'owner' | 'editor' | 'viewer' | 'member'
@@ -99,7 +105,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
 
       setParticipants(prev =>
         prev.map(p =>
-          p.id === participant.id ? { ...p, role: newRole as any } : p
+          p.id === participant.id ? { ...p, role: newRole as 'owner' | 'editor' | 'viewer' | 'member' } : p
         )
       )
 
@@ -174,8 +180,8 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
     }
   }
 
-  const formatJoinDate = (dateString: string) => {
-    const date = new Date(dateString)
+  const formatJoinDate = (dateString: string | Date) => {
+    const date = typeof dateString === 'string' ? new Date(dateString) : dateString
     const now = new Date()
     const diffTime = Math.abs(now.getTime() - date.getTime())
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))

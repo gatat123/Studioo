@@ -5,15 +5,11 @@ import { motion } from 'framer-motion';
 import {
   Archive,
   Search,
-  Filter,
   RotateCcw,
   Trash2,
   Calendar,
   User,
-  Tag,
-  ChevronDown,
-  CheckSquare,
-  Square,
+  Users,
   AlertTriangle,
   Clock,
   HardDrive,
@@ -24,7 +20,6 @@ import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
@@ -34,14 +29,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -49,19 +36,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
 import { useArchiveStore } from '@/store/useArchiveStore';
-import { format, formatDistanceToNow, addDays } from 'date-fns';
+import { formatDistanceToNow, addDays } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
 
 export default function ArchivePage() {
   const { toast } = useToast();
   const {
     archivedProjects,
-    loading,
     searchQuery,
     sortBy,
     sortOrder,
@@ -163,6 +148,7 @@ export default function ArchivePage() {
         });
       }, 1500);
     } catch (error) {
+      console.error('Failed to restore project:', error);
       toast({
         title: '복원 실패',
         description: '프로젝트 복원 중 오류가 발생했습니다.',
@@ -190,6 +176,7 @@ export default function ArchivePage() {
         });
       }, 2000);
     } catch (error) {
+      console.error('Failed to batch restore projects:', error);
       toast({
         title: '일괄 복원 실패',
         description: '프로젝트 복원 중 오류가 발생했습니다.',
@@ -218,6 +205,7 @@ export default function ArchivePage() {
         });
       }, 1500);
     } catch (error) {
+      console.error('Failed to delete project:', error);
       toast({
         title: '삭제 실패',
         description: '프로젝트 삭제 중 오류가 발생했습니다.',
@@ -228,8 +216,7 @@ export default function ArchivePage() {
 
   const getDaysUntilDeletion = (deletionDate?: string) => {
     if (!deletionDate) return null;
-    const days = Math.ceil((new Date(deletionDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-    return days;
+    return Math.ceil((new Date(deletionDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
   };
 
   return (
@@ -298,7 +285,7 @@ export default function ArchivePage() {
           {/* Sort */}
           <Select value={`${sortBy}-${sortOrder}`} onValueChange={(value) => {
             const [field, order] = value.split('-');
-            setSortBy(field as any);
+            setSortBy(field as 'archivedAt' | 'name' | 'deletionDate');
             setSortOrder(order as 'asc' | 'desc');
           }}>
             <SelectTrigger className="w-[180px]">

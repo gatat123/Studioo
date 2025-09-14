@@ -134,7 +134,7 @@ export default function StudioPage() {
 
               <div className="flex items-center gap-3">
                 {/* Notifications */}
-                <NotificationCenter userId={user?.id} />
+                <NotificationCenter />
 
                 {/* Profile Dropdown */}
                 <DropdownMenu>
