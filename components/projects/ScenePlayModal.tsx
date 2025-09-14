@@ -101,8 +101,9 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
       }
 
       // Calculate which scene we're on based on scroll position
-      const sceneHeight = scrollHeight / (sceneImages.length - 1 || 1)
-      const exactScene = scrollTop / sceneHeight
+      // Each scene takes equal portion of scroll
+      const scrollRatio = scrollTop / scrollHeight
+      const exactScene = scrollRatio * (sceneImages.length - 1)
       const newSceneIndex = Math.floor(exactScene)
 
       // Calculate progress between scenes (0 to 1)
@@ -141,14 +142,14 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
   // Calculate opacity for fade transitions with improved logic
   const calculateOpacity = (index: number) => {
     if (index === currentSceneIndex) {
-      // Current scene - fade out as we scroll
-      return Math.max(0, 1 - scrollProgress * 0.7)
+      // Current scene - fade out as we scroll to next
+      return Math.max(0, 1 - scrollProgress)
     } else if (index === currentSceneIndex + 1 && index < sceneImages.length) {
       // Next scene - fade in as we scroll
-      return Math.min(1, scrollProgress * 1.2)
-    } else if (index === currentSceneIndex - 1 && scrollProgress < 0.1) {
-      // Previous scene - show slightly when scrolling back
-      return Math.min(0.3, (0.1 - scrollProgress) * 3)
+      return Math.min(1, scrollProgress)
+    } else if (index === currentSceneIndex - 1 && index >= 0) {
+      // Previous scene when scrolling back
+      return 0
     }
     return 0
   }
@@ -210,8 +211,8 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
           scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent'
         }}
       >
-        {/* Extended scroll area for smooth transitions - reduced height for better control */}
-        <div style={{ height: `${Math.max(sceneImages.length * 100, 100)}vh` }}>
+        {/* Extended scroll area for smooth transitions */}
+        <div style={{ height: `${sceneImages.length * 200}vh` }}>
           {/* Fixed position scenes container */}
           <div className="fixed inset-0 flex items-center justify-center">
             {sceneImages.map(({ scene, image, script }, index) => {
@@ -327,9 +328,13 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
       )}
 
       {/* Debug Info - Remove in production */}
-      <div className="absolute top-32 right-4 z-30 bg-black/50 text-white text-xs p-2 rounded">
+      <div className="absolute top-32 right-4 z-30 bg-black/80 text-white text-xs p-3 rounded space-y-1">
         <div>현재 씬: {currentSceneIndex + 1}/{sceneImages.length}</div>
         <div>진행도: {(scrollProgress * 100).toFixed(0)}%</div>
+        <div>현재 씬 투명도: {calculateOpacity(currentSceneIndex).toFixed(2)}</div>
+        {currentSceneIndex < sceneImages.length - 1 && (
+          <div>다음 씬 투명도: {calculateOpacity(currentSceneIndex + 1).toFixed(2)}</div>
+        )}
       </div>
     </div>
   )
