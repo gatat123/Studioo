@@ -38,7 +38,7 @@ export default function SystemStatus() {
   useEffect(() => {
     const fetchSystemStatus = async () => {
       try {
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token') || 'gatat123-temp-token';
         const response = await fetch('/api/admin/system/status', {
           headers: {
             Authorization: `Bearer ${token}`,

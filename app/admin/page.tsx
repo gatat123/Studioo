@@ -28,12 +28,18 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    // Set temporary token for gatat123 if not exists
+    if (!localStorage.getItem('token')) {
+      localStorage.setItem('token', 'gatat123-temp-token');
+      localStorage.setItem('username', 'gatat123');
+      localStorage.setItem('userId', 'gatat123-temp-id');
+    }
     void fetchDashboardStats();
   }, []);
 
   const fetchDashboardStats = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token') || 'gatat123-temp-token';
       const response = await fetch('/api/admin/stats', {
         headers: {
           Authorization: `Bearer ${token}`,

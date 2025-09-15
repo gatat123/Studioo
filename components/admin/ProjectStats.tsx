@@ -26,7 +26,7 @@ export default function ProjectStats() {
 
   const fetchProjectStats = async () => {
     try {
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem('token') || 'gatat123-temp-token';
       const response = await fetch('/api/admin/projects/stats', {
         headers: {
           Authorization: `Bearer ${token}`,

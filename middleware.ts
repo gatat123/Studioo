@@ -77,8 +77,13 @@ export function middleware(request: NextRequest) {
   // The actual admin check will be done in the admin layout component
 
   // 모든 응답에 CORS 헤더 추가
-  response.headers.set('Access-Control-Allow-Origin', 'https://studioo-production-eb03.up.railway.app');
-  response.headers.set('Access-Control-Allow-Credentials', 'true');
+  const allowedOrigins = ['https://studioo-production-eb03.up.railway.app', 'http://localhost:3000', 'http://localhost:3001'];
+  const origin = request.headers.get('origin');
+
+  if (origin && allowedOrigins.includes(origin)) {
+    response.headers.set('Access-Control-Allow-Origin', origin);
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+  }
 
   return response;
 }

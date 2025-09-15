@@ -1,64 +1,56 @@
 import { NextResponse } from 'next/server';
 import { verifyAdminAuth } from '@/lib/auth/admin-auth';
 
-// Mock system status data - replace with actual system monitoring
-const getMockSystemStatus = () => {
-  const uptime = Math.floor(Math.random() * 720) + 24; // 24-744 hours
-  const memoryUsed = Math.floor(Math.random() * 40) + 50; // 50-90%
-  const cpuUsage = Math.floor(Math.random() * 30) + 10; // 10-40%
-  const diskUsage = Math.floor(Math.random() * 20) + 60; // 60-80%
-
-  return {
-    serverStatus: 'healthy',
-    uptime: `${Math.floor(uptime / 24)}d ${uptime % 24}h`,
-    version: '1.0.0',
-    environment: process.env.NODE_ENV || 'development',
-    memory: {
-      used: `${memoryUsed}%`,
-      total: '16GB',
-      available: '16GB'
-    },
-    cpu: {
-      usage: `${cpuUsage}%`,
-      cores: 8,
-      model: 'Intel Core i7'
-    },
-    storage: {
-      used: `${diskUsage}%`,
-      total: '500GB',
-      available: `${500 - Math.floor(500 * diskUsage / 100)}GB`
-    },
-    database: {
-      status: 'connected',
-      connections: Math.floor(Math.random() * 20) + 5,
-      responseTime: `${Math.floor(Math.random() * 50) + 10}ms`
-    },
-    services: {
-      api: 'running',
-      websocket: 'running',
-      authentication: 'running',
-      fileUpload: 'running'
-    },
-    lastCheck: new Date().toISOString()
-  };
-};
-
 export async function GET() {
   try {
-    // Verify admin authentication
     const authResult = await verifyAdminAuth();
+
     if (!authResult.success) {
       return authResult.error;
     }
 
-    // Get system status - in production, query actual system metrics
-    const systemStatus = getMockSystemStatus();
+    // Mock system status data - In production, get real metrics
+    const systemStatus = {
+      health: 'healthy',
+      uptime: '15d 7h 23m',
+      cpu: {
+        usage: 45,
+        cores: 4,
+      },
+      memory: {
+        used: 3.2,
+        total: 8,
+        percentage: 40,
+      },
+      disk: {
+        used: 120,
+        total: 500,
+        percentage: 24,
+      },
+      database: {
+        status: 'connected',
+        connections: 12,
+        maxConnections: 100,
+        responseTime: 23, // ms
+      },
+      redis: {
+        status: 'connected',
+        memory: 256, // MB
+        keys: 1234,
+      },
+      services: [
+        { name: 'API Server', status: 'running', uptime: '15d 7h 23m' },
+        { name: 'WebSocket Server', status: 'running', uptime: '15d 7h 23m' },
+        { name: 'Background Jobs', status: 'running', uptime: '15d 7h 20m' },
+        { name: 'Email Service', status: 'running', uptime: '15d 7h 23m' },
+      ],
+      lastChecked: new Date().toISOString(),
+    };
 
     return NextResponse.json(systemStatus);
-  } catch (error) {
-    console.error('System status error:', error);
+  } catch {
     return NextResponse.json(
-      { error: 'Failed to retrieve system status' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
