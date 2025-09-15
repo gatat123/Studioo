@@ -54,7 +54,7 @@ export function CreateChannelModal({ open, onOpenChange, onChannelCreated, studi
       onChannelCreated()
       onOpenChange(false)
       setFormData({ name: '', description: '', type: 'public' })
-    } catch {
+    } catch (error) {
       toast({
         title: '오류',
         description: (error as {response?: {data?: {error?: string}}}).response?.data?.error || '채널 생성에 실패했습니다',

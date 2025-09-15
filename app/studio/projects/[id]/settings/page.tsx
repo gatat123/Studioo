@@ -171,7 +171,7 @@ export default function ProjectSettingsPage() {
         title: '설정 업데이트',
         description: '프로젝트 설정이 저장되었습니다.',
       })
-    } catch {
+    } catch (error) {
       // 프로젝트 업데이트 실패
 
       const errorStatus = error instanceof Error && 'status' in error

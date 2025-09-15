@@ -35,9 +35,21 @@ export async function verifyAdminAuth() {
 
     // Simple admin check for now
     // In production, verify against actual database
+
+    // Type guard to check if decoded is a JwtPayload object
+    if (typeof decoded === 'string') {
+      return {
+        success: false,
+        error: NextResponse.json(
+          { error: 'Invalid token format' },
+          { status: 401 }
+        )
+      };
+    }
+
     const user = {
-      id: decoded.userId || decoded.id,
-      username: decoded.username,
+      id: decoded.userId || decoded.id || decoded.sub,
+      username: decoded.username || decoded.name,
       role: decoded.role || (decoded.isAdmin ? 'admin' : 'user'),
       isActive: true
     };
@@ -58,7 +70,7 @@ export async function verifyAdminAuth() {
       user
     };
   } catch {
-    
+
     return {
       success: false,
       error: NextResponse.json(

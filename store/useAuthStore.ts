@@ -69,7 +69,7 @@ export const useAuthStore = create<AuthState>()(
               error: null,
             });
           }
-        } catch {
+        } catch (error) {
           const errorMessage = error instanceof Error ? error.message : '로그인에 실패했습니다.';
           set({
             user: null,
@@ -121,7 +121,7 @@ export const useAuthStore = create<AuthState>()(
               error: null,
             });
           }
-        } catch {
+        } catch (error) {
           const errorMessage = error instanceof Error ? error.message : '회원가입에 실패했습니다.';
           set({
             user: null,

@@ -62,7 +62,7 @@ export default function JoinProjectModal({ open, onClose }: JoinProjectModalProp
       router.push(`/studio/projects/${result.id}`)
       onClose()
       setInviteCode('')
-    } catch {
+    } catch (error) {
       toast({
         title: '참여 실패',
         description: (error as Error).message || '초대 코드가 유효하지 않거나 만료되었습니다.',
