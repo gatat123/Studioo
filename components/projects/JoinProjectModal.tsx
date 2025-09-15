@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useToast } from '@/components/ui/use-toast'
+import { useToast } from '@/hooks/use-toast'
 import { projectsAPI } from '@/lib/api/projects'
 import { Loader2, UserPlus, Info, ClipboardPaste } from 'lucide-react'
 

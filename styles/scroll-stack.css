@@ -7,7 +7,6 @@
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
-  -webkit-transform: translateZ(0);
   transform: translateZ(0);
   will-change: scroll-position;
 }
@@ -35,7 +34,6 @@
   border-radius: 20px;
   box-sizing: border-box;
   /* Improve mobile performance */
-  -webkit-transform: translateZ(0);
   transform: translateZ(0);
   position: relative;
 }

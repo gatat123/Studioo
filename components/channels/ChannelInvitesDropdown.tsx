@@ -16,7 +16,9 @@ import { useToast } from '@/hooks/use-toast'
 import { useRouter } from 'next/navigation'
 import { socketClient } from '@/lib/socket/client'
 
-export function ChannelInvitesDropdown() {
+// Currently unused - ready for future implementation
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function ChannelInvitesDropdown() {
   const [invitations, setInvitations] = useState<ChannelInvitation[]>([])
   const [loading, setLoading] = useState(false)
   const { toast } = useToast()

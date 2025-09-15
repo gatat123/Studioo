@@ -13,7 +13,9 @@ interface CommentInputProps {
   loading?: boolean
 }
 
-export function CommentInput({ 
+// Currently unused - ready for future implementation
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export default function CommentInput({
   onSubmit, 
   placeholder = "댓글을 입력하세요... (@로 멘션 가능)",
   projectId,

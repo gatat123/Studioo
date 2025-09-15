@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { headers } from 'next/headers';
-import jwt from 'jsonwebtoken';
+import { verifyAdminAuth } from '@/lib/auth/admin-auth';
 
 // Mock data for demonstration - replace with actual database queries
 const getMockProjectStats = () => {
@@ -16,36 +15,10 @@ const getMockProjectStats = () => {
 
 export async function GET() {
   try {
-    // Get authorization header
-    const headersList = await headers();
-    const authorization = headersList.get('authorization');
-
-    if (!authorization || !authorization.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
-    const token = authorization.split(' ')[1];
-
-    // Verify token and check admin status
-    try {
-      // In production, verify with your JWT secret
-      const decoded = jwt.decode(token) as { isAdmin?: boolean; username?: string } | null;
-
-      // Check if user is admin
-      if (!decoded || (!decoded.isAdmin && decoded.username !== 'gatat123')) {
-        return NextResponse.json(
-          { error: 'Forbidden - Admin access required' },
-          { status: 403 }
-        );
-      }
-    } catch {
-      return NextResponse.json(
-        { error: 'Invalid token' },
-        { status: 401 }
-      );
+    // Verify admin authentication
+    const authResult = await verifyAdminAuth();
+    if (!authResult.success) {
+      return authResult.error;
     }
 
     // Get project stats - in production, query from database

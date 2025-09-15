@@ -98,15 +98,7 @@
 }
 
 @layer utilities {
-  /* Custom Apple-inspired utilities */
-  .backdrop-blur-apple {
-    backdrop-filter: saturate(180%) blur(20px);
-    background-color: rgba(255, 255, 255, 0.72);
-  }
-  
-  .dark .backdrop-blur-apple {
-    background-color: rgba(0, 0, 0, 0.72);
-  }
+  /* Custom Apple-inspired utilities - removed unused backdrop-blur-apple */
   
   /* Smooth animations */
   .animate-in {

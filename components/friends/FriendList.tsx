@@ -76,6 +76,7 @@ interface SearchUser {
   friendStatus: 'none' | 'friend' | 'request_sent' | 'request_received';
 }
 
+// Currently unused - ready for future implementation
 export function FriendList() {
   const [open, setOpen] = useState(false);
   const [friends, setFriends] = useState<Friend[]>([]);

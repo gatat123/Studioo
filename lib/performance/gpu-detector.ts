@@ -138,8 +138,8 @@ class GPUDetector {
     const debugInfo = this.gl.getExtension('WEBGL_debug_renderer_info');
     const isWebGL2 = this.gl instanceof WebGL2RenderingContext;
 
-    const vendor = this.gl.getParameter(this.gl.VENDOR) || 'Unknown';
-    const renderer = this.gl.getParameter(this.gl.RENDERER) || 'Unknown';
+    const vendor = this.gl.getParameter(7936) || 'Unknown'; // gl.VENDOR
+    const renderer = this.gl.getParameter(7937) || 'Unknown'; // gl.RENDERER
     let unmaskedVendor: string | undefined;
     let unmaskedRenderer: string | undefined;
 
@@ -148,7 +148,7 @@ class GPUDetector {
       unmaskedRenderer = this.gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) || undefined;
     }
 
-    const maxTextureSize = this.gl.getParameter(this.gl.MAX_TEXTURE_SIZE) || 2048;
+    const maxTextureSize = this.gl.getParameter(3379) || 2048; // gl.MAX_TEXTURE_SIZE
 
     // Determine performance tier based on renderer string
     const rendererString = unmaskedRenderer || renderer;

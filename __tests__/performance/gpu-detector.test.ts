@@ -24,9 +24,6 @@ describe('GPU Detector', () => {
 
     // Create mock WebGL context
     mockGl = {
-      VENDOR: 7936,
-      RENDERER: 7937,
-      MAX_TEXTURE_SIZE: 3379,
       getParameter: jest.fn(),
       getExtension: jest.fn()
     }
@@ -47,9 +44,9 @@ describe('GPU Detector', () => {
       // Setup WebGL2 context mock
       mockGl.getParameter.mockImplementation((param: number) => {
         switch (param) {
-          case 7936: return 'NVIDIA Corporation'
-          case 7937: return 'ANGLE (NVIDIA GeForce RTX 3080)'
-          case 3379: return 16384
+          case 7936: return 'NVIDIA Corporation' // gl.VENDOR
+          case 7937: return 'ANGLE (NVIDIA GeForce RTX 3080)' // gl.RENDERER
+          case 3379: return 16384 // gl.MAX_TEXTURE_SIZE
           default: return null
         }
       })
@@ -136,11 +133,11 @@ describe('GPU Detector', () => {
     it('should use unmasked renderer when debug extension is available', async () => {
       mockGl.getParameter.mockImplementation((param: number) => {
         switch (param) {
-          case 7936: return 'Generic Vendor'
-          case 7937: return 'Generic Renderer'
-          case 37445: return 'NVIDIA Corporation'
-          case 37446: return 'NVIDIA GeForce RTX 4090'
-          case 3379: return 16384
+          case 7936: return 'Generic Vendor' // gl.VENDOR
+          case 7937: return 'Generic Renderer' // gl.RENDERER
+          case 37445: return 'NVIDIA Corporation' // UNMASKED_VENDOR_WEBGL
+          case 37446: return 'NVIDIA GeForce RTX 4090' // UNMASKED_RENDERER_WEBGL
+          case 3379: return 16384 // gl.MAX_TEXTURE_SIZE
           default: return null
         }
       })
@@ -206,9 +203,9 @@ describe('GPU Detector', () => {
       it(`should classify "${renderer}" as ${expectedTier} tier`, async () => {
         mockGl.getParameter.mockImplementation((param: number) => {
           switch (param) {
-            case 7937: return renderer
-            case 7936: return 'Test Vendor'
-            case 3379: return 8192
+            case 7937: return renderer // gl.RENDERER
+            case 7936: return 'Test Vendor' // gl.VENDOR
+            case 3379: return 8192 // gl.MAX_TEXTURE_SIZE
             default: return null
           }
         })
@@ -234,7 +231,7 @@ describe('GPU Detector', () => {
         gpuDetector.resetCache()
 
         mockGl.getParameter.mockImplementation((param: number) => {
-          if (param === 7937) return renderer
+          if (param === 7937) return renderer // gl.RENDERER
           return 'Test'
         })
 
@@ -375,7 +372,7 @@ describe('GPU Detector', () => {
         gpuDetector.resetCache()
 
         mockGl.getParameter.mockImplementation((param: number) => {
-          if (param === 7937) return gpu.name
+          if (param === 7937) return gpu.name // gl.RENDERER
           return 'Test'
         })
 

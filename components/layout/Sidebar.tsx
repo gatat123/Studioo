@@ -26,7 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { projectsAPI } from '@/lib/api/projects';
 import { Project } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { socketClient } from '@/lib/socket/client';
 
 interface SidebarProps {
