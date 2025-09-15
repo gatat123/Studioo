@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useState, useRef, useCallback } from 'react'
-import { X } from 'lucide-react'
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import { X, ChevronUp, ChevronDown, Keyboard, Smartphone } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { Scene, Image } from '@/types'
 import api from '@/lib/api/client'
@@ -24,9 +24,38 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
   const [sceneImages, setSceneImages] = useState<{ scene: Scene; image: Image | null; script?: ScriptData }[]>([])
   const [currentSceneIndex, setCurrentSceneIndex] = useState(0)
   const [scrollProgress, setScrollProgress] = useState(0)
+  const [showHints, setShowHints] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const [isLoading, setIsLoading] = useState(true)
   const animationFrameRef = useRef<number | null>(null)
+  const touchStartRef = useRef<{ y: number; time: number } | null>(null)
+  const throttleRef = useRef<number | null>(null)
+
+  // Detect mobile device
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768 || 'ontouchstart' in window)
+    }
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
+
+  // Hide hints after interaction
+  useEffect(() => {
+    if (currentSceneIndex > 0 || scrollProgress > 0.1) {
+      setShowHints(false)
+    }
+  }, [currentSceneIndex, scrollProgress])
+
+  // Optimized scroll height calculation
+  const scrollHeight = useMemo(() => {
+    if (sceneImages.length === 0) return '100vh'
+    // More reasonable height calculation: minimum 300vh, then 100vh per additional scene
+    const height = Math.max(300, 200 + (sceneImages.length - 1) * 100)
+    return `${height}vh`
+  }, [sceneImages.length])
 
   // Load scenes with images and scripts
   useEffect(() => {
@@ -68,23 +97,20 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
     loadScenesData()
   }, [scenes, imageType])
 
-  // Handle scroll events with improved calculation and performance
+  // Throttled scroll handler for better performance
   const handleScroll = useCallback(() => {
     if (!containerRef.current || sceneImages.length === 0) return
 
-    // Cancel any pending animation frame
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current)
-    }
+    // Throttle scroll events to 16ms (60fps)
+    if (throttleRef.current) return
+    throttleRef.current = requestAnimationFrame(() => {
+      throttleRef.current = null
 
-    // Use requestAnimationFrame for smooth performance
-    animationFrameRef.current = requestAnimationFrame(() => {
       if (!containerRef.current) return
 
       const container = containerRef.current
       const scrollTop = container.scrollTop
       const scrollHeight = container.scrollHeight - container.clientHeight
-
 
       // If no scrollable height, stay at first scene
       if (scrollHeight <= 0) {
@@ -105,9 +131,92 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
       // Update state with clamped values
       setCurrentSceneIndex(Math.max(0, Math.min(newSceneIndex, sceneImages.length - 1)))
       setScrollProgress(Math.max(0, Math.min(1, sceneProgress)))
-
     })
   }, [sceneImages.length])
+
+  // Navigate to specific scene
+  const navigateToScene = useCallback((targetIndex: number) => {
+    if (!containerRef.current || sceneImages.length === 0) return
+
+    const clampedIndex = Math.max(0, Math.min(targetIndex, sceneImages.length - 1))
+    const container = containerRef.current
+    const scrollHeight = container.scrollHeight - container.clientHeight
+    const targetScrollTop = (clampedIndex / (sceneImages.length - 1)) * scrollHeight
+
+    container.scrollTo({
+      top: targetScrollTop,
+      behavior: 'smooth'
+    })
+  }, [sceneImages.length])
+
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Prevent default behavior for navigation keys
+      switch (event.key) {
+        case 'ArrowUp':
+        case 'ArrowLeft':
+          event.preventDefault()
+          navigateToScene(currentSceneIndex - 1)
+          break
+        case 'ArrowDown':
+        case 'ArrowRight':
+        case ' ':
+          event.preventDefault()
+          navigateToScene(currentSceneIndex + 1)
+          break
+        case 'Home':
+          event.preventDefault()
+          navigateToScene(0)
+          break
+        case 'End':
+          event.preventDefault()
+          navigateToScene(sceneImages.length - 1)
+          break
+        case 'Escape':
+          event.preventDefault()
+          onClose()
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [currentSceneIndex, navigateToScene, sceneImages.length, onClose])
+
+  // Touch/swipe handling
+  const handleTouchStart = useCallback((event: React.TouchEvent) => {
+    const touch = event.touches[0]
+    touchStartRef.current = {
+      y: touch.clientY,
+      time: Date.now()
+    }
+  }, [])
+
+  const handleTouchEnd = useCallback((event: React.TouchEvent) => {
+    if (!touchStartRef.current) return
+
+    const touch = event.changedTouches[0]
+    const deltaY = touchStartRef.current.y - touch.clientY
+    const deltaTime = Date.now() - touchStartRef.current.time
+
+    // Require minimum swipe distance and speed
+    const minDistance = 50
+    const maxTime = 300
+
+    if (Math.abs(deltaY) > minDistance && deltaTime < maxTime) {
+      event.preventDefault()
+      if (deltaY > 0) {
+        // Swipe up - next scene
+        navigateToScene(currentSceneIndex + 1)
+      } else {
+        // Swipe down - previous scene
+        navigateToScene(currentSceneIndex - 1)
+      }
+    }
+
+    touchStartRef.current = null
+  }, [currentSceneIndex, navigateToScene])
 
   useEffect(() => {
     const container = containerRef.current
@@ -121,11 +230,25 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
 
     return () => {
       container.removeEventListener('scroll', handleScroll)
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [handleScroll])
+
+  // Cleanup animation frames on unmount
+  useEffect(() => {
+    // Store ref values in variables to avoid stale closure issues
+    const animationFrame = animationFrameRef.current
+    const throttleFrame = throttleRef.current
+
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame)
+      }
+      if (throttleFrame) {
+        cancelAnimationFrame(throttleFrame)
       }
     }
-  }, [handleScroll])
+  })
 
   // Calculate opacity for fade transitions with improved logic
   const calculateOpacity = (index: number) => {
@@ -174,33 +297,70 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
         </div>
       </div>
 
-      {/* Progress Indicator */}
-      <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20 flex gap-2">
-        {sceneImages.map((_, index) => (
-          <div
-            key={index}
-            className={`h-1 w-8 rounded-full transition-all duration-300 ${
-              index <= currentSceneIndex
-                ? 'bg-white'
-                : 'bg-white/30'
-            }`}
-          />
-        ))}
+      {/* Enhanced Progress Indicator */}
+      <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-20">
+        <div className="flex items-center gap-2 bg-black/40 backdrop-blur rounded-full px-4 py-2">
+          <span className="text-white/70 text-sm font-medium">
+            {currentSceneIndex + 1} / {sceneImages.length}
+          </span>
+          <div className="flex gap-1 ml-2">
+            {sceneImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => navigateToScene(index)}
+                className={`h-1.5 w-6 rounded-full transition-all duration-300 hover:scale-110 ${
+                  index === currentSceneIndex
+                    ? 'bg-white'
+                    : index < currentSceneIndex
+                    ? 'bg-white/70'
+                    : 'bg-white/30'
+                }`}
+                aria-label={`씬 ${index + 1}로 이동`}
+              />
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Scrollable Container with Extended Height */}
+      {/* Navigation Controls */}
+      <div className="absolute top-1/2 left-4 transform -translate-y-1/2 z-20">
+        <button
+          onClick={() => navigateToScene(currentSceneIndex - 1)}
+          disabled={currentSceneIndex === 0}
+          className="bg-black/40 backdrop-blur text-white p-2 rounded-full hover:bg-black/60 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="이전 씬"
+        >
+          <ChevronUp className="h-5 w-5" />
+        </button>
+      </div>
+
+      <div className="absolute top-1/2 right-4 transform -translate-y-1/2 z-20">
+        <button
+          onClick={() => navigateToScene(currentSceneIndex + 1)}
+          disabled={currentSceneIndex === sceneImages.length - 1}
+          className="bg-black/40 backdrop-blur text-white p-2 rounded-full hover:bg-black/60 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="다음 씬"
+        >
+          <ChevronDown className="h-5 w-5" />
+        </button>
+      </div>
+
+      {/* Optimized Scrollable Container */}
       <div
         ref={containerRef}
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
         className="h-full w-full overflow-y-auto overflow-x-hidden"
         style={{
           scrollBehavior: 'smooth',
+          scrollSnapType: 'y proximity',
           // Custom scrollbar styles
           scrollbarWidth: 'thin',
           scrollbarColor: 'rgba(255, 255, 255, 0.3) transparent'
         }}
       >
-        {/* Extended scroll area for smooth transitions */}
-        <div style={{ height: `${sceneImages.length * 200}vh` }}>
+        {/* Optimized scroll area with reasonable height */}
+        <div style={{ height: scrollHeight }}>
           {/* Fixed position scenes container */}
           <div className="fixed inset-0 flex items-center justify-center">
             {sceneImages.map(({ scene, image, script }, index) => {
@@ -215,8 +375,10 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
                     opacity,
                     pointerEvents: isVisible ? 'auto' : 'none',
                     zIndex: index === currentSceneIndex ? 10 : index === currentSceneIndex + 1 ? 5 : 1,
-                    transition: 'opacity 0.5s ease-in-out',
-                    willChange: 'opacity'
+                    transition: 'opacity 0.3s ease-in-out, transform 0.3s ease-in-out',
+                    transform: `translateY(${index === currentSceneIndex ? 0 : index < currentSceneIndex ? -20 : 20}px)`,
+                    willChange: 'opacity, transform',
+                    scrollSnapAlign: 'center'
                   }}
                 >
                   <div className="w-full max-w-6xl mx-auto px-8">
@@ -306,24 +468,54 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
         </div>
       </div>
 
-      {/* Scroll Hint with improved visibility */}
-      {currentSceneIndex === 0 && scrollProgress < 0.1 && sceneImages.length > 1 && (
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 animate-bounce">
-          <div className="bg-white/10 backdrop-blur px-4 py-2 rounded-full">
-            <div className="text-white/80 text-sm font-medium">↓ 스크롤하여 다음 씬 보기</div>
+      {/* Interactive Hints */}
+      {showHints && sceneImages.length > 1 && (
+        <>
+          {/* Scroll/Swipe Hint */}
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-20 animate-pulse">
+            <div className="bg-black/60 backdrop-blur border border-white/20 px-4 py-3 rounded-lg">
+              <div className="text-white/90 text-sm font-medium text-center">
+                {isMobile ? (
+                  <div className="flex items-center gap-2">
+                    <Smartphone className="h-4 w-4" />
+                    위아래로 스와이프하여 씬 이동
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Keyboard className="h-4 w-4" />
+                    화살표 키 또는 스크롤로 씬 이동
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
+
+          {/* Keyboard shortcuts hint for desktop */}
+          {!isMobile && (
+            <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20">
+              <div className="bg-black/40 backdrop-blur px-3 py-2 rounded">
+                <div className="text-white/70 text-xs text-center">
+                  ↑↓ 또는 스페이스 • Home/End • ESC로 닫기
+                </div>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
-      {/* Debug Info - Remove in production */}
-      <div className="absolute top-32 right-4 z-30 bg-black/80 text-white text-xs p-3 rounded space-y-1">
-        <div>현재 씬: {currentSceneIndex + 1}/{sceneImages.length}</div>
-        <div>진행도: {(scrollProgress * 100).toFixed(0)}%</div>
-        <div>현재 씬 투명도: {calculateOpacity(currentSceneIndex).toFixed(2)}</div>
-        {currentSceneIndex < sceneImages.length - 1 && (
-          <div>다음 씬 투명도: {calculateOpacity(currentSceneIndex + 1).toFixed(2)}</div>
-        )}
-      </div>
+      {/* Development Debug Info - Only show in development */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="absolute top-32 right-4 z-30 bg-black/80 text-white text-xs p-3 rounded space-y-1">
+          <div>현재 씬: {currentSceneIndex + 1}/{sceneImages.length}</div>
+          <div>진행도: {(scrollProgress * 100).toFixed(0)}%</div>
+          <div>스크롤 높이: {scrollHeight}</div>
+          <div>모바일: {isMobile ? 'Y' : 'N'}</div>
+          <div>현재 씬 투명도: {calculateOpacity(currentSceneIndex).toFixed(2)}</div>
+          {currentSceneIndex < sceneImages.length - 1 && (
+            <div>다음 씬 투명도: {calculateOpacity(currentSceneIndex + 1).toFixed(2)}</div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
