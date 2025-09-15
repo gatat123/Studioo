@@ -13,14 +13,12 @@ import {
   Edit,
   MapPin,
   Link as LinkIcon,
-  Instagram as InstagramIcon,
   X,
-  Github as GithubIcon,
-  Linkedin as LinkedinIcon,
   ChevronDown,
   Settings,
   Plus,
 } from 'lucide-react';
+import { FaInstagram, FaGithub, FaLinkedin } from 'react-icons/fa';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -213,12 +211,20 @@ export default function PortfolioPage({ params }: { params: Promise<{ username: 
     });
   };
 
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    toast({
-      title: '링크 복사됨',
-      description: '포트폴리오 링크가 클립보드에 복사되었습니다.',
-    });
+  const handleShare = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: '링크 복사됨',
+        description: '포트폴리오 링크가 클립보드에 복사되었습니다.',
+      });
+    } catch {
+      toast({
+        title: '복사 실패',
+        description: '링크 복사에 실패했습니다.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -319,7 +325,7 @@ export default function PortfolioPage({ params }: { params: Promise<{ username: 
                 {profile.social.instagram && (
                   <Button variant="ghost" size="icon" asChild>
                     <a href={`https://instagram.com/${profile.social.instagram}`} target="_blank" rel="noopener noreferrer">
-                      <InstagramIcon className="w-4 h-4" />
+                      <FaInstagram className="w-4 h-4" />
                     </a>
                   </Button>
                 )}
@@ -333,14 +339,14 @@ export default function PortfolioPage({ params }: { params: Promise<{ username: 
                 {profile.social.github && (
                   <Button variant="ghost" size="icon" asChild>
                     <a href={`https://github.com/${profile.social.github}`} target="_blank" rel="noopener noreferrer">
-                      <GithubIcon className="w-4 h-4" />
+                      <FaGithub className="w-4 h-4" />
                     </a>
                   </Button>
                 )}
                 {profile.social.linkedin && (
                   <Button variant="ghost" size="icon" asChild>
                     <a href={`https://linkedin.com/in/${profile.social.linkedin}`} target="_blank" rel="noopener noreferrer">
-                      <LinkedinIcon className="w-4 h-4" />
+                      <FaLinkedin className="w-4 h-4" />
                     </a>
                   </Button>
                 )}

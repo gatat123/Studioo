@@ -28,7 +28,7 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetchDashboardStats();
+    void fetchDashboardStats();
   }, []);
 
   const fetchDashboardStats = async () => {

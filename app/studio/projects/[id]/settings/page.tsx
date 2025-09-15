@@ -142,7 +142,7 @@ export default function ProjectSettingsPage() {
       }
     }
 
-    fetchProject()
+    void fetchProject()
   }, [projectId, router, form, toast, currentUser])
 
   const onSubmit = async (data: ProjectFormValues) => {
@@ -171,11 +171,15 @@ export default function ProjectSettingsPage() {
         title: '설정 업데이트',
         description: '프로젝트 설정이 저장되었습니다.',
       })
-    } catch (error: any) {
+    } catch (error) {
       console.error('프로젝트 업데이트 실패:', error)
 
+      const errorStatus = error instanceof Error && 'status' in error
+        ? (error as { status?: number }).status
+        : undefined
+
       // Check if it's a permission error
-      if (error?.status === 403) {
+      if (errorStatus === 403) {
         toast({
           title: '권한 없음',
           description: '프로젝트를 수정할 권한이 없습니다.',
@@ -184,7 +188,7 @@ export default function ProjectSettingsPage() {
       } else {
         toast({
           title: '오류',
-          description: error?.message || '프로젝트 업데이트에 실패했습니다.',
+          description: error instanceof Error ? error.message : '프로젝트 업데이트에 실패했습니다.',
           variant: 'destructive',
         })
       }

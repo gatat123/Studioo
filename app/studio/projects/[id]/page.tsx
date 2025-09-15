@@ -166,7 +166,7 @@ export default function ProjectDetailPage() {
     
     socketClient.on('new_scene', (data: {user?: {nickname?: string}}) => {
       // Refetch scenes to get the full data with proper structure
-      fetchProjectDetails()
+      void fetchProjectDetails()
       toast({
         title: '새 씬',
         description: `${data.user?.nickname || 'Someone'}님이 새 씬을 추가했습니다.`
@@ -176,7 +176,7 @@ export default function ProjectDetailPage() {
     socketClient.on('new_image', (data: {uploader?: {nickname?: string}; type?: string}) => {
       // Refetch images for the scene to get the full data
       console.log('Received new_image event:', data)
-      fetchProjectDetails() // 전체 프로젝트 데이터를 다시 가져와서 이미지 업데이트
+      void fetchProjectDetails() // 전체 프로젝트 데이터를 다시 가져와서 이미지 업데이트
       
       toast({
         title: '새 이미지',
@@ -187,7 +187,7 @@ export default function ProjectDetailPage() {
     // Listen for image version changes
     socketClient.on('image_version_changed', (data: {user?: {username?: string}; imageType?: string}) => {
       console.log('Received image_version_changed event:', data)
-      fetchProjectDetails() // 전체 프로젝트 데이터를 다시 가져와서 이미지 업데이트
+      void fetchProjectDetails() // 전체 프로젝트 데이터를 다시 가져와서 이미지 업데이트
       
       toast({
         title: '이미지 버전 변경',
@@ -752,7 +752,7 @@ export default function ProjectDetailPage() {
                           <DropdownMenuItem 
                             onClick={(e) => {
                               e.stopPropagation()
-                              handleDeleteScene(scene.id)
+                              void handleDeleteScene(scene.id)
                             }}
                             className="text-destructive"
                           >

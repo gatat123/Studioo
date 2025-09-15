@@ -56,7 +56,7 @@ export default function SceneEditorPage() {
       }
     }
     
-    loadSceneData()
+    void loadSceneData()
   }, [sceneId])
 
   // 키보드 단축키 핸들러
