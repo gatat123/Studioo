@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import {
   Archive,
   Search,
@@ -39,12 +40,14 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useArchiveStore } from '@/store/useArchiveStore';
-import { formatDistanceToNow, addDays } from 'date-fns';
+import { getArchivedProjects, restoreProject, deleteArchivedProject, batchRestoreProjects } from '@/lib/api/archive';
+import { formatDistanceToNow } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 
 export default function ArchivePage() {
   const { toast } = useToast();
+  const router = useRouter();
   const {
     archivedProjects,
     searchQuery,
@@ -52,10 +55,16 @@ export default function ArchivePage() {
     sortOrder,
     currentPage,
     itemsPerPage,
+    totalItems: _totalItems,
+    loading,
     setSearchQuery,
     setSortBy,
     setSortOrder,
     setCurrentPage,
+    setArchivedProjects,
+    setTotalItems,
+    setLoading,
+    setError,
     getFilteredProjects,
     getPaginatedProjects,
     removeArchivedProject,
@@ -66,52 +75,34 @@ export default function ArchivePage() {
   const [projectToDelete, setProjectToDelete] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // Mock data for demonstration
+  // Fetch archived projects data
   useEffect(() => {
-    // In real implementation, fetch archived projects from API
-    const mockProjects = [
-      {
-        id: '1',
-        name: '2024 브랜드 리뉴얼',
-        description: '새로운 브랜드 아이덴티티 디자인 프로젝트',
-        thumbnail: '/api/placeholder/400/300',
-        ownerId: 'user1',
-        ownerName: '김디자인',
-        ownerAvatar: '/api/placeholder/40/40',
-        archivedAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-        archivedBy: 'user1',
-        archivedByName: '김디자인',
-        deletionDate: addDays(new Date(), 25).toISOString(),
-        collaborators: 3,
-        files: 24,
-        lastActivity: new Date(Date.now() - 86400000 * 10).toISOString(),
-        canRestore: true,
-        canDelete: true,
-        tags: ['브랜딩', 'UI/UX'],
-      },
-      {
-        id: '2',
-        name: '모바일 앱 UI 개선',
-        description: 'iOS/Android 앱 UI 전면 개편',
-        thumbnail: '/api/placeholder/400/300',
-        ownerId: 'user2',
-        ownerName: '이개발',
-        ownerAvatar: '/api/placeholder/40/40',
-        archivedAt: new Date(Date.now() - 86400000 * 15).toISOString(),
-        archivedBy: 'user2',
-        archivedByName: '이개발',
-        deletionDate: addDays(new Date(), 15).toISOString(),
-        collaborators: 5,
-        files: 42,
-        lastActivity: new Date(Date.now() - 86400000 * 20).toISOString(),
-        canRestore: true,
-        canDelete: false,
-        tags: ['모바일', 'UI디자인'],
-      },
-    ];
+    const fetchArchivedProjects = async () => {
+      try {
+        setLoading(true);
+        const response = await getArchivedProjects(
+          currentPage,
+          itemsPerPage,
+          sortBy,
+          sortOrder
+        );
+        setArchivedProjects(response.projects);
+        setTotalItems(response.total);
+      } catch (error) {
+        console.error('Failed to fetch archived projects:', error);
+        setError('아카이브된 프로젝트를 불러오는데 실패했습니다.');
+        toast({
+          title: '오류',
+          description: '아카이브된 프로젝트를 불러오는데 실패했습니다.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    useArchiveStore.getState().setArchivedProjects(mockProjects);
-  }, []);
+    fetchArchivedProjects();
+  }, [currentPage, itemsPerPage, sortBy, sortOrder, setArchivedProjects, setTotalItems, setLoading, setError, toast]);
 
   const filteredProjects = getPaginatedProjects();
   const totalPages = Math.ceil(getFilteredProjects().length / itemsPerPage);
@@ -139,16 +130,15 @@ export default function ArchivePage() {
         description: '프로젝트를 복원하고 있습니다...',
       });
 
-      // API call would go here
-      setTimeout(() => {
-        removeArchivedProject(projectId);
-        toast({
-          title: '복원 완료',
-          description: '프로젝트가 성공적으로 복원되었습니다.',
-        });
-      }, 1500);
-    } catch {
-      // Failed to restore project
+      await restoreProject(projectId);
+      removeArchivedProject(projectId);
+
+      toast({
+        title: '복원 완료',
+        description: '프로젝트가 성공적으로 복원되었습니다.',
+      });
+    } catch (error) {
+      console.error('Failed to restore project:', error);
       toast({
         title: '복원 실패',
         description: '프로젝트 복원 중 오류가 발생했습니다.',
@@ -166,17 +156,16 @@ export default function ArchivePage() {
         description: `${selectedProjects.length}개 프로젝트를 복원하고 있습니다...`,
       });
 
-      // API call would go here
-      setTimeout(() => {
-        selectedProjects.forEach(id => removeArchivedProject(id));
-        setSelectedProjects([]);
-        toast({
-          title: '일괄 복원 완료',
-          description: `${selectedProjects.length}개 프로젝트가 복원되었습니다.`,
-        });
-      }, 2000);
-    } catch {
-      // Failed to batch restore projects
+      await batchRestoreProjects(selectedProjects);
+      selectedProjects.forEach(id => removeArchivedProject(id));
+      setSelectedProjects([]);
+
+      toast({
+        title: '일괄 복원 완료',
+        description: `${selectedProjects.length}개 프로젝트가 복원되었습니다.`,
+      });
+    } catch (error) {
+      console.error('Failed to batch restore projects:', error);
       toast({
         title: '일괄 복원 실패',
         description: '프로젝트 복원 중 오류가 발생했습니다.',
@@ -194,18 +183,17 @@ export default function ArchivePage() {
         description: '프로젝트를 영구 삭제하고 있습니다...',
       });
 
-      // API call would go here
-      setTimeout(() => {
-        removeArchivedProject(projectToDelete);
-        setShowDeleteDialog(false);
-        setProjectToDelete(null);
-        toast({
-          title: '삭제 완료',
-          description: '프로젝트가 영구적으로 삭제되었습니다.',
-        });
-      }, 1500);
-    } catch {
-      // Failed to delete project
+      await deleteArchivedProject(projectToDelete);
+      removeArchivedProject(projectToDelete);
+      setShowDeleteDialog(false);
+      setProjectToDelete(null);
+
+      toast({
+        title: '삭제 완료',
+        description: '프로젝트가 영구적으로 삭제되었습니다.',
+      });
+    } catch (error) {
+      console.error('Failed to delete project:', error);
       toast({
         title: '삭제 실패',
         description: '프로젝트 삭제 중 오류가 발생했습니다.',
@@ -321,8 +309,18 @@ export default function ArchivePage() {
         </div>
       </div>
 
-      {/* Projects Grid/List */}
-      {filteredProjects.length === 0 ? (
+      {/* Loading State */}
+      {loading ? (
+        <Card className="p-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">로딩 중...</h3>
+            <p className="text-muted-foreground">
+              아카이브된 프로젝트를 불러오고 있습니다.
+            </p>
+          </div>
+        </Card>
+      ) : filteredProjects.length === 0 ? (
         <Card className="p-12">
           <div className="text-center">
             <Archive className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
@@ -364,7 +362,9 @@ export default function ArchivePage() {
                     )}>
                       <CardHeader className="p-0">
                         <div className="relative">
-                          <div className="aspect-video bg-muted" />
+                          <div className="aspect-video bg-muted cursor-pointer" onClick={() => {
+                            router.push(`/studio/archive/${project.id}`);
+                          }} />
                           <Checkbox
                             checked={isSelected}
                             onCheckedChange={() => handleSelectProject(project.id)}
@@ -479,7 +479,9 @@ export default function ArchivePage() {
                         onCheckedChange={() => handleSelectProject(project.id)}
                       />
 
-                      <div className="w-16 h-16 bg-muted rounded" />
+                      <div className="w-16 h-16 bg-muted rounded cursor-pointer" onClick={() => {
+                        router.push(`/studio/archive/${project.id}`);
+                      }} />
 
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">

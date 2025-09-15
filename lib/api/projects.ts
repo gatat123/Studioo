@@ -28,6 +28,9 @@ export interface ProjectWithParticipants extends Project {
     participants: number;
     comments: number;
   };
+  archivedAt?: string | null;
+  archivedBy?: string | null;
+  deletionDate?: string | null;
 }
 
 export const projectsAPI = {
