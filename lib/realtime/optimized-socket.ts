@@ -117,17 +117,17 @@ export class OptimizedSocket {
             this.handleProcessedMessage(data);
             break;
           case 'error':
-            console.error('Worker error:', data);
+            
             break;
         }
       };
 
-      this.worker.onerror = (error) => {
-        console.error('Worker error:', error);
+      this.worker.onerror = (_error) => {
+
         this.worker = null; // Fallback to main thread
       };
-    } catch (error) {
-      console.warn('Web Worker initialization failed:', error);
+    } catch {
+
       this.config.enableWebWorker = false;
     }
   }

@@ -53,8 +53,7 @@ export default function ProfilePage() {
         email: userData.email || '',
         bio: userData.bio || ''
       }))
-    } catch (error) {
-      console.error('프로필 로드 실패:', error)
+    } catch {
       toast({
         title: '오류',
         description: '프로필을 불러오는데 실패했습니다.',
@@ -68,20 +67,12 @@ export default function ProfilePage() {
   const handleUpdateProfile = async () => {
     setSaving(true)
     try {
-      console.log('[Profile Update] Sending data:', {
-        nickname: formData.nickname,
-        email: formData.email,
-        bio: formData.bio
-      })
-      
       const response = await api.put('/api/users/profile', {
         nickname: formData.nickname,
         email: formData.email,
         bio: formData.bio
       })
-      
-      console.log('[Profile Update] Response:', response)
-      
+
       if (response && response.user) {
         setProfile(response.user)
         setFormData(prev => ({
@@ -90,16 +81,15 @@ export default function ProfilePage() {
           email: response.user.email || '',
           bio: response.user.bio || ''
         }))
-        
+
         toast({
           title: '성공',
           description: '프로필이 업데이트되었습니다.'
         })
-        
+
         // Refresh profile data
         await fetchProfile()
       } else {
-        console.error('[Profile Update] Invalid response structure:', response)
         toast({
           title: '오류',
           description: response?.message || '프로필 업데이트에 실패했습니다.',
@@ -107,7 +97,6 @@ export default function ProfilePage() {
         })
       }
     } catch (error: unknown) {
-      console.error('[Profile Update] Error:', error)
       const errorObj = error as {response?: {data?: {error?: string}}; message?: string}
       const errorMessage = errorObj?.response?.data?.error || errorObj?.message || '프로필 업데이트에 실패했습니다.'
       toast({
@@ -123,16 +112,8 @@ export default function ProfilePage() {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) {
-      console.log('[Profile Upload] No file selected')
       return
     }
-
-    console.log('[Profile Upload] File selected:', {
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      lastModified: file.lastModified
-    })
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
@@ -158,17 +139,8 @@ export default function ProfilePage() {
     try {
       const formData = new FormData()
       formData.append('file', file)
-      
-      // Verify FormData content
-      console.log('[Profile Upload] FormData created with entries:', 
-        Array.from(formData.entries()).map(([k, v]) => 
-          [k, v instanceof File ? `File(${v.name}, ${v.type}, ${v.size} bytes)` : v]
-        )
-      )
 
       const response = await api.upload('/api/users/profile/image', formData)
-      
-      console.log('[Profile Upload] Response:', response)
 
       if (response && response.user) {
         setProfile(response.user)
@@ -176,14 +148,13 @@ export default function ProfilePage() {
           title: '성공',
           description: '프로필 사진이 업데이트되었습니다.'
         })
-        
+
         // Refresh profile data to get the updated image
         await fetchProfile()
-        
+
         // Force page refresh to update all image instances
         window.location.reload()
       } else {
-        console.error('[Profile Upload] Invalid response structure:', response)
         toast({
           title: '오류',
           description: response?.message || '프로필 사진 업로드에 실패했습니다.',
@@ -191,7 +162,6 @@ export default function ProfilePage() {
         })
       }
     } catch (error: unknown) {
-      console.error('[Profile Upload] Error:', error)
       const errorObj = error as {response?: {data?: {error?: string}}; message?: string}
       const errorMessage = errorObj?.response?.data?.error || errorObj?.message || '프로필 사진 업로드에 실패했습니다.'
       toast({
@@ -219,8 +189,7 @@ export default function ProfilePage() {
           description: '프로필 사진이 제거되었습니다.'
         })
       }
-    } catch (error) {
-      console.error('프로필 사진 제거 실패:', error)
+    } catch {
       toast({
         title: '오류',
         description: '프로필 사진 제거에 실패했습니다.',
@@ -259,8 +228,7 @@ export default function ProfilePage() {
         newPassword: '',
         confirmPassword: ''
       }))
-    } catch (error) {
-      console.error('비밀번호 변경 실패:', error)
+    } catch {
       toast({
         title: '오류',
         description: '비밀번호 변경에 실패했습니다.',

@@ -46,8 +46,8 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
               if (response.script) {
                 scriptData = response.script
               }
-            } catch (error) {
-              console.error(`Failed to load script for scene ${scene.id}:`, error)
+            } catch {
+              // Failed to load script for scene
             }
 
             return {
@@ -58,8 +58,8 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
           })
         )
         setSceneImages(imagesWithScenes)
-      } catch (error) {
-        console.error('Failed to load scenes data:', error)
+      } catch {
+        // Failed to load scenes data
       } finally {
         setIsLoading(false)
       }
@@ -85,13 +85,6 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
       const scrollTop = container.scrollTop
       const scrollHeight = container.scrollHeight - container.clientHeight
 
-      // Debug log
-      console.log('Scroll Debug:', {
-        scrollTop,
-        scrollHeight,
-        clientHeight: container.clientHeight,
-        totalHeight: container.scrollHeight
-      })
 
       // If no scrollable height, stay at first scene
       if (scrollHeight <= 0) {
@@ -113,11 +106,6 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
       setCurrentSceneIndex(Math.max(0, Math.min(newSceneIndex, sceneImages.length - 1)))
       setScrollProgress(Math.max(0, Math.min(1, sceneProgress)))
 
-      console.log('Scene Info:', {
-        currentIndex: newSceneIndex,
-        progress: sceneProgress,
-        totalScenes: sceneImages.length
-      })
     })
   }, [sceneImages.length])
 

@@ -153,8 +153,7 @@ export function HistorySection({
             description: `${payload.user?.nickname || '누군가'}님이 댓글을 작성했습니다.`
           })
         }
-      } catch (error) {
-        console.error('Failed to fetch updated comments:', error)
+      } catch {
       }
     }
 
@@ -349,8 +348,7 @@ export function HistorySection({
         }
       }, 100)
 
-    } catch (error) {
-      console.error('Failed to submit comment:', error)
+    } catch {
       toast({
         title: '오류',
         description: '댓글 작성에 실패했습니다.',
@@ -414,8 +412,7 @@ export function HistorySection({
                 title: '새로고침 완료',
                 description: '히스토리가 업데이트되었습니다.'
               })
-            } catch (error) {
-              console.error('Failed to refresh:', error)
+            } catch {
               toast({
                 title: '오류',
                 description: '새로고침에 실패했습니다.',

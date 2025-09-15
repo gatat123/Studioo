@@ -84,8 +84,6 @@ class APIClient {
       
       // Debug logging (only for auth endpoints)
       if (url.includes('/auth')) {
-        console.log('🔑 API Client - Auth request:', url);
-        console.log('🔑 API Client - Token available:', !!authToken);
       }
     }
 
@@ -98,10 +96,8 @@ class APIClient {
     if (authToken) {
       requestHeaders['Authorization'] = `Bearer ${authToken}`;
       if (url.includes('/auth')) {
-        console.log('✅ API Client - Authorization header set for auth request');
       }
     } else if (url.includes('/auth')) {
-      console.log('⚠️ API Client - No token available for auth request');
     }
 
     // Create abort controller for timeout
@@ -126,23 +122,25 @@ class APIClient {
           // Handle non-OK responses
           if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new APIError(
+            lastError = new APIError(
               response.status,
               errorData.message || `HTTP ${response.status}`,
               errorData
             );
-          }
 
-          // Parse and return response
-          return await response.json();
+            // Don't retry on client errors (4xx)
+            if (lastError instanceof APIError && lastError.status >= 400 && lastError.status < 500) {
+              return Promise.reject(lastError);
+            }
+
+            // Continue to retry logic for 5xx errors
+          } else {
+            // Parse and return response
+            return await response.json();
+          }
         } catch (error) {
           lastError = error as Error;
 
-          // Don't retry on client errors (4xx)
-          if (error instanceof APIError && error.status >= 400 && error.status < 500) {
-            console.error('[API Error]', error.message);
-            return Promise.reject(error);
-          }
           
           // Wait before retry (exponential backoff)
           if (attempt < retry - 1) {
@@ -225,10 +223,6 @@ class APIClient {
     }
 
     const url = `${this.baseURL}${endpoint}`;
-    console.log('[API Upload] Uploading to:', url);
-    console.log('[API Upload] FormData entries:', Array.from(formData.entries()).map(([k, v]) => 
-      [k, v instanceof File ? `File(${v.name}, ${v.type}, ${v.size} bytes)` : v]
-    ));
 
     try {
       const response = await fetch(url, {
@@ -241,20 +235,18 @@ class APIClient {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('[API Upload] Error response:', response.status, errorData);
-        throw new APIError(
+        // API Upload Error response
+        return Promise.reject(new APIError(
           response.status,
           errorData.message || errorData.error || `HTTP ${response.status}`,
           errorData
-        );
+        ));
       }
 
-      const data = await response.json();
-      console.log('[API Upload] Success:', data);
-      return data;
+      return await response.json();
     } catch (error) {
-      console.error('[API Upload] Request failed:', error);
-      return Promise.reject(error);
+      // API Upload Request failed
+      throw error;
     }
   }
 }

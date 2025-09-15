@@ -126,11 +126,11 @@ export const usePerformanceStore = create<PerformanceState>()(
             renderingSettings
           });
 
-          console.log('GPU Detected:', gpuInfo);
-          console.log('Performance Tier:', gpuInfo.tier);
-          console.log('Recommended Settings:', renderingSettings);
-        } catch (error) {
-          console.error('Failed to detect GPU:', error);
+          
+          
+          
+        } catch {
+          
 
           // Set fallback settings
           set({
@@ -168,7 +168,7 @@ export const usePerformanceStore = create<PerformanceState>()(
         performanceMonitor.start();
 
         set({ isMonitoring: true });
-        console.log('Performance monitoring started');
+        
       },
 
       // Stop performance monitoring
@@ -179,7 +179,7 @@ export const usePerformanceStore = create<PerformanceState>()(
           consecutiveLowFrames: 0,
           consecutiveHighFrames: 0
         });
-        console.log('Performance monitoring stopped');
+        
       },
 
       // Update performance metrics
@@ -249,7 +249,7 @@ export const usePerformanceStore = create<PerformanceState>()(
 
         // Don't exceed GPU's recommended tier
         if (state.gpuInfo && currentTier >= state.gpuInfo.tier) {
-          console.log('Already at maximum recommended quality for this GPU');
+          
           return;
         }
 
@@ -286,7 +286,7 @@ export const usePerformanceStore = create<PerformanceState>()(
           consecutiveHighFrames: 0
         });
 
-        console.log(`Quality increased to ${newTier}`);
+        
       },
 
       // Adjust quality down
@@ -328,14 +328,14 @@ export const usePerformanceStore = create<PerformanceState>()(
           consecutiveHighFrames: 0
         });
 
-        console.log(`Quality decreased to ${newTier}`);
+        
       },
 
       // Reset to GPU recommended settings
       resetToRecommended: () => {
         const state = get();
         if (!state.gpuInfo) {
-          console.warn('GPU info not available');
+          
           return;
         }
 
@@ -356,7 +356,7 @@ export const usePerformanceStore = create<PerformanceState>()(
           consecutiveHighFrames: 0
         });
 
-        console.log('Reset to recommended settings for', state.gpuInfo.tier);
+        
       },
 
       // Force a specific performance tier
@@ -379,7 +379,7 @@ export const usePerformanceStore = create<PerformanceState>()(
           lastQualityChange: Date.now()
         });
 
-        console.log(`Forced performance tier to ${tier}`);
+        
       }
     }),
     {

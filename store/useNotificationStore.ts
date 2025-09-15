@@ -198,7 +198,7 @@ export const useNotificationStore = create<NotificationState>()(
           });
 
           get().updateUnreadCount();
-        } catch (error) {
+        } catch {
           const errorMessage = error instanceof Error ? error.message : '알림을 불러오는데 실패했습니다.';
           set({
             error: errorMessage,

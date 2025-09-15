@@ -115,8 +115,8 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
       try {
         const user = JSON.parse(userData);
         setCurrentUserId(user.id);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
+      } catch {
+        // Error parsing user data
       }
     }
   }, []);
@@ -133,7 +133,6 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
       message?: string;
       requestId?: string;
     }) => {
-      console.log('Friend request received:', data);
       setReceivedRequests(prev => {
         // 중복 확인
         const exists = prev.some(req => req.id === data.requestId);
@@ -153,7 +152,6 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
     const handleFriendRequestAccepted = (data: {
       acceptedBy?: { id: string; username: string; nickname: string; profileImageUrl?: string };
     }) => {
-      console.log('Friend request accepted:', data);
       
       // 보낸 요청에서 제거 (내가 보낸 요청이 수락된 경우)
       setReceivedRequests(prev => prev.filter(req => req.sender?.id !== data.acceptedBy?.id));
@@ -183,8 +181,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
     };
 
     // 친구 요청 거절됨
-    const handleFriendRequestRejected = (data: Record<string, unknown>) => {
-      console.log('Friend request rejected:', data);
+    const handleFriendRequestRejected = (_data: Record<string, unknown>) => {
       // 특별한 처리 없음 - 이미 보낸 요청 목록에서 자동 제거됨
     };
 
@@ -201,7 +198,6 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
 
     // 친구 삭제됨 - 목록에서 제거
     const handleFriendRemoved = (data: { removedBy: string }) => {
-      console.log('Friend removed:', data);
       setFriends(prev => prev.filter(f => f.friend.id !== data.removedBy));
     };
 
@@ -243,8 +239,8 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
         setFriends(data.friends || []);
         setReceivedRequests(data.receivedRequests || []);
       }
-    } catch (error) {
-      console.error('Error fetching friends:', error);
+    } catch {
+      // Error fetching friends
     }
   }, [friends.length]);
 
@@ -271,8 +267,8 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
         const data = await response.json();
         setSearchResults(data.users || []);
       }
-    } catch (error) {
-      console.error('Error searching users:', error);
+    } catch {
+      // Error searching users
     }
   };
 
@@ -338,8 +334,8 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
         const error = await response.json();
         toast.error(error.error || '요청 실패');
       }
-    } catch (error) {
-      console.error('Error sending friend request:', error);
+    } catch {
+      // Error sending friend request
       toast.error('요청 실패');
     }
   };
@@ -384,8 +380,8 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
       } else {
         toast.error('요청 처리 실패');
       }
-    } catch (error) {
-      console.error('Error responding to request:', error);
+    } catch {
+      // Error responding to request
       toast.error('요청 처리 실패');
     }
   };
@@ -411,8 +407,8 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
       } else {
         toast.error('친구 삭제 실패');
       }
-    } catch (error) {
-      console.error('Error removing friend:', error);
+    } catch {
+      // Error removing friend
       toast.error('친구 삭제 실패');
     }
   };
@@ -450,8 +446,8 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
       } else {
         toast.error('메모 저장 실패');
       }
-    } catch (error) {
-      console.error('Error saving memo:', error);
+    } catch {
+      // Error saving memo
       toast.error('메모 저장 실패');
     }
   };

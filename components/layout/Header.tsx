@@ -83,8 +83,8 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
       // - Clearing state
       // - Removing cookies and localStorage
       // - Navigation is handled in authAPI.logout()
-    } catch (error) {
-      console.error('Sign out error:', error);
+    } catch {
+      
       toast({
         title: '로그아웃 실패',
         description: '로그아웃 중 문제가 발생했습니다.',

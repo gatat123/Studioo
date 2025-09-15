@@ -27,8 +27,8 @@ export const commentsAPI = {
       const response = await api.get(`/api/comments?projectId=${projectId}`);
       // Backend returns { success: true, data: { comments: [...] } }
       return response.data?.comments || response.comments || [];
-    } catch (error) {
-      console.error('Failed to get project comments:', error);
+    } catch {
+      
       return [];
     }
   },

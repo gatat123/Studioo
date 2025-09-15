@@ -129,8 +129,8 @@ export default function ProjectSettingsPage() {
           deadline: data.deadline ? new Date(data.deadline) : undefined,
           status: data.status || 'active',
         })
-      } catch (error) {
-        console.error('프로젝트 로드 실패:', error)
+      } catch {
+        // 프로젝트 로드 실패
         toast({
           title: '오류',
           description: '프로젝트를 불러올 수 없습니다.',
@@ -171,8 +171,8 @@ export default function ProjectSettingsPage() {
         title: '설정 업데이트',
         description: '프로젝트 설정이 저장되었습니다.',
       })
-    } catch (error) {
-      console.error('프로젝트 업데이트 실패:', error)
+    } catch {
+      // 프로젝트 업데이트 실패
 
       const errorStatus = error instanceof Error && 'status' in error
         ? (error as { status?: number }).status
@@ -203,8 +203,8 @@ export default function ProjectSettingsPage() {
         title: '초대 코드 생성',
         description: '새로운 초대 코드가 생성되었습니다.',
       })
-    } catch (error) {
-      console.error('초대 코드 생성 실패:', error)
+    } catch {
+      // 초대 코드 생성 실패
       toast({
         title: '오류',
         description: '초대 코드 생성에 실패했습니다.',
@@ -233,8 +233,8 @@ export default function ProjectSettingsPage() {
       })
       
       router.push('/studio')
-    } catch (error) {
-      console.error('프로젝트 삭제 실패:', error)
+    } catch {
+      // 프로젝트 삭제 실패
       toast({
         title: '오류',
         description: '프로젝트 삭제에 실패했습니다.',
@@ -251,8 +251,8 @@ export default function ProjectSettingsPage() {
         title: '프로젝트 보관',
         description: '프로젝트가 보관되었습니다.',
       })
-    } catch (error) {
-      console.error('프로젝트 보관 실패:', error)
+    } catch {
+      // 프로젝트 보관 실패
       toast({
         title: '오류',
         description: '프로젝트 보관에 실패했습니다.',

@@ -159,8 +159,8 @@ export function useOptimizedSocket(options: UseOptimizedSocketOptions = {}) {
       if (enableMetrics) {
         startMetricsCollection();
       }
-    } catch (error) {
-      console.error('Socket connection error:', error);
+    } catch {
+      
       onError?.(error as Error);
     }
   }, [enableMetrics, onConnect, onDisconnect, onError, startMetricsCollection]);

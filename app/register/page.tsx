@@ -48,9 +48,9 @@ export default function RegisterPage() {
         nickname: formData.nickname || formData.username,
       });
       router.push('/studio');
-    } catch (error) {
+    } catch {
       // Error is handled in the store
-      console.error('Registration failed:', error);
+
     }
   };
 

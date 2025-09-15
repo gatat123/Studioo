@@ -76,8 +76,8 @@ const Sidebar: React.FC<SidebarProps> = ({
       // Filter starred projects (you might need to add a starred field to Project type)
       // For now, we'll just use empty array
       // setStarredProjects([]);
-    } catch (error) {
-      console.error('Failed to fetch projects:', error);
+    } catch {
+      
       toast({
         title: '프로젝트 불러오기 실패',
         description: '프로젝트 목록을 불러오는데 실패했습니다.',

@@ -98,9 +98,8 @@ export default function ImageViewer({ lineartImage, artImage }: ImageViewerProps
     setIsImageSelected(false)
   }
 
-  const handleFileUpload = async (type: 'lineart' | 'art', file: File) => {
+  const handleFileUpload = async (_type: 'lineart' | 'art', _file: File) => {
     // TODO: 파일 업로드 API 호출
-    console.log(`Uploading ${type} file:`, file.name)
   }
 
   const handleDragOver = (e: React.DragEvent) => {

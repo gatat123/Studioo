@@ -93,7 +93,6 @@ export default function VersionHistory({
 
     // Listen for version updates
     const handleVersionUpdate = (data: { version: Version, action: 'add' | 'update' | 'restore' }) => {
-      console.log('Version update received:', data)
 
       if (data.action === 'add') {
         setLocalVersions(prev => [data.version, ...prev])

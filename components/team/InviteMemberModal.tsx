@@ -83,8 +83,7 @@ export function InviteMemberModal({ open, onOpenChange, channelId, channelName }
             const availableUsers = users.filter((user: User) => !currentMembers.includes(user.id))
             setSearchResults(availableUsers)
           }
-        } catch (error) {
-          console.error('Failed to search users:', error)
+        } catch {
         }
       }, 300)
       
@@ -109,8 +108,7 @@ export function InviteMemberModal({ open, onOpenChange, channelId, channelName }
       // Load current channel members to exclude them
       const members = await channelsAPI.getMembers(channelId)
       setCurrentMembers(members.map((m) => m.userId))
-    } catch (error) {
-      console.error('Failed to load data:', error)
+    } catch {
       toast({
         title: '오류',
         description: '친구 목록을 불러올 수 없습니다',

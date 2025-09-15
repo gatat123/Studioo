@@ -142,12 +142,10 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
           acc + conv.unreadCount, 0) || 0
         setTotalUnread(unread)
       } else if (response.status === 404) {
-        console.warn('Conversations endpoint not found, using empty list')
         setConversations([])
         setTotalUnread(0)
       }
-    } catch (error) {
-      console.error('Failed to load conversations:', error)
+    } catch {
       // Set empty conversations on error to allow modal to open
       setConversations([])
       setTotalUnread(0)
@@ -167,8 +165,7 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
         const data = await response.json()
         setFriends(data.friends || [])
       }
-    } catch (error) {
-      console.error('Failed to load friends:', error)
+    } catch {
     }
   }
 

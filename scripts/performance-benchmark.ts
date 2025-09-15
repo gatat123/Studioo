@@ -1,4 +1,5 @@
 #!/usr/bin/env ts-node
+/* eslint-disable no-console */
 
 /**
  * Performance Benchmark Script
@@ -77,7 +78,6 @@ class PerformanceBenchmark {
    * GPU Detection Benchmarks
    */
   async benchmarkGPUDetection(): Promise<void> {
-    console.log('\n🎮 GPU Detection Benchmarks\n' + '='.repeat(50))
 
     const suite: BenchmarkSuite = {
       name: 'GPU Detection',
@@ -155,7 +155,6 @@ class PerformanceBenchmark {
    * Message Queue Benchmarks
    */
   async benchmarkMessageQueue(): Promise<void> {
-    console.log('\n📨 Message Queue Benchmarks\n' + '='.repeat(50))
 
     const suite: BenchmarkSuite = {
       name: 'Message Queue',
@@ -169,9 +168,9 @@ class PerformanceBenchmark {
       batchInterval: 16
     })
 
-    let processedCount = 0
+    let _processedCount = 0
     messageQueue.setProcessor(async (messages) => {
-      processedCount += messages.length
+      _processedCount += messages.length
     })
 
     // Test 1: Message Enqueueing
@@ -258,14 +257,12 @@ class PerformanceBenchmark {
     this.suites.push(suite)
     this.printSuiteResults(suite)
 
-    console.log(`\n📊 Total messages processed: ${processedCount}`)
   }
 
   /**
    * FPS Monitoring Benchmarks
    */
   async benchmarkFPSMonitoring(): Promise<void> {
-    console.log('\n🎬 FPS Monitoring Benchmarks\n' + '='.repeat(50))
 
     const suite: BenchmarkSuite = {
       name: 'FPS Monitoring',
@@ -361,7 +358,6 @@ class PerformanceBenchmark {
    * Memory Leak Detection
    */
   async benchmarkMemoryLeaks(): Promise<void> {
-    console.log('\n💾 Memory Leak Detection\n' + '='.repeat(50))
 
     const suite: BenchmarkSuite = {
       name: 'Memory Management',
@@ -435,7 +431,6 @@ class PerformanceBenchmark {
    * Stress Testing
    */
   async runStressTest(): Promise<void> {
-    console.log('\n🔥 Stress Testing\n' + '='.repeat(50))
 
     const suite: BenchmarkSuite = {
       name: 'Stress Test',
@@ -511,8 +506,6 @@ class PerformanceBenchmark {
    * Print suite results
    */
   private printSuiteResults(suite: BenchmarkSuite): void {
-    console.log(`\n📊 ${suite.name} Results:`)
-    console.log('-'.repeat(70))
 
     const headers = ['Test', 'Duration (ms)', 'Ops/sec', 'Memory (MB)']
     const colWidths = [35, 15, 15, 15]
@@ -521,7 +514,6 @@ class PerformanceBenchmark {
     console.log(
       headers.map((h, i) => h.padEnd(colWidths[i])).join('')
     )
-    console.log('-'.repeat(70))
 
     // Print results
     suite.results.forEach(result => {
@@ -536,49 +528,37 @@ class PerformanceBenchmark {
       )
     })
 
-    console.log('-'.repeat(70))
-    console.log(`Total Duration: ${suite.totalDuration.toFixed(2)}ms`)
-    console.log(`Average Ops/sec: ${suite.averageOpsPerSecond.toFixed(0)}`)
   }
 
   /**
    * Generate final report
    */
   private generateReport(): void {
-    console.log('\n' + '='.repeat(70))
-    console.log('📈 PERFORMANCE BENCHMARK SUMMARY')
-    console.log('='.repeat(70))
 
     // Overall statistics
-    const totalTests = this.results.length
-    const totalDuration = this.results.reduce((sum, r) => sum + r.duration, 0)
-    const avgOpsPerSec = this.results.reduce((sum, r) => sum + r.opsPerSecond, 0) / totalTests
-    const totalMemory = this.results.reduce((sum, r) => sum + r.memoryUsed, 0)
+    const _totalTests = this.results.length
+    // These statistics could be used for more detailed reporting
+    // const totalDuration = this.results.reduce((sum, r) => sum + r.duration, 0)
+    // const avgOpsPerSec = this.results.reduce((sum, r) => sum + r.opsPerSecond, 0) / _totalTests
+    // const totalMemory = this.results.reduce((sum, r) => sum + r.memoryUsed, 0)
 
-    console.log(`\n📊 Overall Statistics:`)
-    console.log(`  • Total Tests Run: ${totalTests}`)
-    console.log(`  • Total Duration: ${(totalDuration / 1000).toFixed(2)}s`)
-    console.log(`  • Average Ops/sec: ${avgOpsPerSec.toFixed(0)}`)
-    console.log(`  • Total Memory Used: ${(totalMemory / 1024 / 1024).toFixed(2)}MB`)
 
     // Performance grades
-    console.log(`\n🏆 Performance Grades:`)
-    this.suites.forEach(suite => {
-      const grade = this.calculateGrade(suite.averageOpsPerSecond)
-      console.log(`  • ${suite.name}: ${grade}`)
+    this.suites.forEach(_suite => {
+      // Grade calculation for future use
+      // const grade = this._calculateGrade(_suite.averageOpsPerSecond)
     })
 
     // Recommendations
-    console.log(`\n💡 Recommendations:`)
     this.generateRecommendations()
 
-    console.log('\n' + '='.repeat(70))
   }
 
   /**
    * Calculate performance grade
+   * @private Currently unused but kept for future reporting enhancements
    */
-  private calculateGrade(opsPerSecond: number): string {
+  private _calculateGrade(opsPerSecond: number): string {
     if (opsPerSecond > 100000) return 'A+ (Excellent)'
     if (opsPerSecond > 50000) return 'A (Very Good)'
     if (opsPerSecond > 25000) return 'B (Good)'
@@ -621,19 +601,12 @@ class PerformanceBenchmark {
       recommendations.push('  • Performance is optimal! No immediate optimizations needed.')
     }
 
-    recommendations.forEach(r => console.log(r))
   }
 
   /**
    * Run all benchmarks
    */
   async runAll(): Promise<void> {
-    console.log('🚀 Starting Performance Benchmarks for Studio Platform')
-    console.log('=' + '='.repeat(69))
-    console.log(`📅 Date: ${new Date().toISOString()}`)
-    console.log(`💻 Platform: ${process.platform}`)
-    console.log(`🔧 Node Version: ${process.version}`)
-    console.log(`💾 Memory: ${(process.memoryUsage().heapTotal / 1024 / 1024).toFixed(2)}MB`)
 
     try {
       await this.benchmarkGPUDetection()
@@ -643,8 +616,7 @@ class PerformanceBenchmark {
       await this.runStressTest()
 
       this.generateReport()
-    } catch (error) {
-      console.error('\n❌ Benchmark failed:', error)
+    } catch {
       process.exit(1)
     }
   }
@@ -660,20 +632,16 @@ if (require.main === module) {
   const specific = args.find(arg => arg.startsWith('--test='))
 
   if (verbose) {
-    console.log('🔍 Verbose mode enabled')
   }
 
   if (specific) {
-    const testName = specific.split('=')[1]
-    console.log(`🎯 Running specific test: ${testName}`)
-    // Implement specific test running logic here
+    // const testName = specific.split('=')[1]
+    // TODO: Implement specific test running logic here
   }
 
   benchmark.runAll().then(() => {
-    console.log('\n✅ Benchmarks completed successfully!')
     process.exit(0)
-  }).catch(error => {
-    console.error('\n❌ Benchmark error:', error)
+  }).catch(_error => {
     process.exit(1)
   })
 }

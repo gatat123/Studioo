@@ -25,8 +25,8 @@ export async function GET() {
     const stats = getMockStats();
 
     return NextResponse.json(stats);
-  } catch (error) {
-    console.error('Admin stats error:', error);
+  } catch {
+    // Admin stats error
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

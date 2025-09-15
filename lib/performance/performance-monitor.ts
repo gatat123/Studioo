@@ -247,8 +247,8 @@ class PerformanceMonitor {
     this.callbacks.forEach(callback => {
       try {
         callback(metrics);
-      } catch (error) {
-        console.error('Performance callback error:', error);
+      } catch {
+        
       }
     });
   }

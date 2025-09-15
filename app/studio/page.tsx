@@ -70,19 +70,13 @@ export default function StudioPage() {
   }, [router]);
   
   useEffect(() => {
-    // Debug: Check localStorage and cookies
-    if (typeof window !== 'undefined') {
-      console.log('🔍 Debug - localStorage token:', localStorage.getItem('token'));
-      console.log('🔍 Debug - cookie token:', document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1]);
-    }
-    
     // Give zustand time to hydrate from localStorage
     const timer = setTimeout(() => {
       checkAuth().finally(() => {
         setIsInitializing(false);
       });
     }, 100);
-    
+
     return () => clearTimeout(timer);
   }, [checkAuth]);
 
@@ -93,11 +87,8 @@ export default function StudioPage() {
   }, [isAuthenticated, fetchProjects]);
   
   useEffect(() => {
-    console.log('🎭 Studio - Auth state:', { isInitializing, isLoading, isAuthenticated, user: user?.username });
-    
     // Only redirect after initialization is complete
     if (!isInitializing && !isLoading && !isAuthenticated) {
-      console.log('⚠️ Studio - Redirecting to login page');
       router.push('/login');
     }
   }, [isInitializing, isLoading, isAuthenticated, router, user?.username]);

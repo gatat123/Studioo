@@ -52,8 +52,8 @@ export async function GET() {
     const stats = getMockProjectStats();
 
     return NextResponse.json(stats);
-  } catch (error) {
-    console.error('Admin project stats error:', error);
+  } catch {
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

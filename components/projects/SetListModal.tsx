@@ -56,8 +56,7 @@ export function SetListModal({
       if (response.story?.setList) {
         setSetList(response.story.setList)
       }
-    } catch (error) {
-      console.error('Failed to load set list:', error)
+    } catch {
     }
   }
 
@@ -97,8 +96,7 @@ export function SetListModal({
       
       setIsEditing(false)
       setEditingId(null)
-    } catch (error) {
-      console.error('Failed to save set list:', error)
+    } catch {
       toast({
         title: '저장 실패',
         description: '세트 리스트 저장에 실패했습니다.',

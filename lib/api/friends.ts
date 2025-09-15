@@ -50,7 +50,6 @@ export const friendsAPI = {
         receivedRequests?: FriendRequest[]
         sentRequests?: FriendRequest[]
       }
-      console.log('Friends API Response:', response)
 
       // The API returns { success: true, friends: [...], receivedRequests: [...], sentRequests: [...] }
       if (response && response.friends) {
@@ -70,8 +69,8 @@ export const friendsAPI = {
       }
       
       return []
-    } catch (error) {
-      console.error('Failed to get friends:', error)
+    } catch {
+      // Failed to get friends
       return []
     }
   },

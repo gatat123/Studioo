@@ -177,8 +177,8 @@ function TeamPageContent() {
       if (response.channels.length > 0 && !selectedChannel) {
         setSelectedChannel(response.channels[0])
       }
-    } catch (error) {
-      console.error('Failed to load channels:', error)
+    } catch {
+      // Failed to load channels
       toast({
         title: '오류',
         description: '채널 목록을 불러오는데 실패했습니다',
@@ -209,8 +209,8 @@ function TeamPageContent() {
           userIds: members.map(m => m.userId)
         } as never)
       }
-    } catch (error) {
-      console.error('Failed to load channel members:', error)
+    } catch {
+      // Failed to load channel members
     }
   }
   
@@ -233,8 +233,8 @@ function TeamPageContent() {
       if (!cursor) {
         scrollToBottom()
       }
-    } catch (error) {
-      console.error('Failed to load messages:', error)
+    } catch {
+      // Failed to load messages
     } finally {
       setLoading(false)
     }
@@ -369,10 +369,10 @@ function TeamPageContent() {
         // @ts-expect-error - Custom event not in typed events
         socketClient.socket?.emit('leave_channel', { channelId: selectedChannel.id })
       } else {
-        console.error('Failed to leave channel')
+        // Failed to leave channel
       }
-    } catch (error) {
-      console.error('Leave channel error:', error)
+    } catch {
+      // Leave channel error
       toast({
         title: '오류',
         description: '채널 탈퇴에 실패했습니다.',

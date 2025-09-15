@@ -31,8 +31,7 @@ export function CommentInput({
         const data = await response.json()
         setUsers(data.participants || [])
       }
-    } catch (error) {
-      console.error('Failed to fetch users:', error)
+    } catch {
     }
   }, [projectId])
 
@@ -59,8 +58,7 @@ export function CommentInput({
       
       await onSubmit(plainText, extractedMentions)
       setValue('')
-    } catch (error) {
-      console.error('Failed to submit comment:', error)
+    } catch {
     } finally {
       setIsSubmitting(false)
     }

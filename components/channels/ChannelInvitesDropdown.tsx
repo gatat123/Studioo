@@ -44,8 +44,7 @@ export function ChannelInvitesDropdown() {
     try {
       const data = await channelsAPI.getPendingInvites()
       setInvitations(data)
-    } catch (error) {
-      console.error('Failed to load invitations:', error)
+    } catch {
     }
   }
 

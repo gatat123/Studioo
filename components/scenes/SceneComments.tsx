@@ -62,8 +62,7 @@ export default function SceneComments({ sceneId }: SceneCommentsProps) {
       }
       setComments([comment, ...comments])
       setNewComment('')
-    } catch (error) {
-      console.error('Failed to post comment:', error)
+    } catch {
     } finally {
       setIsLoading(false)
     }

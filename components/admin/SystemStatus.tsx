@@ -54,8 +54,8 @@ export default function SystemStatus() {
           setMetrics(getDefaultMetrics());
           setServices(getDefaultServices());
         }
-      } catch (error) {
-        console.error('Failed to fetch system status:', error);
+      } catch {
+
         // Use default data
         setMetrics(getDefaultMetrics());
         setServices(getDefaultServices());

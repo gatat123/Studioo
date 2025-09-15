@@ -262,7 +262,7 @@ export const useProjectStore = create<ProjectState>()(
           }));
           
           set({ projects: formattedProjects, isLoading: false });
-        } catch (error) {
+        } catch {
           set({
             error: error instanceof Error ? error.message : 'Failed to fetch projects',
             isLoading: false,
@@ -287,7 +287,7 @@ export const useProjectStore = create<ProjectState>()(
           };
           
           set({ currentProject: formattedProject, isLoading: false });
-        } catch (error) {
+        } catch {
           set({
             error: error instanceof Error ? error.message : 'Failed to fetch project',
             isLoading: false,
@@ -313,7 +313,7 @@ export const useProjectStore = create<ProjectState>()(
           
           get().addProject(formattedProject);
           set({ isLoading: false, currentProject: formattedProject });
-        } catch (error) {
+        } catch {
           set({
             error: error instanceof Error ? error.message : 'Failed to create project',
             isLoading: false,
@@ -339,7 +339,7 @@ export const useProjectStore = create<ProjectState>()(
           
           get().addProject(formattedProject);
           set({ isLoading: false, currentProject: formattedProject });
-        } catch (error) {
+        } catch {
           set({
             error: error instanceof Error ? error.message : 'Failed to join project',
             isLoading: false,
@@ -354,8 +354,8 @@ export const useProjectStore = create<ProjectState>()(
           const { inviteCode } = await projectsAPI.generateInviteCode(projectId);
           get().updateProject(projectId, { inviteCode });
           return inviteCode;
-        } catch (error) {
-          console.error('Failed to generate invite code:', error);
+        } catch {
+          
           return null;
         }
       },

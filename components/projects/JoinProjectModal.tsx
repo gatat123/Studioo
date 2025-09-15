@@ -35,8 +35,7 @@ export default function JoinProjectModal({ open, onClose }: JoinProjectModalProp
       if (cleanCode) {
         setInviteCode(cleanCode)
       }
-    } catch (err) {
-      console.error('Failed to read clipboard:', err)
+    } catch {
     }
   }
 
@@ -63,7 +62,7 @@ export default function JoinProjectModal({ open, onClose }: JoinProjectModalProp
       router.push(`/studio/projects/${result.id}`)
       onClose()
       setInviteCode('')
-    } catch (error) {
+    } catch {
       toast({
         title: '참여 실패',
         description: (error as Error).message || '초대 코드가 유효하지 않거나 만료되었습니다.',

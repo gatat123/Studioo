@@ -271,9 +271,8 @@ export function AnnotationTools({
       const transaction = db.transaction(['annotations'], 'readwrite')
       const store = transaction.objectStore('annotations')
       await store.put({ id: 'current', shapes: shapesToSave, timestamp: Date.now() })
-      console.log('Annotations saved to IndexedDB')
-    } catch (error) {
-      console.error('Error saving to IndexedDB:', error)
+    } catch {
+      // Error saving to IndexedDB
     }
   }, [])
 
@@ -317,8 +316,8 @@ export function AnnotationTools({
           saveToHistory(request.result.shapes)
         }
       }
-    } catch (error) {
-      console.error('Error loading from IndexedDB:', error)
+    } catch {
+      // Error loading from IndexedDB
     }
   }, [saveToHistory])
 

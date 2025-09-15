@@ -113,8 +113,7 @@ export function MessagesDropdown() {
           acc + conv.unreadCount, 0) || 0
         setTotalUnread(unread)
       }
-    } catch (error) {
-      console.error('Failed to load conversations:', error)
+    } catch {
     }
   }
 

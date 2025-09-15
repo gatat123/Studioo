@@ -39,9 +39,8 @@ export default function SceneDescription({ initialDescription = '' }: SceneDescr
     try {
       // TODO: API 호출로 설명 저장
       await new Promise(resolve => setTimeout(resolve, 500))
-      console.log('Saved description:', description)
-    } catch (error) {
-      console.error('Failed to save description:', error)
+    } catch {
+      // Failed to save description
     } finally {
       setIsSaving(false)
     }

@@ -77,9 +77,8 @@ export default function RegisterPage() {
       
       // 회원가입 성공 시 스튜디오 페이지로 이동
       router.push('/studio');
-    } catch (err) {
-      // 에러는 store에서 처리
-      console.error('Registration failed:', err);
+    } catch {
+      // 에러는 store에서 처리됨
     }
   };
 

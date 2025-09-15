@@ -79,7 +79,6 @@ export default function NotificationSettings({ }: NotificationSettingsProps) {
 
   const handleSaveSettings = () => {
     // Here you would typically save to backend
-    console.log('Saving notification settings:', settings)
     
     toast({
       title: 'Settings Saved',

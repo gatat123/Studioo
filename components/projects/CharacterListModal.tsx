@@ -56,8 +56,7 @@ export function CharacterListModal({
       if (response.story?.characterList) {
         setCharacterList(response.story.characterList)
       }
-    } catch (error) {
-      console.error('Failed to load character list:', error)
+    } catch {
     }
   }
 
@@ -98,8 +97,7 @@ export function CharacterListModal({
       
       setIsEditing(false)
       setEditingId(null)
-    } catch (error) {
-      console.error('Failed to save character list:', error)
+    } catch {
       toast({
         title: '저장 실패',
         description: '캐릭터 리스트 저장에 실패했습니다.',

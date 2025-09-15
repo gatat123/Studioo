@@ -89,8 +89,7 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
       await navigator.clipboard.writeText(inviteCode)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
-    } catch (err) {
-      console.error('Failed to copy:', err)
+    } catch {
     }
   }
 
@@ -120,7 +119,6 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'Failed to create project' }))
-        console.error('Failed to create project:', errorData)
         toast({
           title: '프로젝트 생성 실패',
           description: errorData.message || '프로젝트를 생성하는 중 오류가 발생했습니다.',
@@ -148,8 +146,7 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
       // Refresh projects list
       const fetchProjects = useProjectStore.getState().fetchProjects;
       await fetchProjects();
-    } catch (error) {
-      console.error('Failed to create project:', error)
+    } catch {
       toast({
         title: '프로젝트 생성 실패',
         description: '프로젝트를 생성하는 중 예기치 않은 오류가 발생했습니다.',

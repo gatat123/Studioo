@@ -103,8 +103,8 @@ class GPUDetector {
       this.cachedInfo = gpuInfo;
       this.cleanup();
       return gpuInfo;
-    } catch (error) {
-      console.error('GPU detection failed:', error);
+    } catch {
+      
       return this.getFallbackGPUInfo();
     }
   }

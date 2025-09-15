@@ -34,26 +34,24 @@ class SocketClient {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('✅ Socket.io connected');
       this.reconnectAttempts = 0;
     });
 
-    this.socket.on('disconnect', (reason) => {
-      console.log('❌ Socket.io disconnected:', reason);
+    this.socket.on('disconnect', (_reason) => {
     });
 
-    this.socket.on('connect_error', (error) => {
-      console.error('Socket.io connection error:', error.message);
+    this.socket.on('connect_error', (_error) => {
+      // Socket.io connection error
       this.reconnectAttempts++;
       
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.error('Max reconnection attempts reached');
+        // Max reconnection attempts reached
         this.disconnect();
       }
     });
 
-    this.socket.on('error', (error) => {
-      console.error('Socket.io error:', error);
+    this.socket.on('error', (_error) => {
+      // Socket.io error
     });
   }
 
@@ -173,18 +171,15 @@ class SocketClient {
 
   // Custom event emitter with type safety
   emit<K extends keyof SocketEventMap>(event: K | string, data?: K extends keyof SocketEventMap ? Parameters<SocketEventMap[K]>[0] : unknown) {
-    console.log(`📤 Emitting Socket.io event: ${event}`, data);
     this.socket?.emit(event as string, data);
   }
 
   // Custom event listener registration with type safety
   on<K extends keyof SocketEventMap>(event: K | string, callback: K extends keyof SocketEventMap ? SocketEventMap[K] : (...args: unknown[]) => void) {
-    console.log(`👂 Listening for Socket.io event: ${event}`);
     this.socket?.on(event as string, callback as (...args: unknown[]) => void);
   }
 
   off<K extends keyof SocketEventMap>(event: K | string, callback?: K extends keyof SocketEventMap ? SocketEventMap[K] : (...args: unknown[]) => void) {
-    console.log(`🔇 Removing Socket.io listener: ${event}`);
     this.socket?.off(event as string, callback as (...args: unknown[]) => void);
   }
 

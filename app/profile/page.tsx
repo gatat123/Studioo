@@ -126,8 +126,8 @@ export default function ProfilePage() {
           variant: 'destructive'
         });
       }
-    } catch (error) {
-      console.error('Profile update error:', error);
+    } catch {
+
       toast({
         title: '오류',
         description: '프로필 업데이트 중 오류가 발생했습니다.',
@@ -205,8 +205,8 @@ export default function ProfilePage() {
           variant: 'destructive'
         });
       }
-    } catch (error) {
-      console.error('Image upload error:', error);
+    } catch {
+
       toast({
         title: '오류',
         description: '프로필 사진 업로드 중 오류가 발생했습니다.',

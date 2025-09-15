@@ -179,8 +179,8 @@ export function ImageUploader({
         setUploadState({ isUploading: false, progress: 0, error: null });
       }, 1000);
       
-    } catch (error) {
-      console.error('Upload error:', error);
+    } catch {
+      
       setUploadState({
         isUploading: false,
         progress: 0,

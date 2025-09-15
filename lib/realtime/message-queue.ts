@@ -141,8 +141,8 @@ export class MessageQueue {
       try {
         await this.processCallback(batch);
         this.updateMetrics(batch.length);
-      } catch (error) {
-        console.error('Batch processing error:', error);
+      } catch {
+        
         this.handleFailedMessages(batch);
       }
     }
@@ -174,7 +174,7 @@ export class MessageQueue {
         }
       } else {
         this.metrics.dropped++;
-        console.warn(`Message dropped after ${message.maxRetries} retries:`, message);
+        
       }
     }
   }

@@ -45,8 +45,8 @@ export default function UserManagement() {
         const data = await response.json();
         setUsers(data.users || []);
       }
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
+    } catch {
+      
     } finally {
       setIsLoading(false);
     }
@@ -67,8 +67,8 @@ export default function UserManagement() {
       if (response.ok) {
         fetchUsers(); // Refresh the user list
       }
-    } catch (error) {
-      console.error('Failed to update user status:', error);
+    } catch {
+      
     }
   };
 
@@ -87,8 +87,8 @@ export default function UserManagement() {
       if (response.ok) {
         fetchUsers(); // Refresh the user list
       }
-    } catch (error) {
-      console.error('Failed to update admin status:', error);
+    } catch {
+      
     }
   };
 
@@ -109,8 +109,8 @@ export default function UserManagement() {
       if (response.ok) {
         fetchUsers(); // Refresh the user list
       }
-    } catch (error) {
-      console.error('Failed to delete user:', error);
+    } catch {
+      
     }
   };
 

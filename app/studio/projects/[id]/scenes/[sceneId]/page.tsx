@@ -49,8 +49,8 @@ export default function SceneEditorPage() {
             art: null
           }
         })
-      } catch (error) {
-        console.error('Failed to load scene:', error)
+      } catch {
+        // Error loading scene data
       } finally {
         setIsLoading(false)
       }
@@ -128,8 +128,7 @@ export default function SceneEditorPage() {
                 imageUrl={currentScene?.images?.art || currentScene?.images?.lineart}
                 width={800}
                 height={600}
-                onSave={(shapes) => {
-                  console.log('Annotations saved:', shapes)
+                onSave={(_shapes) => {
                   // TODO: Save annotations to backend
                 }}
               />

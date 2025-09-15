@@ -78,8 +78,8 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose, o
         setMessages(data.messages);
         scrollToBottom();
       }
-    } catch (error) {
-      console.error('Error fetching messages:', error);
+    } catch {
+      
       toast.error('메시지를 불러오는데 실패했습니다.');
     } finally {
       setIsLoading(false);

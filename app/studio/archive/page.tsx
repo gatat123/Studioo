@@ -147,8 +147,8 @@ export default function ArchivePage() {
           description: '프로젝트가 성공적으로 복원되었습니다.',
         });
       }, 1500);
-    } catch (error) {
-      console.error('Failed to restore project:', error);
+    } catch {
+      // Failed to restore project
       toast({
         title: '복원 실패',
         description: '프로젝트 복원 중 오류가 발생했습니다.',
@@ -175,8 +175,8 @@ export default function ArchivePage() {
           description: `${selectedProjects.length}개 프로젝트가 복원되었습니다.`,
         });
       }, 2000);
-    } catch (error) {
-      console.error('Failed to batch restore projects:', error);
+    } catch {
+      // Failed to batch restore projects
       toast({
         title: '일괄 복원 실패',
         description: '프로젝트 복원 중 오류가 발생했습니다.',
@@ -204,8 +204,8 @@ export default function ArchivePage() {
           description: '프로젝트가 영구적으로 삭제되었습니다.',
         });
       }, 1500);
-    } catch (error) {
-      console.error('Failed to delete project:', error);
+    } catch {
+      // Failed to delete project
       toast({
         title: '삭제 실패',
         description: '프로젝트 삭제 중 오류가 발생했습니다.',

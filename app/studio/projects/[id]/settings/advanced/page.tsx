@@ -106,8 +106,8 @@ export default function AdvancedSettingsPage({ params }: { params: Promise<{ id:
           description: '프로젝트가 성공적으로 내보내졌습니다.',
         });
       }, 2000);
-    } catch (error) {
-      console.error('Failed to export project:', error);
+    } catch {
+      
       toast({
         title: '내보내기 실패',
         description: '프로젝트 내보내기 중 오류가 발생했습니다.',
@@ -140,8 +140,8 @@ export default function AdvancedSettingsPage({ params }: { params: Promise<{ id:
         });
         setImportFile(null);
       }, 2000);
-    } catch (error) {
-      console.error('Failed to import project:', error);
+    } catch {
+      
       toast({
         title: '가져오기 실패',
         description: '프로젝트 가져오기 중 오류가 발생했습니다.',
@@ -164,8 +164,8 @@ export default function AdvancedSettingsPage({ params }: { params: Promise<{ id:
           description: '프로젝트 백업이 성공적으로 생성되었습니다.',
         });
       }, 2000);
-    } catch (error) {
-      console.error('Failed to create backup:', error);
+    } catch {
+      
       toast({
         title: '백업 실패',
         description: '백업 생성 중 오류가 발생했습니다.',
@@ -188,8 +188,8 @@ export default function AdvancedSettingsPage({ params }: { params: Promise<{ id:
           description: '프로젝트가 성공적으로 복원되었습니다.',
         });
       }, 2000);
-    } catch (error) {
-      console.error('Failed to restore project:', error);
+    } catch {
+      
       toast({
         title: '복원 실패',
         description: '프로젝트 복원 중 오류가 발생했습니다.',
@@ -218,8 +218,8 @@ export default function AdvancedSettingsPage({ params }: { params: Promise<{ id:
         });
         router.push('/studio');
       }, 2000);
-    } catch (error) {
-      console.error('Failed to delete project:', error);
+    } catch {
+      
       toast({
         title: '삭제 실패',
         description: '프로젝트 삭제 중 오류가 발생했습니다.',
@@ -250,8 +250,8 @@ export default function AdvancedSettingsPage({ params }: { params: Promise<{ id:
         });
         setTransferEmail('');
       }, 2000);
-    } catch (error) {
-      console.error('Failed to transfer ownership:', error);
+    } catch {
+      
       toast({
         title: '이전 실패',
         description: '소유권 이전 중 오류가 발생했습니다.',

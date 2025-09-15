@@ -99,10 +99,9 @@ export default function ChannelSettingsModal({
         toast.success('채널 정보가 업데이트되었습니다');
         onChannelUpdate();
       } else {
-        throw new Error('Failed to update channel');
+        toast.error('채널 업데이트에 실패했습니다');
       }
-    } catch (error) {
-      console.error('Update channel error:', error);
+    } catch {
       toast.error('채널 업데이트에 실패했습니다');
     } finally {
       setLoading(false);
@@ -132,10 +131,9 @@ export default function ChannelSettingsModal({
         toast.success(`${member.user.nickname}님을 채널에서 제거했습니다`);
         onChannelUpdate();
       } else {
-        throw new Error('Failed to remove member');
+        toast.error('멤버 제거에 실패했습니다');
       }
-    } catch (error) {
-      console.error('Remove member error:', error);
+    } catch {
       toast.error('멤버 제거에 실패했습니다');
     } finally {
       setLoading(false);
@@ -166,10 +164,9 @@ export default function ChannelSettingsModal({
         setSelectedMemberId('');
         setNewRole('member');
       } else {
-        throw new Error('Failed to update role');
+        toast.error('역할 변경에 실패했습니다');
       }
-    } catch (error) {
-      console.error('Update role error:', error);
+    } catch {
       toast.error('역할 변경에 실패했습니다');
     } finally {
       setLoading(false);
@@ -196,10 +193,9 @@ export default function ChannelSettingsModal({
         onOpenChange(false);
         onChannelUpdate();
       } else {
-        throw new Error('Failed to delete channel');
+        toast.error('채널 삭제에 실패했습니다');
       }
-    } catch (error) {
-      console.error('Delete channel error:', error);
+    } catch {
       toast.error('채널 삭제에 실패했습니다');
     } finally {
       setLoading(false);

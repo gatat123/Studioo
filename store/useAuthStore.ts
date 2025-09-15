@@ -69,7 +69,7 @@ export const useAuthStore = create<AuthState>()(
               error: null,
             });
           }
-        } catch (error) {
+        } catch {
           const errorMessage = error instanceof Error ? error.message : '로그인에 실패했습니다.';
           set({
             user: null,
@@ -121,7 +121,7 @@ export const useAuthStore = create<AuthState>()(
               error: null,
             });
           }
-        } catch (error) {
+        } catch {
           const errorMessage = error instanceof Error ? error.message : '회원가입에 실패했습니다.';
           set({
             user: null,
@@ -137,8 +137,8 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         try {
           await authAPI.logout();
-        } catch (error) {
-          console.error('Logout error:', error);
+        } catch {
+          
         } finally {
           // Clear state first
           set({
@@ -224,7 +224,7 @@ export const useAuthStore = create<AuthState>()(
           }
           
           const sessionUser = await authAPI.getSession();
-          console.log('🔐 CheckAuth - Session response:', sessionUser);
+          
           
           if (sessionUser) {
             const user: User = {
@@ -237,22 +237,22 @@ export const useAuthStore = create<AuthState>()(
               isAdmin: sessionUser.username === 'gatat123' ? true : sessionUser.isAdmin
             };
             
-            console.log('✅ CheckAuth - User authenticated:', user.username);
+            
             set({
               user,
               isAuthenticated: true,
               isLoading: false,
             });
           } else {
-            console.log('❌ CheckAuth - No session user returned');
+            
             set({
               user: null,
               isAuthenticated: false,
               isLoading: false,
             });
           }
-        } catch (error) {
-          console.error('CheckAuth error:', error);
+        } catch {
+          
           set({
             user: null,
             isAuthenticated: false,

@@ -92,8 +92,8 @@ export async function GET() {
     const users = getMockUsers();
 
     return NextResponse.json(users);
-  } catch (error) {
-    console.error('Admin users error:', error);
+  } catch {
+
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

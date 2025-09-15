@@ -83,10 +83,9 @@ export const authAPI = {
   async getSession(): Promise<User | null> {
     try {
       const response = await api.get('/api/auth/session') as { user: User };
-      console.log('📜 Session API Response:', response);
       return response.user;
-    } catch (error) {
-      console.error('❌ Session API Error:', error);
+    } catch {
+      // Session API Error
       return null;
     }
   },

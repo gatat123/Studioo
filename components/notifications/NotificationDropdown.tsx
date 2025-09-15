@@ -221,8 +221,8 @@ export default function NotificationDropdown() {
         setNotifications(data.notifications || []);
         setUnreadCount(data.notifications?.filter((n: Notification) => !n.isRead).length || 0);
       }
-    } catch (error) {
-      console.error('Failed to load notifications:', error);
+    } catch {
+      
     }
   };
 
@@ -240,8 +240,8 @@ export default function NotificationDropdown() {
         n.id === notificationId ? { ...n, isRead: true } : n
       ));
       setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+    } catch {
+      
     }
   };
 
@@ -257,8 +257,8 @@ export default function NotificationDropdown() {
 
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
       setUnreadCount(0);
-    } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
+    } catch {
+      
     }
   };
 
@@ -305,8 +305,8 @@ export default function NotificationDropdown() {
       } else {
         toast.error('처리 중 오류가 발생했습니다.');
       }
-    } catch (error) {
-      console.error('Failed to respond to invite:', error);
+    } catch {
+      
       toast.error('처리 중 오류가 발생했습니다.');
     }
   };

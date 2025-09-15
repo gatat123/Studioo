@@ -57,8 +57,8 @@ export async function verifyAdminAuth() {
       success: true,
       user
     };
-  } catch (error) {
-    console.error('Auth error:', error);
+  } catch {
+    
     return {
       success: false,
       error: NextResponse.json(

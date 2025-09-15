@@ -67,8 +67,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
         // Get participants
         const participantsData = await projectsAPI.getParticipants(projectId)
         setParticipants(participantsData)
-      } catch (error) {
-        console.error('Failed to load participants:', error)
+      } catch {
         toast({
           title: 'Error',
           description: 'Failed to load project members',
@@ -113,8 +112,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
         title: 'Role Updated',
         description: `${participant.user?.nickname || 'Member'}'s role has been updated to ${newRole}.`,
       })
-    } catch (error) {
-      console.error('Failed to update role:', error)
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to update member role.',
@@ -142,8 +140,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
         title: 'Member Removed',
         description: `${participant.user?.nickname || 'Member'} has been removed from the project.`,
       })
-    } catch (error) {
-      console.error('Failed to remove participant:', error)
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to remove member from project.',

@@ -67,9 +67,8 @@ export default function SceneHistory({ sceneId }: SceneHistoryProps) {
     setHistory(mockHistory)
   }, [sceneId])
 
-  const handleRestore = async (item: HistoryItem) => {
+  const handleRestore = async (_item: HistoryItem) => {
     // TODO: API 호출로 버전 복원
-    console.log('Restoring version:', item)
   }
 
   const getActionLabel = (action: string) => {

@@ -59,8 +59,8 @@ export default function ProjectStats() {
 
         setStatusStats(statuses);
       }
-    } catch (error) {
-      console.error('Failed to fetch project stats:', error);
+    } catch {
+
       // Set mock data for demonstration
       setProjectStats([
         { tag: '일러스트레이션', count: 12, percentage: 40 },

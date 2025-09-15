@@ -72,7 +72,7 @@ export default function AnnotationModal({ image, onClose, onSave }: AnnotationMo
       updateCanvasSize();
     };
     img.onerror = () => {
-      console.error('Failed to load image for annotation');
+      
     };
     img.src = image.url || image.fileUrl;
 

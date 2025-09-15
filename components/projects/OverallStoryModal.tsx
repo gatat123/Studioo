@@ -53,8 +53,7 @@ export function OverallStoryModal({
       })
       
       setIsEditing(false)
-    } catch (error) {
-      console.error('Failed to save story:', error)
+    } catch {
       toast({
         title: '저장 실패',
         description: '스토리 저장에 실패했습니다.',

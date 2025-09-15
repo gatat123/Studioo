@@ -195,15 +195,14 @@ export const useArchiveStore = create<ArchiveState>((set, get) => ({
     if (startDate || endDate) {
       filtered = filtered.filter((p) => {
         const archivedDate = new Date(p.archivedAt);
-        if (startDate && archivedDate < startDate) return false;
-        if (endDate && archivedDate > endDate) return false;
-        return true;
+        return (!startDate || archivedDate >= startDate) &&
+               (!endDate || archivedDate <= endDate);
       });
     }
 
     // Sort
     filtered.sort((a, b) => {
-      let compareValue = 0;
+      let compareValue;
       switch (state.sortBy) {
         case 'name':
           compareValue = a.name.localeCompare(b.name);

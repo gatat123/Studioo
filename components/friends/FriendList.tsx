@@ -107,8 +107,8 @@ export function FriendList() {
         setReceivedRequests(data.receivedRequests || []);
         setSentRequests(data.sentRequests || []);
       }
-    } catch (error) {
-      console.error('Failed to fetch friends:', error);
+    } catch {
+      
     }
   };
 
@@ -137,8 +137,8 @@ export function FriendList() {
         const data = await response.json();
         setSearchResults(data.users || []);
       }
-    } catch (error) {
-      console.error('Failed to search users:', error);
+    } catch {
+      
       toast({
         title: '오류',
         description: '사용자 검색에 실패했습니다.',
@@ -181,8 +181,8 @@ export function FriendList() {
           variant: 'destructive'
         });
       }
-    } catch (error) {
-      console.error('Failed to send friend request:', error);
+    } catch {
+      
       toast({
         title: '오류',
         description: '친구 요청 전송에 실패했습니다.',
@@ -220,8 +220,8 @@ export function FriendList() {
           variant: 'destructive'
         });
       }
-    } catch (error) {
-      console.error('Failed to handle friend request:', error);
+    } catch {
+      
       toast({
         title: '오류',
         description: '요청 처리에 실패했습니다.',
@@ -249,8 +249,8 @@ export function FriendList() {
         });
         void fetchFriends();
       }
-    } catch (error) {
-      console.error('Failed to cancel friend request:', error);
+    } catch {
+      
       toast({
         title: '오류',
         description: '요청 취소에 실패했습니다.',
@@ -278,8 +278,8 @@ export function FriendList() {
         });
         void fetchFriends();
       }
-    } catch (error) {
-      console.error('Failed to remove friend:', error);
+    } catch {
+      
       toast({
         title: '오류',
         description: '친구 삭제에 실패했습니다.',

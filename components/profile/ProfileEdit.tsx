@@ -88,8 +88,7 @@ export function ProfileEdit({ user, onUpdate }: ProfileEditProps) {
         try {
           const imageResult = await usersAPI.uploadProfileImage(avatarFile)
           profileImageUrl = imageResult.url
-        } catch (error) {
-          console.error('프로필 이미지 업로드 실패:', error)
+        } catch {
           toast.error('프로필 이미지 업로드에 실패했습니다')
         }
       }
@@ -105,8 +104,7 @@ export function ProfileEdit({ user, onUpdate }: ProfileEditProps) {
       
       onUpdate(updatedUser)
       toast.success('프로필이 성공적으로 업데이트되었습니다')
-    } catch (error) {
-      console.error('프로필 업데이트 실패:', error)
+    } catch {
       toast.error('프로필 업데이트에 실패했습니다')
     } finally {
       setLoading(false)

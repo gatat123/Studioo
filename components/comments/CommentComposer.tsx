@@ -189,9 +189,8 @@ export const CommentComposer: React.FC<CommentComposerProps> = ({
                 type="file"
                 className="hidden"
                 accept="image/*"
-                onChange={(e) => {
+                onChange={(_e) => {
                   // Handle file upload
-                  console.log('File selected:', e.target.files);
                 }}
               />
             </>

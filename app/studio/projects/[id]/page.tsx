@@ -175,7 +175,6 @@ export default function ProjectDetailPage() {
     
     socketClient.on('new_image', (data: {uploader?: {nickname?: string}; type?: string}) => {
       // Refetch images for the scene to get the full data
-      console.log('Received new_image event:', data)
       void fetchProjectDetails() // 전체 프로젝트 데이터를 다시 가져와서 이미지 업데이트
       
       toast({
@@ -186,7 +185,6 @@ export default function ProjectDetailPage() {
     
     // Listen for image version changes
     socketClient.on('image_version_changed', (data: {user?: {username?: string}; imageType?: string}) => {
-      console.log('Received image_version_changed event:', data)
       void fetchProjectDetails() // 전체 프로젝트 데이터를 다시 가져와서 이미지 업데이트
       
       toast({
@@ -211,8 +209,8 @@ export default function ProjectDetailPage() {
     try {
       const commentsData = await commentsAPI.getProjectComments(projectId)
       setComments(commentsData || [])
-    } catch (error) {
-      console.error('Failed to fetch comments:', error)
+    } catch {
+      // Error handling for failed comment fetch
     }
   }
 
@@ -221,8 +219,7 @@ export default function ProjectDetailPage() {
   //   try {
   //     // Refetch the entire project to get updated scene data
   //     await fetchProjectDetails()
-  //   } catch (error) {
-  //     console.error('Failed to fetch scene images:', error)
+  //   } catch {
   //   }
   // }
 
@@ -234,16 +231,6 @@ export default function ProjectDetailPage() {
         api.get(`/api/projects/${projectId}/story`).catch(() => null)
       ])
 
-      console.log('Frontend: Received project data:', {
-        projectId,
-        hasScenes: !!projectData.scenes,
-        scenesCount: projectData.scenes?.length,
-        scenes: projectData.scenes?.map((s: Scene) => ({
-          id: s.id,
-          imagesCount: s.images?.length,
-          images: s.images
-        }))
-      });
 
       // For illustration projects, create a default scene if none exists
       let scenesData = projectData.scenes || [];
@@ -260,7 +247,6 @@ export default function ProjectDetailPage() {
             });
             scenesData = [defaultScene];
           } catch {
-            console.log('Could not create default scene, using virtual scene');
             // Fallback to virtual scene if API fails
             scenesData = [{
               id: `${projectId}-default`,
@@ -277,7 +263,6 @@ export default function ProjectDetailPage() {
       } else {
         // Storyboard projects: Fetch scenes if needed
         if (!scenesData.length) {
-          console.log('Frontend: No scenes in project data, fetching separately');
           scenesData = await scenesAPI.getScenes(projectId, true);
         }
       }
@@ -299,7 +284,6 @@ export default function ProjectDetailPage() {
           })) || []
       }))
 
-      console.log('Frontend: Processed scenes:', processedScenes);
 
       setProject(projectData)
       setScenes(processedScenes)
@@ -316,8 +300,7 @@ export default function ProjectDetailPage() {
       if (processedScenes.length > 0) {
         setSelectedScene(processedScenes[0])
       }
-    } catch (error) {
-      console.error('프로젝트 정보 로드 실패:', error)
+    } catch {
       toast({
         title: '오류',
         description: '프로젝트 정보를 불러올 수 없습니다.',
@@ -371,8 +354,7 @@ export default function ProjectDetailPage() {
         title: '씬 추가',
         description: '새로운 씬이 추가되었습니다.'
       })
-    } catch (error) {
-      console.error('씬 추가 실패:', error)
+    } catch {
       toast({
         title: '오류',
         description: '씬 추가에 실패했습니다.',
@@ -398,8 +380,7 @@ export default function ProjectDetailPage() {
         title: '씬 삭제',
         description: '씬이 삭제되었습니다.'
       })
-    } catch (error) {
-      console.error('씬 삭제 실패:', error)
+    } catch {
       toast({
         title: '오류',
         description: '씬 삭제에 실패했습니다.',
@@ -511,12 +492,6 @@ export default function ProjectDetailPage() {
         isCurrent: true
       }
       
-      console.log('Uploaded image:', {
-        id: projectImage.id,
-        fileUrl: projectImage.fileUrl,
-        url: projectImage.url,
-        type: projectImage.type
-      })
       
       // Update scenes with new image
       setScenes(prevScenes =>
@@ -564,8 +539,7 @@ export default function ProjectDetailPage() {
         title: '업로드 완료',
         description: `${type === 'lineart' ? '선화' : '아트'} 이미지가 업로드되었습니다.`
       })
-    } catch (error) {
-      console.error('이미지 업로드 실패:', error)
+    } catch {
       toast({
         title: '업로드 실패',
         description: '이미지 업로드에 실패했습니다.',
@@ -745,7 +719,7 @@ export default function ProjectDetailPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => console.log('Edit scene:', scene.id)}>
+                          <DropdownMenuItem onClick={() => {/* Edit scene functionality */}}>
                             <Edit className="h-4 w-4 mr-2" />
                             편집
                           </DropdownMenuItem>
@@ -870,7 +844,6 @@ export default function ProjectDetailPage() {
                           }))
                           setImageHistory(fixedHistory)
                           setShowHistory(true)
-                          console.log('Image history loaded:', fixedHistory)
                         }}
                       >
                         <History className="h-4 w-4 mr-1" />
@@ -1379,8 +1352,7 @@ export default function ProjectDetailPage() {
                           title: '버전 변경 완료',
                           description: `버전 ${img.version}으로 변경되었습니다.`
                         })
-                      } catch (error) {
-                        console.error('Failed to change version:', error)
+                      } catch {
                         toast({
                           title: '버전 변경 실패',
                           description: '버전 변경 중 오류가 발생했습니다.',
@@ -1504,8 +1476,7 @@ export default function ProjectDetailPage() {
                 title: '주석 저장',
                 description: '주석이 저장되었습니다.'
               })
-            } catch (error) {
-              console.error('주석 저장 실패:', error)
+            } catch {
               toast({
                 title: '오류',
                 description: '주석 저장에 실패했습니다.',

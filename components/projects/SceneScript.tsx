@@ -71,8 +71,7 @@ export function SceneScript({
       if (response.script) {
         setScript(response.script)
       }
-    } catch (error) {
-      console.error('Failed to load script:', error)
+    } catch {
     }
   }
 
@@ -87,8 +86,7 @@ export function SceneScript({
       })
       
       setIsEditing(false)
-    } catch (error) {
-      console.error('Failed to save script:', error)
+    } catch {
       toast({
         title: '저장 실패',
         description: '스크립트 저장에 실패했습니다.',
