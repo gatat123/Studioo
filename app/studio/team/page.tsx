@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Send, 
-  MessageSquare, 
+import {
+  Send,
+  MessageSquare,
   MoreVertical,
   Search,
   Plus,
@@ -17,7 +17,8 @@ import {
   Smile,
   UserPlus,
   Settings,
-  LogOut
+  LogOut,
+  Trash2
 } from 'lucide-react'
 import { socketClient } from '@/lib/socket/client'
 import { useToast } from '@/hooks/use-toast'
@@ -26,6 +27,7 @@ import { channelsAPI, type Channel, type ChannelMember, type ChannelMessage, typ
 import { useAuthStore } from '@/store/useAuthStore'
 import { CreateChannelModal } from '@/components/team/CreateChannelModal'
 import { InviteMemberModal } from '@/components/team/InviteMemberModal'
+import { DeleteChannelModal } from '@/components/team/DeleteChannelModal'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 
@@ -44,6 +46,7 @@ function TeamPageContent() {
   const [loading, setLoading] = useState(false)
   const [createChannelOpen, setCreateChannelOpen] = useState(false)
   const [inviteMemberOpen, setInviteMemberOpen] = useState(false)
+  const [deleteChannelOpen, setDeleteChannelOpen] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [hasMore, setHasMore] = useState(false)
@@ -388,6 +391,21 @@ function TeamPageContent() {
       description: '채널 설정 기능은 준비 중입니다.'
     })
   }
+
+  const handleChannelDeleted = () => {
+    // Remove the deleted channel from the list
+    if (selectedChannel) {
+      setChannels(prev => prev.filter(ch => ch.id !== selectedChannel.id))
+
+      // Select another channel or clear selection
+      const remainingChannels = channels.filter(ch => ch.id !== selectedChannel.id)
+      setSelectedChannel(remainingChannels.length > 0 ? remainingChannels[0] : null)
+
+      // Clear channel-specific data
+      setChannelMembers([])
+      setMessages([])
+    }
+  }
   
   // Removed unused getStatusColor function
 
@@ -613,7 +631,18 @@ function TeamPageContent() {
                         </DropdownMenuItem>
                       )}
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem 
+                      {/* Show delete option only for admins or channel creators */}
+                      {(channelMembers.find(m => m.userId === currentUser?.id && m.role === 'admin') ||
+                        selectedChannel?.creatorId === currentUser?.id) && (
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => setDeleteChannelOpen(true)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          채널 삭제
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem
                         className="text-destructive"
                         onClick={() => handleLeaveChannel()}
                       >
@@ -778,6 +807,13 @@ function TeamPageContent() {
           channelName={selectedChannel.name}
         />
       )}
+
+      <DeleteChannelModal
+        open={deleteChannelOpen}
+        onOpenChange={setDeleteChannelOpen}
+        channel={selectedChannel}
+        onChannelDeleted={handleChannelDeleted}
+      />
     </>
   )
 }

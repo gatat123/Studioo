@@ -210,5 +210,10 @@ export const channelsAPI = {
   getPendingInvites: async () => {
     const response = await apiClient.get('/api/channels/invitations') as { invitations?: ChannelInvitation[] }
     return response.invitations || []
+  },
+
+  // Delete channel (admin only)
+  deleteChannel: async (channelId: string): Promise<void> => {
+    await apiClient.delete(`/api/channels/${channelId}`)
   }
 }
