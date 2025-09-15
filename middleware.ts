@@ -9,6 +9,25 @@ const authRoutes = ['/auth/login', '/auth/register'];
 export function middleware(request: NextRequest) {
   const { pathname, hostname } = request.nextUrl;
 
+  // CORS 헤더 처리
+  const response = NextResponse.next();
+
+  // CORS 설정
+  if (request.method === 'OPTIONS') {
+    const allowedOrigins = ['https://studioo-production-eb03.up.railway.app', 'http://localhost:3000'];
+    const origin = request.headers.get('origin');
+
+    if (origin && allowedOrigins.includes(origin)) {
+      response.headers.set('Access-Control-Allow-Origin', origin);
+    }
+
+    response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+    response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+    response.headers.set('Access-Control-Allow-Credentials', 'true');
+
+    return response;
+  }
+
   // Production에서 www를 non-www로 리디렉션
   if (process.env.NODE_ENV === 'production' && hostname === 'www.dustdio.com') {
     return NextResponse.redirect(
@@ -57,7 +76,11 @@ export function middleware(request: NextRequest) {
   // Since we can't decode JWT without the secret on the edge runtime
   // The actual admin check will be done in the admin layout component
 
-  return NextResponse.next();
+  // 모든 응답에 CORS 헤더 추가
+  response.headers.set('Access-Control-Allow-Origin', 'https://studioo-production-eb03.up.railway.app');
+  response.headers.set('Access-Control-Allow-Credentials', 'true');
+
+  return response;
 }
 
 export const config = {

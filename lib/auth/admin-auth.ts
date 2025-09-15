@@ -20,9 +20,10 @@ export async function verifyAdminAuth() {
     const token = authorization.split(' ')[1];
 
     // Verify token
+    const jwtSecret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'your-secret-key';
     let decoded: jwt.JwtPayload | string;
     try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      decoded = jwt.verify(token, jwtSecret);
     } catch {
       return {
         success: false,
@@ -54,8 +55,12 @@ export async function verifyAdminAuth() {
       isActive: true
     };
 
-    // Check if user is admin (temporary implementation)
-    if (user.role !== 'admin' && user.username !== 'gatat123') {
+    // Check if user is admin (improved implementation)
+    const isAdmin = user.role === 'admin' ||
+                   user.username === 'gatat123' ||
+                   (typeof decoded === 'object' && decoded.isAdmin === true);
+
+    if (!isAdmin) {
       return {
         success: false,
         error: NextResponse.json(

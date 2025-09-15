@@ -1,6 +1,4 @@
-import { getAuthHeaders } from '@/lib/api/helpers';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+import { apiClient } from './client';
 
 export interface ArchivedProject {
   id: string;
@@ -36,49 +34,41 @@ export async function getArchivedProjects(
     sortOrder,
   });
 
-  const response = await fetch(`${API_URL}/projects/archived?${params}`, {
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
+  try {
+    const response = await apiClient.get(`/projects/archived?${params}`);
+    return response as { projects: ArchivedProject[]; total: number };
+  } catch (error) {
+    console.error('Failed to fetch archived projects:', error);
     throw new Error('Failed to fetch archived projects');
   }
-
-  return response.json();
 }
 
 // Archive a project
 export async function archiveProject(projectId: string): Promise<void> {
-  const response = await fetch(`${API_URL}/projects/${projectId}/archive`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
+  try {
+    await apiClient.post(`/projects/${projectId}/archive`);
+  } catch (error) {
+    console.error('Failed to archive project:', error);
     throw new Error('Failed to archive project');
   }
 }
 
 // Restore archived project
 export async function restoreProject(projectId: string): Promise<void> {
-  const response = await fetch(`${API_URL}/projects/${projectId}/restore`, {
-    method: 'POST',
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
+  try {
+    await apiClient.post(`/projects/${projectId}/restore`);
+  } catch (error) {
+    console.error('Failed to restore project:', error);
     throw new Error('Failed to restore project');
   }
 }
 
 // Delete archived project permanently
 export async function deleteArchivedProject(projectId: string): Promise<void> {
-  const response = await fetch(`${API_URL}/projects/${projectId}/archived`, {
-    method: 'DELETE',
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
+  try {
+    await apiClient.delete(`/projects/${projectId}/archived`);
+  } catch (error) {
+    console.error('Failed to delete archived project:', error);
     throw new Error('Failed to delete archived project');
   }
 }
@@ -100,45 +90,31 @@ export async function searchArchivedProjects(
   if (filters?.dateTo) params.append('dateTo', filters.dateTo);
   if (filters?.tags) filters.tags.forEach(tag => params.append('tags', tag));
 
-  const response = await fetch(`${API_URL}/projects/archived/search?${params}`, {
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
+  try {
+    const response = await apiClient.get(`/projects/archived/search?${params}`);
+    return response as ArchivedProject[];
+  } catch (error) {
+    console.error('Failed to search archived projects:', error);
     throw new Error('Failed to search archived projects');
   }
-
-  return response.json();
 }
 
 // Batch restore projects
 export async function batchRestoreProjects(projectIds: string[]): Promise<void> {
-  const response = await fetch(`${API_URL}/projects/archived/batch-restore`, {
-    method: 'POST',
-    headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ projectIds }),
-  });
-
-  if (!response.ok) {
+  try {
+    await apiClient.post('/projects/archived/batch-restore', { projectIds });
+  } catch (error) {
+    console.error('Failed to batch restore projects:', error);
     throw new Error('Failed to batch restore projects');
   }
 }
 
 // Batch delete archived projects
 export async function batchDeleteArchivedProjects(projectIds: string[]): Promise<void> {
-  const response = await fetch(`${API_URL}/projects/archived/batch-delete`, {
-    method: 'DELETE',
-    headers: {
-      ...getAuthHeaders(),
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ projectIds }),
-  });
-
-  if (!response.ok) {
+  try {
+    await apiClient.post('/projects/archived/batch-delete', { projectIds });
+  } catch (error) {
+    console.error('Failed to batch delete projects:', error);
     throw new Error('Failed to batch delete projects');
   }
 }
@@ -150,13 +126,16 @@ export async function getArchiveStats(): Promise<{
   archivedThisMonth: number;
   totalSize: number;
 }> {
-  const response = await fetch(`${API_URL}/projects/archived/stats`, {
-    headers: getAuthHeaders(),
-  });
-
-  if (!response.ok) {
+  try {
+    const response = await apiClient.get('/projects/archived/stats');
+    return response as {
+      totalArchived: number;
+      pendingDeletion: number;
+      archivedThisMonth: number;
+      totalSize: number;
+    };
+  } catch (error) {
+    console.error('Failed to fetch archive statistics:', error);
     throw new Error('Failed to fetch archive statistics');
   }
-
-  return response.json();
 }
