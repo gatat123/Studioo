@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -186,7 +186,9 @@ export default function SettingsPage() {
 
   useEffect(() => {
     checkAuth();
-    fetchSettings();
+    fetchSettings().catch(error => {
+      console.error('Failed to fetch settings:', error);
+    });
   }, [fetchSettings]);
 
   const handleSaveSettings = async (section: keyof SystemSettings) => {

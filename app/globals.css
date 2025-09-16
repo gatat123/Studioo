@@ -122,24 +122,7 @@
   }
 
   /* Performance optimizations */
-  .gpu-accelerated {
-    transform: translateZ(0);
-    will-change: transform;
-  }
-
-  .no-gpu {
-    transform: none;
-    will-change: auto;
-  }
-
-  /* Optimized hover effects */
-  .hover-lift {
-    transition: transform 200ms ease-out;
-  }
-
-  .hover-lift:hover {
-    transform: translateY(-2px);
-  }
+  /* Removed unused CSS classes: gpu-accelerated, no-gpu, hover-lift */
 
   /* Reduce motion for accessibility */
   @media (prefers-reduced-motion: reduce) {

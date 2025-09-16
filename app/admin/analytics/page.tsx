@@ -135,7 +135,9 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     checkAuth();
-    fetchAnalytics();
+    fetchAnalytics().catch(error => {
+      console.error('Failed to fetch analytics:', error);
+    });
   }, [fetchAnalytics]);
 
   const calculateGrowthRate = (data: number[]) => {

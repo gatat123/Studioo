@@ -1,24 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Mock projects data - in production these would be database operations
-const mockActiveProjects: Array<{
-  id: string;
-  name: string;
-  status: string;
-  updatedAt: string;
-  [key: string]: unknown;
-}> = [];
-const mockArchivedProjects: Array<{
-  id: string;
-  name: string;
-  canRestore: boolean;
-  archivedAt?: string;
-  archivedBy?: string;
-  archivedByName?: string;
-  deletionDate?: string;
-  canDelete?: boolean;
-  [key: string]: unknown;
-}> = [];
+import { mockProjectStore } from '@/lib/data/mock-projects';
+import { validateRestoration } from '@/lib/utils/project-validation';
+import { createRestoredProject } from '@/lib/utils/project-operations';
 
 export async function POST(
   request: NextRequest,
@@ -34,50 +17,42 @@ export async function POST(
     // }
 
     // Find the archived project to restore
-    const projectIndex = mockArchivedProjects.findIndex(p => p.id === id);
-    if (projectIndex === -1) {
+    const archivedProject = mockProjectStore.findArchivedProject(id);
+    if (!archivedProject) {
       return NextResponse.json(
         { error: 'Archived project not found' },
         { status: 404 }
       );
     }
 
-    const archivedProject = mockArchivedProjects[projectIndex];
-
     // TODO: Check if user has permission to restore this project
-    // if (archivedProject.ownerId !== currentUserId && !isAdmin) {
+    // const permissionCheck = checkProjectPermissions(
+    //   archivedProject.ownerId,
+    //   currentUserId,
+    //   isAdmin
+    // );
+    // if (!permissionCheck.hasPermission) {
     //   return NextResponse.json(
-    //     { error: 'Insufficient permissions' },
+    //     { error: permissionCheck.reason || 'Insufficient permissions' },
     //     { status: 403 }
     //   );
     // }
 
     // Check if project can be restored
-    if (!archivedProject.canRestore) {
+    const restorationCheck = validateRestoration(archivedProject.canRestore);
+    if (!restorationCheck.canProceed) {
       return NextResponse.json(
-        { error: 'This project cannot be restored' },
+        { error: restorationCheck.reason || 'This project cannot be restored' },
         { status: 400 }
       );
     }
 
-    // Create restored project (remove archive-specific fields)
-    const restoredProject = {
-      ...archivedProject,
-      status: 'active',
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Remove archive-specific fields
-    delete restoredProject.archivedAt;
-    delete restoredProject.archivedBy;
-    delete restoredProject.archivedByName;
-    delete restoredProject.deletionDate;
-    delete restoredProject.canRestore;
-    delete restoredProject.canDelete;
+    // Create restored project using utility function
+    const restoredProject = createRestoredProject(archivedProject);
 
     // Move project back to active
-    mockActiveProjects.push(restoredProject);
-    mockArchivedProjects.splice(projectIndex, 1);
+    mockProjectStore.addActiveProject(restoredProject);
+    mockProjectStore.removeArchivedProject(id);
 
     // TODO: In production, update project status in database
     // await db.project.update({

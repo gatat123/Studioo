@@ -91,7 +91,9 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     checkAuth();
-    fetchProjects();
+    fetchProjects().catch(error => {
+      console.error('Failed to fetch projects:', error);
+    });
   }, [fetchProjects]);
 
   const handleStatusChange = async (projectId: string, newStatus: string) => {

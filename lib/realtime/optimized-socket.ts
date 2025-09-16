@@ -69,8 +69,8 @@ export class OptimizedSocket {
   private pendingAcks: Map<string, { resolve: (value: unknown) => void; reject: (reason?: unknown) => void }> = new Map();
 
   // Throttled/Debounced methods
-  private throttledCursorMove: (...args: unknown[]) => void;
-  private debouncedTyping: (...args: unknown[]) => void;
+  private readonly throttledCursorMove: (...args: unknown[]) => void;
+  private readonly debouncedTyping: (...args: unknown[]) => void;
 
   constructor(config?: Partial<OptimizationConfig>) {
     this.config = {
