@@ -34,19 +34,30 @@ export default function UserManagement() {
 
   const fetchUsers = async () => {
     try {
-      const token = localStorage.getItem('token') || 'gatat123-temp-token';
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+
+      if (!token) {
+        console.warn('No authentication token found for user management');
+        setIsLoading(false);
+        return;
+      }
+
       const response = await fetch('/api/admin/users', {
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (response.ok) {
         const data = await response.json();
         setUsers(data.users || []);
+      } else {
+        console.error('Failed to fetch users:', response.status);
       }
-    } catch {
-      
+    } catch (error) {
+      console.error('Error fetching users:', error);
     } finally {
       setIsLoading(false);
     }
@@ -54,7 +65,13 @@ export default function UserManagement() {
 
   const handleToggleUserStatus = async (userId: string, isActive: boolean) => {
     try {
-      const token = localStorage.getItem('token') || 'gatat123-temp-token';
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+
       const response = await fetch(`/api/admin/users/${userId}/status`, {
         method: 'PATCH',
         headers: {

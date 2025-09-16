@@ -3,7 +3,9 @@
  * Production-ready API client with error handling, retry logic, and type safety
  */
 
-// Authentication will be handled via localStorage token
+import { getAuthToken } from '@/lib/utils/cookies';
+
+// Authentication will be handled via cookies primarily, localStorage as backup
 
 // API Base URL from environment
 const getAPIBaseURL = () => {
@@ -76,24 +78,10 @@ class APIClient {
     // Prepare URL
     const url = `${this.baseURL}${endpoint}`;
 
-    // Get authentication token from localStorage or cookies
+    // Get authentication token using utility function
     let authToken = token;
     if (!authToken && typeof window !== 'undefined') {
-      // First try localStorage
-      authToken = localStorage.getItem('token') || undefined;
-      
-      // Fallback to cookie if no token in localStorage
-      if (!authToken) {
-        const cookieToken = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('token='))
-          ?.split('=')[1];
-        authToken = cookieToken || undefined;
-      }
-      
-      // Debug logging (only for auth endpoints)
-      if (url.includes('/auth')) {
-      }
+      authToken = getAuthToken();
     }
 
     // Prepare headers
@@ -104,9 +92,6 @@ class APIClient {
 
     if (authToken) {
       requestHeaders['Authorization'] = `Bearer ${authToken}`;
-      if (url.includes('/auth')) {
-      }
-    } else if (url.includes('/auth')) {
     }
 
     // Create abort controller for timeout
@@ -213,18 +198,10 @@ class APIClient {
       delete (uploadHeaders as Record<string, string>)['Content-Type'];
     }
 
-    // Get authentication token
+    // Get authentication token using utility function
     let authToken = token;
     if (!authToken && typeof window !== 'undefined') {
-      authToken = localStorage.getItem('token') || undefined;
-      
-      if (!authToken) {
-        const cookieToken = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('token='))
-          ?.split('=')[1];
-        authToken = cookieToken || undefined;
-      }
+      authToken = getAuthToken();
     }
 
     if (authToken) {

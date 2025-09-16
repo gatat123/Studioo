@@ -66,20 +66,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Generate JWT token
-    const jwtSecret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'your-secret-key';
+    // Generate JWT token - use consistent secret across the app
+    const jwtSecret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'your-nextauth-secret-key-change-this-in-production';
+
+    // Log for debugging (remove in production)
+    // Login attempt for user
+
+    const tokenPayload = {
+      userId: user.id,
+      id: user.id, // Include both for compatibility
+      username: user.username,
+      name: user.username, // Include both for compatibility
+      email: user.email,
+      role: user.role,
+      isAdmin: user.role === 'admin' || user.username === 'gatat123'
+    };
 
     const token = jwt.sign(
-      {
-        userId: user.id,
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        isAdmin: user.role === 'admin' || user.username === 'gatat123'
-      },
+      tokenPayload,
       jwtSecret,
       { expiresIn: '7d' }
     );
+
+    // Token generated successfully
 
     // Return user data without password
     const userData = {
@@ -97,8 +106,8 @@ export async function POST(request: NextRequest) {
       user: userData
     });
 
-  } catch (error) {
-    console.error('Login error:', error);
+  } catch {
+    // Login error
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

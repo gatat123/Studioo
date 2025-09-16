@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { authAPI } from '@/lib/api/auth';
-import Cookies from 'js-cookie';
+import { setAuthToken, getAuthToken, removeAuthToken, hasAuthToken } from '@/lib/utils/cookies';
 import type { User } from '@/types';
 
 // Auth store state interface
@@ -47,19 +47,10 @@ export const useAuthStore = create<AuthState>()(
               isAdmin: response.user.username === 'gatat123' ? true : response.user.isAdmin
             };
             
-            // Set cookie for middleware authentication
+            // Set authentication token
             const token = response.accessToken || response.token;
             if (token) {
-              // Extract domain for cookie (for Railway deployment)
-              const hostname = window.location.hostname;
-              const domain = hostname.includes('railway.app') ? `.${hostname.split('.').slice(-3).join('.')}` : undefined;
-              
-              Cookies.set('token', token, { 
-                expires: 7,
-                sameSite: 'lax',
-                secure: window.location.protocol === 'https:',
-                domain: domain
-              });
+              setAuthToken(token);
             }
             
             set({
@@ -99,19 +90,10 @@ export const useAuthStore = create<AuthState>()(
               isAdmin: response.user.username === 'gatat123' ? true : response.user.isAdmin
             };
             
-            // Set cookie for middleware authentication
+            // Set authentication token
             const token = response.accessToken || response.token;
             if (token) {
-              // Extract domain for cookie (for Railway deployment)
-              const hostname = window.location.hostname;
-              const domain = hostname.includes('railway.app') ? `.${hostname.split('.').slice(-3).join('.')}` : undefined;
-              
-              Cookies.set('token', token, { 
-                expires: 7,
-                sameSite: 'lax',
-                secure: window.location.protocol === 'https:',
-                domain: domain
-              });
+              setAuthToken(token);
             }
             
             set({
@@ -147,16 +129,8 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
 
-          // Remove authentication cookie with all possible domains
-          const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-          const domain = hostname.includes('railway.app') ? `.${hostname.split('.').slice(-3).join('.')}` : undefined;
-
-          // Remove cookie with domain
-          Cookies.remove('token', { domain: domain });
-          // Remove cookie without domain (for localhost)
-          Cookies.remove('token');
-          // Remove cookie with path
-          Cookies.remove('token', { path: '/' });
+          // Remove authentication token
+          removeAuthToken();
 
           // Clear all localStorage items related to auth
           if (typeof window !== 'undefined') {
@@ -197,9 +171,17 @@ export const useAuthStore = create<AuthState>()(
 
       // Check authentication status
       checkAuth: async () => {
-        // Skip check if already logged out intentionally
         const currentState = get();
-        if (currentState.isAuthenticated === false && !Cookies.get('token')) {
+
+        // If already authenticated with valid user, skip API call
+        // This prevents unnecessary API calls during navigation
+        if (currentState.isAuthenticated && currentState.user && hasAuthToken()) {
+          set({ isLoading: false });
+          return;
+        }
+
+        // Skip check if already logged out intentionally
+        if (currentState.isAuthenticated === false && !hasAuthToken()) {
           set({ isLoading: false });
           return;
         }
@@ -207,10 +189,10 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
 
         try {
-          // Only check cookie for token (not localStorage to prevent auto-login)
-          const cookieToken = Cookies.get('token');
+          // Check for authentication token
+          const authToken = getAuthToken();
 
-          if (!cookieToken) {
+          if (!authToken) {
             // No token means user is not authenticated
             set({
               user: null,
@@ -219,13 +201,12 @@ export const useAuthStore = create<AuthState>()(
             });
             // Clear localStorage to ensure clean state
             localStorage.removeItem('auth-storage');
-            localStorage.removeItem('token');
             return;
           }
-          
+
+          // Only make API call if we have token but no user data
           const sessionUser = await authAPI.getSession();
-          
-          
+
           if (sessionUser) {
             const user: User = {
               ...sessionUser,
@@ -236,23 +217,25 @@ export const useAuthStore = create<AuthState>()(
               // 임시로 특정 사용자를 관리자로 설정 (테스트용)
               isAdmin: sessionUser.username === 'gatat123' ? true : sessionUser.isAdmin
             };
-            
-            
+
             set({
               user,
               isAuthenticated: true,
               isLoading: false,
+              error: null,
             });
           } else {
-            
+            // Session expired or invalid
             set({
               user: null,
               isAuthenticated: false,
               isLoading: false,
             });
+            // Clear token since session is invalid
+            removeAuthToken();
           }
-        } catch {
-          
+        } catch (error) {
+          console.error('Auth check failed:', error);
           set({
             user: null,
             isAuthenticated: false,

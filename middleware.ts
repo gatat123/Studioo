@@ -35,12 +35,22 @@ export function middleware(request: NextRequest) {
     );
   }
 
-  // 정적 파일과 API 라우트는 건너뛰기
+  // 정적 파일은 건너뛰기
   if (
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/api') ||
     pathname.includes('.') // 파일 확장자가 있는 경우
   ) {
+    return NextResponse.next();
+  }
+
+  // Admin API 라우트 처리
+  if (pathname.startsWith('/api/admin')) {
+    // Admin API request - authentication handled by API route
+    return NextResponse.next();
+  }
+
+  // Regular API 라우트는 건너뛰기
+  if (pathname.startsWith('/api')) {
     return NextResponse.next();
   }
 

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import AdminSidebar from '@/components/admin/AdminSidebar';
+import AdminAuthProvider from '@/components/admin/AdminAuthProvider';
 
 export default function AdminLayout({
   children,
@@ -12,34 +13,42 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const { user, isAuthenticated, checkAuth } = useAuthStore();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    const verifyAdmin = async () => {
-      setIsLoading(true);
+    const initializeAuth = async () => {
+      // Only check auth on initial mount
+      if (!isInitialized) {
+        // If we have persisted auth state, use it
+        if (isAuthenticated && user) {
+          // Verify the user is admin
+          if (!user.isAdmin) {
+            router.push('/studio');
+            return;
+          }
+          setIsInitialized(true);
+        } else {
+          // Only call checkAuth if we don't have auth state
+          await checkAuth();
 
-      // Check authentication first
-      if (!isAuthenticated) {
-        await checkAuth();
+          const currentUser = useAuthStore.getState().user;
+          const currentAuth = useAuthStore.getState().isAuthenticated;
+
+          if (!currentAuth || !currentUser || !currentUser.isAdmin) {
+            router.push('/studio');
+            return;
+          }
+
+          setIsInitialized(true);
+        }
       }
-
-      // Get the latest user state
-      const currentUser = useAuthStore.getState().user;
-
-      // Check if user is admin
-      if (!currentUser || !currentUser.isAdmin) {
-        // Redirect non-admin users to studio
-        router.push('/studio');
-        return;
-      }
-
-      setIsLoading(false);
     };
 
-    verifyAdmin();
-  }, [isAuthenticated, checkAuth, router]);
+    initializeAuth();
+  }, [isInitialized, isAuthenticated, user, router, checkAuth]);
 
-  if (isLoading) {
+  // Show loading only on initial load
+  if (!isInitialized) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
@@ -47,22 +56,24 @@ export default function AdminLayout({
     );
   }
 
-  // Double-check admin status
+  // Verify admin status
   if (!user?.isAdmin) {
     return null;
   }
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Admin Sidebar */}
-      <AdminSidebar />
+    <AdminAuthProvider>
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Admin Sidebar */}
+        <AdminSidebar />
 
-      {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto px-6 py-8">
-          {children}
-        </div>
-      </main>
-    </div>
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="container mx-auto px-6 py-8">
+            {children}
+          </div>
+        </main>
+      </div>
+    </AdminAuthProvider>
   );
 }

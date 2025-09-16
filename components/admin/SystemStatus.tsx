@@ -38,11 +38,22 @@ export default function SystemStatus() {
   useEffect(() => {
     const fetchSystemStatus = async () => {
       try {
-        const token = localStorage.getItem('token') || 'gatat123-temp-token';
+        const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+
+        if (!token) {
+          console.warn('No authentication token found for system status');
+          setMetrics(getDefaultMetrics());
+          setServices(getDefaultServices());
+          setIsLoading(false);
+          return;
+        }
+
         const response = await fetch('/api/admin/system/status', {
           headers: {
-            Authorization: `Bearer ${token}`,
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
+          credentials: 'include',
         });
 
         if (response.ok) {
@@ -50,12 +61,13 @@ export default function SystemStatus() {
           setMetrics(data.metrics || getDefaultMetrics());
           setServices(data.services || getDefaultServices());
         } else {
+          console.error('Failed to fetch system status:', response.status);
           // Use default data if API fails
           setMetrics(getDefaultMetrics());
           setServices(getDefaultServices());
         }
-      } catch {
-
+      } catch (error) {
+        console.error('Error fetching system status:', error);
         // Use default data
         setMetrics(getDefaultMetrics());
         setServices(getDefaultServices());

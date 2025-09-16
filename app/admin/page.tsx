@@ -28,30 +28,49 @@ export default function AdminDashboard() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Set temporary token for gatat123 if not exists
-    if (!localStorage.getItem('token')) {
-      localStorage.setItem('token', 'gatat123-temp-token');
-      localStorage.setItem('username', 'gatat123');
-      localStorage.setItem('userId', 'gatat123-temp-id');
+    // Check if user is logged in and has a valid token
+    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+    if (!token) {
+      // No authentication token found
+      // Redirect to login page or show error
+      // window.location.href = '/auth/login';
+      return;
     }
     void fetchDashboardStats();
   }, []);
 
   const fetchDashboardStats = async () => {
     try {
-      const token = localStorage.getItem('token') || 'gatat123-temp-token';
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+
+      if (!token) {
+        // No token available for API request
+        setIsLoading(false);
+        return;
+      }
+
+      // Fetching admin stats with token
+
       const response = await fetch('/api/admin/stats', {
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
+
+      // Admin stats response status
 
       if (response.ok) {
         const data = await response.json();
+        // Admin stats data received
         setStats(data);
+      } else {
+        await response.json().catch(() => null);
+        // Failed to fetch admin stats
       }
     } catch {
-      // Failed to fetch dashboard stats
+      // Error fetching dashboard stats
     } finally {
       setIsLoading(false);
     }

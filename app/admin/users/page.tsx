@@ -55,22 +55,34 @@ export default function UsersPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
-  const checkAuth = () => {
-    // Set temporary token for gatat123 if not exists
-    if (!localStorage.getItem('token')) {
-      localStorage.setItem('token', 'gatat123-temp-token');
-      localStorage.setItem('username', 'gatat123');
-      localStorage.setItem('userId', 'gatat123-temp-id');
+  const checkAuth = useCallback(() => {
+    // Check if user is logged in and has a valid token
+    const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+    if (!token) {
+      console.error('No authentication token found. Please login first.');
+      router.push('/auth/login');
+      return false;
     }
-  };
+    return true;
+  }, [router]);
 
   const fetchUsers = useCallback(async () => {
     try {
-      const token = localStorage.getItem('token') || 'gatat123-temp-token';
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+
+      if (!token) {
+        console.error('No token available for API request');
+        setIsLoading(false);
+        router.push('/auth/login');
+        return;
+      }
+
       const response = await fetch('/api/admin/users', {
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -87,13 +99,20 @@ export default function UsersPage() {
   }, [router]);
 
   useEffect(() => {
-    checkAuth();
-    fetchUsers();
-  }, [fetchUsers]);
+    if (checkAuth()) {
+      fetchUsers();
+    }
+  }, [fetchUsers, checkAuth]);
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {
-      const token = localStorage.getItem('token') || 'gatat123-temp-token';
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+
+      if (!token) {
+        console.error('No authentication token found');
+        return;
+      }
+
       const response = await fetch(`/api/admin/users/${userId}/role`, {
         method: 'PUT',
         headers: {

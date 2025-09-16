@@ -26,11 +26,32 @@ export default function ProjectStats() {
 
   const fetchProjectStats = async () => {
     try {
-      const token = localStorage.getItem('token') || 'gatat123-temp-token';
+      const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
+
+      if (!token) {
+        console.warn('No authentication token found for project stats');
+        // Set mock data for demonstration
+        setProjectStats([
+          { tag: '일러스트레이션', count: 12, percentage: 40 },
+          { tag: '스토리보드', count: 15, percentage: 50 },
+          { tag: '기타', count: 3, percentage: 10 },
+        ]);
+
+        setStatusStats([
+          { status: '활성', count: 18, color: 'bg-green-500' },
+          { status: '완료', count: 8, color: 'bg-blue-500' },
+          { status: '보관', count: 4, color: 'bg-gray-500' },
+        ]);
+        setIsLoading(false);
+        return;
+      }
+
       const response = await fetch('/api/admin/projects/stats', {
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
+        credentials: 'include',
       });
 
       if (response.ok) {
