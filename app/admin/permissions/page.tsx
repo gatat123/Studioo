@@ -120,11 +120,6 @@ export default function PermissionsPage() {
   const [newRole, setNewRole] = useState({ name: '', description: '' });
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
 
-  useEffect(() => {
-    checkAuth();
-    fetchData();
-  }, [fetchData]);
-
   const checkAuth = () => {
     // Set temporary token for gatat123 if not exists
     if (!localStorage.getItem('token')) {
@@ -211,6 +206,11 @@ export default function PermissionsPage() {
       setIsLoading(false);
     }
   }, [router, getMockRoles]);
+
+  useEffect(() => {
+    checkAuth();
+    fetchData();
+  }, [fetchData]);
 
   const getMockAssignments = (): RoleAssignment[] => [
     {

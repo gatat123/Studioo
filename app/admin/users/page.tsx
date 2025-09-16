@@ -55,11 +55,6 @@ export default function UsersPage() {
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
-  useEffect(() => {
-    checkAuth();
-    fetchUsers();
-  }, [fetchUsers]);
-
   const checkAuth = () => {
     // Set temporary token for gatat123 if not exists
     if (!localStorage.getItem('token')) {
@@ -90,6 +85,11 @@ export default function UsersPage() {
       setIsLoading(false);
     }
   }, [router]);
+
+  useEffect(() => {
+    checkAuth();
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleRoleChange = async (userId: string, newRole: string) => {
     try {

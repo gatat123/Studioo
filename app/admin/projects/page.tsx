@@ -58,11 +58,6 @@ export default function ProjectsPage() {
   const [sortBy, setSortBy] = useState<string>('lastUpdated');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  useEffect(() => {
-    checkAuth();
-    fetchProjects();
-  }, [fetchProjects]);
-
   const checkAuth = () => {
     // Set temporary token for gatat123 if not exists
     if (!localStorage.getItem('token')) {
@@ -93,6 +88,11 @@ export default function ProjectsPage() {
       setIsLoading(false);
     }
   }, [router]);
+
+  useEffect(() => {
+    checkAuth();
+    fetchProjects();
+  }, [fetchProjects]);
 
   const handleStatusChange = async (projectId: string, newStatus: string) => {
     try {

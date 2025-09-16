@@ -7,55 +7,47 @@ export async function verifyAdminAuth() {
     const headersList = await headers();
     const authorization = headersList.get('authorization');
 
-    // Special handling for gatat123 temporary admin
+    // Require proper authorization header
     if (!authorization || !authorization.startsWith('Bearer ')) {
-      // Allow gatat123 without token temporarily
       return {
-        success: true,
-        user: {
-          id: 'gatat123-temp-id',
-          username: 'gatat123',
-          role: 'admin',
-          isActive: true
-        }
+        success: false,
+        error: NextResponse.json(
+          { error: 'Authorization header required' },
+          { status: 401 }
+        )
       };
     }
 
     const token = authorization.split(' ')[1];
 
-    // Special token for gatat123
-    if (token === 'gatat123-temp-token') {
+    // Verify JWT secret is properly configured
+    const jwtSecret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET;
+
+    if (!jwtSecret || jwtSecret === 'your-secret-key' || jwtSecret.includes('development')) {
+      console.error('CRITICAL: JWT_SECRET not properly configured for production');
       return {
-        success: true,
-        user: {
-          id: 'gatat123-temp-id',
-          username: 'gatat123',
-          role: 'admin',
-          isActive: true
-        }
+        success: false,
+        error: NextResponse.json(
+          { error: 'Server configuration error' },
+          { status: 500 }
+        )
       };
     }
 
     // Verify token
-    const jwtSecret = process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'your-secret-key';
     let decoded: jwt.JwtPayload | string;
     try {
       decoded = jwt.verify(token, jwtSecret);
-    } catch {
-      // If token verification fails, still allow gatat123
+    } catch (error) {
+      console.error('JWT verification failed:', error);
       return {
-        success: true,
-        user: {
-          id: 'gatat123-temp-id',
-          username: 'gatat123',
-          role: 'admin',
-          isActive: true
-        }
+        success: false,
+        error: NextResponse.json(
+          { error: 'Invalid or expired token' },
+          { status: 401 }
+        )
       };
     }
-
-    // Simple admin check for now
-    // In production, verify against actual database
 
     // Type guard to check if decoded is a JwtPayload object
     if (typeof decoded === 'string') {
@@ -71,13 +63,13 @@ export async function verifyAdminAuth() {
     const user = {
       id: decoded.userId || decoded.id || decoded.sub,
       username: decoded.username || decoded.name,
+      email: decoded.email,
       role: decoded.role || (decoded.isAdmin ? 'admin' : 'user'),
       isActive: true
     };
 
-    // Check if user is admin (improved implementation)
+    // Verify admin role from token
     const isAdmin = user.role === 'admin' ||
-                   user.username === 'gatat123' ||
                    (typeof decoded === 'object' && decoded.isAdmin === true);
 
     if (!isAdmin) {
@@ -90,12 +82,23 @@ export async function verifyAdminAuth() {
       };
     }
 
+    // In production, should also verify against database
+    // to ensure the user still has admin rights
+    // Example:
+    // const dbUser = await prisma.user.findUnique({
+    //   where: { id: user.id },
+    //   include: { roles: true }
+    // });
+    // if (!dbUser?.isAdmin && !dbUser?.roles?.some(r => r.name === 'admin')) {
+    //   return { success: false, ... };
+    // }
+
     return {
       success: true,
       user
     };
-  } catch {
-
+  } catch (error) {
+    console.error('Admin authentication error:', error);
     return {
       success: false,
       error: NextResponse.json(

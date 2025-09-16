@@ -153,11 +153,6 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
-  useEffect(() => {
-    checkAuth();
-    fetchSettings();
-  }, [fetchSettings]);
-
   const checkAuth = () => {
     // Set temporary token for gatat123 if not exists
     if (!localStorage.getItem('token')) {
@@ -188,6 +183,11 @@ export default function SettingsPage() {
       setIsLoading(false);
     }
   }, [router, settings]);
+
+  useEffect(() => {
+    checkAuth();
+    fetchSettings();
+  }, [fetchSettings]);
 
   const handleSaveSettings = async (section: keyof SystemSettings) => {
     setIsSaving(true);

@@ -62,11 +62,6 @@ export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState('7d');
   // Removed unused metric state
 
-  useEffect(() => {
-    checkAuth();
-    fetchAnalytics();
-  }, [timeRange, fetchAnalytics]);
-
   const checkAuth = () => {
     // Set temporary token for gatat123 if not exists
     if (!localStorage.getItem('token')) {
@@ -138,8 +133,13 @@ export default function AnalyticsPage() {
     }
   }, [timeRange, router]);
 
+  useEffect(() => {
+    checkAuth();
+    fetchAnalytics();
+  }, [fetchAnalytics]);
+
   const calculateGrowthRate = (data: number[]) => {
-    if (data.length < 2) return 0;
+    if (data.length < 2) return '0';
     const recent = data[data.length - 1];
     const previous = data[0];
     return ((recent - previous) / previous * 100).toFixed(1);
@@ -347,7 +347,7 @@ export default function AnalyticsPage() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ category, value }) => `${category}: ${value}%`}
+                  label={(entry: { category: string; value: number }) => `${entry.category}: ${entry.value}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
