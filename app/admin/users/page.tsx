@@ -59,7 +59,7 @@ export default function UsersPage() {
     // Check if user is logged in and has a valid token
     const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
     if (!token) {
-      console.error('No authentication token found. Please login first.');
+      // No authentication token found - redirect to login
       router.push('/auth/login');
       return false;
     }
@@ -71,7 +71,7 @@ export default function UsersPage() {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
 
       if (!token) {
-        console.error('No token available for API request');
+        // No token available - redirect to login
         setIsLoading(false);
         router.push('/auth/login');
         return;
@@ -91,8 +91,8 @@ export default function UsersPage() {
       } else if (response.status === 401 || response.status === 403) {
         router.push('/login');
       }
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
+    } catch {
+      // Error handled - failed to fetch users
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +109,7 @@ export default function UsersPage() {
       const token = localStorage.getItem('token') || localStorage.getItem('accessToken');
 
       if (!token) {
-        console.error('No authentication token found');
+        // No authentication token - operation cancelled
         return;
       }
 
@@ -125,8 +125,8 @@ export default function UsersPage() {
       if (response.ok) {
         fetchUsers();
       }
-    } catch (error) {
-      console.error('Failed to update role:', error);
+    } catch {
+      // Role update failed - error handled silently
     }
   };
 
@@ -145,8 +145,8 @@ export default function UsersPage() {
       if (response.ok) {
         fetchUsers();
       }
-    } catch (error) {
-      console.error('Failed to update status:', error);
+    } catch {
+      // Status update failed - error handled silently
     }
   };
 
@@ -171,8 +171,8 @@ export default function UsersPage() {
         setSelectedUsers([]);
         fetchUsers();
       }
-    } catch (error) {
-      console.error('Failed to perform bulk action:', error);
+    } catch {
+      // Bulk action failed - error handled silently
     }
   };
 

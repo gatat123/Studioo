@@ -217,8 +217,8 @@ export default function AdvancedSettingsPage({ params }: { params: Promise<{ id:
         description: '프로젝트가 아카이브되었습니다. 30일 후 자동으로 삭제됩니다.',
       });
       router.push('/studio/archive');
-    } catch (error) {
-      console.error('Failed to archive project:', error);
+    } catch {
+      // Archive operation failed - error handled
       toast({
         title: '아카이브 실패',
         description: '프로젝트 아카이브 중 오류가 발생했습니다.',

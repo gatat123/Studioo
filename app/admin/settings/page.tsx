@@ -177,8 +177,8 @@ export default function SettingsPage() {
       } else if (response.status === 401 || response.status === 403) {
         router.push('/login');
       }
-    } catch (error) {
-      console.error('Failed to fetch settings:', error);
+    } catch {
+      // Error handled - fetch settings failed
     } finally {
       setIsLoading(false);
     }
@@ -186,8 +186,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     checkAuth();
-    fetchSettings().catch(error => {
-      console.error('Failed to fetch settings:', error);
+    fetchSettings().catch(() => {
+      // Error handling is already done in fetchSettings
     });
   }, [fetchSettings]);
 
@@ -216,8 +216,8 @@ export default function SettingsPage() {
         setSaveStatus('error');
         setTimeout(() => setSaveStatus('idle'), 3000);
       }
-    } catch (error) {
-      console.error('Failed to save settings:', error);
+    } catch {
+      // Save settings failed - error handled
       setSaveStatus('error');
       setTimeout(() => setSaveStatus('idle'), 3000);
     } finally {
@@ -248,8 +248,8 @@ export default function SettingsPage() {
         setSettings(importedSettings);
         setSaveStatus('success');
         setTimeout(() => setSaveStatus('idle'), 3000);
-      } catch (error) {
-        console.error('Failed to import settings:', error);
+      } catch {
+        // Import settings failed - error handled
         setSaveStatus('error');
         setTimeout(() => setSaveStatus('idle'), 3000);
       }

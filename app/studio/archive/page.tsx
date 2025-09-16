@@ -55,7 +55,6 @@ export default function ArchivePage() {
     sortOrder,
     currentPage,
     itemsPerPage,
-    totalItems: _totalItems,
     loading,
     setSearchQuery,
     setSortBy,
@@ -88,8 +87,8 @@ export default function ArchivePage() {
         );
         setArchivedProjects(response.projects);
         setTotalItems(response.total);
-      } catch (error) {
-        console.error('Failed to fetch archived projects:', error);
+      } catch {
+        // Error handled - failed to fetch archived projects
         setError('아카이브된 프로젝트를 불러오는데 실패했습니다.');
         toast({
           title: '오류',
@@ -137,8 +136,8 @@ export default function ArchivePage() {
         title: '복원 완료',
         description: '프로젝트가 성공적으로 복원되었습니다.',
       });
-    } catch (error) {
-      console.error('Failed to restore project:', error);
+    } catch {
+      // Error handled - failed to restore project
       toast({
         title: '복원 실패',
         description: '프로젝트 복원 중 오류가 발생했습니다.',
@@ -164,8 +163,8 @@ export default function ArchivePage() {
         title: '일괄 복원 완료',
         description: `${selectedProjects.length}개 프로젝트가 복원되었습니다.`,
       });
-    } catch (error) {
-      console.error('Failed to batch restore projects:', error);
+    } catch {
+      // Error handled - batch restore failed
       toast({
         title: '일괄 복원 실패',
         description: '프로젝트 복원 중 오류가 발생했습니다.',
@@ -192,8 +191,8 @@ export default function ArchivePage() {
         title: '삭제 완료',
         description: '프로젝트가 영구적으로 삭제되었습니다.',
       });
-    } catch (error) {
-      console.error('Failed to delete project:', error);
+    } catch {
+      // Error handled - failed to delete project
       toast({
         title: '삭제 실패',
         description: '프로젝트 삭제 중 오류가 발생했습니다.',

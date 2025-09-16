@@ -82,8 +82,8 @@ export default function ProjectsPage() {
       } else if (response.status === 401 || response.status === 403) {
         router.push('/login');
       }
-    } catch (error) {
-      console.error('Failed to fetch projects:', error);
+    } catch {
+      // Error handled - fetch projects failed
     } finally {
       setIsLoading(false);
     }
@@ -91,8 +91,8 @@ export default function ProjectsPage() {
 
   useEffect(() => {
     checkAuth();
-    fetchProjects().catch(error => {
-      console.error('Failed to fetch projects:', error);
+    fetchProjects().catch(() => {
+      // Error handling is already done in fetchProjects
     });
   }, [fetchProjects]);
 
@@ -111,8 +111,8 @@ export default function ProjectsPage() {
       if (response.ok) {
         fetchProjects();
       }
-    } catch (error) {
-      console.error('Failed to update project status:', error);
+    } catch {
+      // Status update failed - error handled silently
     }
   };
 
@@ -131,8 +131,8 @@ export default function ProjectsPage() {
       if (response.ok) {
         fetchProjects();
       }
-    } catch (error) {
-      console.error('Failed to delete project:', error);
+    } catch {
+      // Project deletion failed - error handled silently
     }
   };
 

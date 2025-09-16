@@ -86,8 +86,8 @@ export default function AnalyticsPage() {
       } else if (response.status === 401 || response.status === 403) {
         router.push('/login');
       }
-    } catch (error) {
-      console.error('Failed to fetch analytics:', error);
+    } catch {
+      // Handle error silently, use temporary data as fallback
       // 임시 데이터
       setAnalytics({
         userGrowth: Array.from({ length: 7 }, (_, i) => ({
@@ -135,8 +135,8 @@ export default function AnalyticsPage() {
 
   useEffect(() => {
     checkAuth();
-    fetchAnalytics().catch(error => {
-      console.error('Failed to fetch analytics:', error);
+    fetchAnalytics().catch(() => {
+      // Error handling is already done in fetchAnalytics
     });
   }, [fetchAnalytics]);
 

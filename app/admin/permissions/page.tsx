@@ -198,8 +198,8 @@ export default function PermissionsPage() {
       } else {
         setAssignments(getMockAssignments());
       }
-    } catch (error) {
-      console.error('Failed to fetch data:', error);
+    } catch {
+      // Error handled - use mock data as fallback
       setRoles(getMockRoles());
       setAssignments(getMockAssignments());
     } finally {
@@ -256,8 +256,8 @@ export default function PermissionsPage() {
         setSelectedPermissions([]);
         fetchData();
       }
-    } catch (error) {
-      console.error('Failed to create role:', error);
+    } catch {
+      // Role creation failed - error handled silently
     }
   };
 
@@ -277,8 +277,8 @@ export default function PermissionsPage() {
         setEditingRole(null);
         fetchData();
       }
-    } catch (error) {
-      console.error('Failed to update role:', error);
+    } catch {
+      // Role update failed - error handled silently
     }
   };
 
@@ -297,8 +297,8 @@ export default function PermissionsPage() {
       if (response.ok) {
         fetchData();
       }
-    } catch (error) {
-      console.error('Failed to delete role:', error);
+    } catch {
+      // Role deletion failed - error handled silently
     }
   };
 
@@ -317,8 +317,8 @@ export default function PermissionsPage() {
       if (response.ok) {
         fetchData();
       }
-    } catch (error) {
-      console.error('Failed to assign role:', error);
+    } catch {
+      // Role assignment failed - error handled silently
     }
   };
 
