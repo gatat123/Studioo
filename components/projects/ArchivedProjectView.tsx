@@ -89,14 +89,14 @@ export function ArchivedProjectView({ projectId, isArchived: _isArchived = true 
         lineArtImages: scene.images?.filter((img: Image) => img.type === 'lineart')
           .map((img: Image) => ({
             ...img,
-            url: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+            url: img.fileUrl,
+            fileUrl: img.fileUrl
           })) || [],
         artImages: scene.images?.filter((img: Image) => img.type === 'art')
           .map((img: Image) => ({
             ...img,
-            url: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+            url: img.fileUrl,
+            fileUrl: img.fileUrl
           })) || []
       }))
 

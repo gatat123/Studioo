@@ -63,10 +63,10 @@ C:\Users\a0109\
 
 ### Railway 배포 URL
 - **프론트엔드**: https://studioo-production.up.railway.app
-- **백엔드**: https://courageous-spirit-production.up.railway.app
+- **백엔드**: https://studioo-backend-production.up.railway.app
 
 ### 환경 변수
-- 프론트엔드: `NEXT_PUBLIC_BACKEND_URL=https://courageous-spirit-production.up.railway.app`
+- 프론트엔드: `NEXT_PUBLIC_BACKEND_URL=https://studioo-backend-production.up.railway.app`
 - 백엔드: `DATABASE_URL`, `JWT_SECRET`, `NEXTAUTH_SECRET`
 
 ## 📝 개발 명령어

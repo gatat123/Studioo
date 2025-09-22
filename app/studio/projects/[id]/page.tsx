@@ -273,14 +273,14 @@ export default function ProjectDetailPage() {
         lineArtImages: scene.images?.filter((img: Image) => img.type === 'lineart')
           .map((img: Image) => ({
             ...img,
-            url: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+            url: img.fileUrl,
+            fileUrl: img.fileUrl
           })) || [],
         artImages: scene.images?.filter((img: Image) => img.type === 'art')
           .map((img: Image) => ({
             ...img,
-            url: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+            url: img.fileUrl,
+            fileUrl: img.fileUrl
           })) || []
       }))
 
@@ -838,8 +838,8 @@ export default function ProjectDetailPage() {
                           // Fix image URLs and add version numbers
                           const fixedHistory = history.map((img: ProjectImage, index: number) => ({
                             ...img,
-                            url: img.url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-                            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
+                            url: img.url,
+                            fileUrl: img.fileUrl,
                             version: (img as ProjectImage).version || history.length - index // Add version if missing
                           }))
                           setImageHistory(fixedHistory)
