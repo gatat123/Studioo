@@ -14,7 +14,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { cn } from '@/lib/utils';
 import FriendsDropdown from '@/components/friends/FriendsDropdown';
 import { MessagesModal } from '@/components/messages/MessagesModal';
 import NotificationDropdown from '@/components/notifications/NotificationDropdown';
@@ -39,17 +38,12 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
   userEmail,
   userProfileImage,
   friendRequestCount,
-  pathname
+  pathname: _pathname
 }) => {
   const { user: currentUser } = useAuthStore();
   const [isFriendsOpen, setIsFriendsOpen] = useState(false);
   const { toast } = useToast();
 
-  const navLinks = [
-    { href: '/studio', label: 'Studio' },
-    { href: '/studio/projects', label: 'Projects' },
-    { href: '/studio/recent', label: 'Recent' },
-  ];
 
   // Listen for new invitations via Socket.io
   useEffect(() => {
@@ -115,23 +109,8 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
           </span>
         </Link>
 
-        {/* Navigation Links */}
-        <nav className="hidden md:flex items-center space-x-6 flex-1">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={cn(
-                'text-sm font-medium transition-colors hover:text-black',
-                pathname === link.href
-                  ? 'text-black'
-                  : 'text-gray-500'
-              )}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+        {/* Empty space for flex alignment */}
+        <div className="hidden md:flex flex-1" />
 
         {/* Right Section */}
         <div className="flex items-center space-x-4 ml-auto">
