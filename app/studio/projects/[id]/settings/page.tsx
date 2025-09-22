@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
-import { CalendarIcon, Copy, Trash2, UserPlus, Users, Settings, Bell, Archive } from 'lucide-react'
+import { CalendarIcon, Copy, Trash2, Users, Settings, Bell, Archive } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -195,23 +195,6 @@ export default function ProjectSettingsPage() {
     }
   }
 
-  const handleGenerateInviteCode = async () => {
-    try {
-      const result = await projectsAPI.generateInviteCode(projectId)
-      setInviteCode(result.inviteCode)
-      toast({
-        title: '초대 코드 생성',
-        description: '새로운 초대 코드가 생성되었습니다.',
-      })
-    } catch {
-      // 초대 코드 생성 실패
-      toast({
-        title: '오류',
-        description: '초대 코드 생성에 실패했습니다.',
-        variant: 'destructive',
-      })
-    }
-  }
 
   const handleCopyInviteCode = () => {
     navigator.clipboard.writeText(inviteCode)
@@ -452,16 +435,6 @@ export default function ProjectSettingsPage() {
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleGenerateInviteCode}
-                className="w-full"
-                disabled={!canEdit}
-              >
-                <UserPlus className="mr-2 h-4 w-4" />
-                {canEdit ? 'Generate New Code' : 'No Permission'}
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>

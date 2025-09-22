@@ -67,9 +67,14 @@ export default function LoginPage() {
         username: data.username,
         password: data.password
       });
-      
+
       // 로그인 성공 시 스튜디오 페이지로 이동
-      router.push('/studio');
+      // router.refresh()를 먼저 호출하여 서버 상태 동기화
+      router.refresh();
+      // 약간의 딜레이 후 페이지 이동 (상태 업데이트 완료 보장)
+      setTimeout(() => {
+        router.push('/studio');
+      }, 100);
     } catch {
       // 에러는 store에서 처리됨
     }
