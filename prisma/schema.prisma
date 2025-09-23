@@ -66,7 +66,7 @@ model Project {
   character_list       Json?
   overall_story        String?
   set_list             Json?
-  project_type         String                 @default("studio") @db.VarChar(50)
+  project_type         String                 @db.VarChar(50)
   collaboration_logs   collaboration_logs[]
   comments             comments[]
   notifications        notifications[]
