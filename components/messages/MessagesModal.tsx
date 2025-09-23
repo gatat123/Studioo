@@ -302,9 +302,9 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
             className="fixed z-50 bg-white rounded-lg shadow-2xl border h-[550px] w-[420px] flex flex-col"
             style={{
               position: 'fixed',
-              top: '80px',  // 헤더 바로 아래 위치
+              top: '120px',  // 헤더 아래 여유있게 위치
               right: '40px',
-              maxHeight: 'calc(100vh - 100px)'
+              maxHeight: 'calc(100vh - 140px)'
             }}
           >
             {/* Header */}
