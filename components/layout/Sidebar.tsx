@@ -14,7 +14,7 @@ import {
   LayoutGrid,
   FileText,
   Palette,
-  Star,
+  Briefcase,
   Archive,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -205,10 +205,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: <Clock className="h-4 w-4" />,
     },
     {
-      id: 'starred',
-      label: 'Starred',
-      href: '/studio/starred',
-      icon: <Star className="h-4 w-4" />,
+      id: 'work',
+      label: 'Work',
+      href: '/studio/work',
+      icon: <Briefcase className="h-4 w-4" />,
     },
     {
       id: 'team',
