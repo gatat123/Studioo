@@ -70,7 +70,7 @@ export default function WorkPage() {
       const data = await projectsAPI.getProjects('work')
 
       // Filter only work projects on frontend as additional safety
-      const workProjects = data.filter(p => p.projectType === 'work')
+      const workProjects = data.filter(p => p.project_type === 'work')
 
       setProjects(workProjects)
       if (workProjects.length > 0 && !selectedProject) {

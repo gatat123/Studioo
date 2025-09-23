@@ -34,17 +34,21 @@ export interface Studio {
 // Project types
 export interface Project {
   id: string;
-  studioId: string;
-  creatorId: string;
+  studio_id: string;
+  creator_id: string;
   name: string;
   description?: string | null;
   deadline?: string | Date | null;
   tag?: 'illustration' | 'storyboard' | null;
-  inviteCode?: string | null;
+  invite_code?: string | null;
   status: 'active' | 'completed' | 'archived';
-  hasUpdates: boolean;
-  createdAt: string | Date;
-  updatedAt: string | Date;
+  project_type: 'studio' | 'work';
+  has_updates: boolean;
+  created_at: string | Date;
+  updated_at: string | Date;
+  character_list?: any;
+  overall_story?: string | null;
+  set_list?: any;
   studio?: Studio;
   creator?: User;
   participants?: ProjectParticipant[];
