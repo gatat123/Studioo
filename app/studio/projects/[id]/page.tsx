@@ -57,6 +57,8 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import ScenePlayModal from '@/components/projects/ScenePlayModal'
+import TaskBoard from '@/components/work/TaskBoard'
+import TodoList from '@/components/work/TodoList'
 
 // Removed AnnotationLayer - using AnnotationModal instead
 
@@ -603,45 +605,56 @@ export default function ProjectDetailPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold">{project.name}</h1>
-              <Badge variant={project.tag === 'illustration' ? 'default' : 'secondary'}>
-                {project.tag === 'illustration' ? '일러스트' : '스토리보드'}
-              </Badge>
+              {project.project_type === 'work' ? (
+                <Badge variant="default">
+                  업무
+                </Badge>
+              ) : (
+                <Badge variant={project.tag === 'illustration' ? 'default' : 'secondary'}>
+                  {project.tag === 'illustration' ? '일러스트' : '스토리보드'}
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground">{project.description}</p>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
-          {/* Storyboard-specific buttons */}
-          {project.tag === 'storyboard' && (
+          {/* Studio project buttons */}
+          {project.project_type === 'studio' && (
             <>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowOverallStoryModal(true)}
-              >
-                <FileText className="h-4 w-4 mr-1" />
-                전체 스토리
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowSetListModal(true)}
-              >
-                <Package className="h-4 w-4 mr-1" />
-                세트
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowCharacterListModal(true)}
-              >
-                <Users className="h-4 w-4 mr-1" />
-                캐릭터
-              </Button>
+              {/* Storyboard-specific buttons */}
+              {project.tag === 'storyboard' && (
+                <>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowOverallStoryModal(true)}
+                  >
+                    <FileText className="h-4 w-4 mr-1" />
+                    전체 스토리
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowSetListModal(true)}
+                  >
+                    <Package className="h-4 w-4 mr-1" />
+                    세트
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCharacterListModal(true)}
+                  >
+                    <Users className="h-4 w-4 mr-1" />
+                    캐릭터
+                  </Button>
+                </>
+              )}
             </>
           )}
-          
+
           <Link href={`/studio/projects/${projectId}/settings`}>
             <Button variant="outline" size="icon">
               <Settings className="h-4 w-4" />
@@ -652,8 +665,20 @@ export default function ProjectDetailPage() {
 
       {/* Main Content - Different layout based on project type */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Left Panel - Scene List (only for storyboard) */}
-        {project.tag === 'storyboard' ? (
+        {/* Work Project Layout */}
+        {project.project_type === 'work' ? (
+          <div className="flex-1 flex gap-6 p-6">
+            <div className="flex-1">
+              <TaskBoard projectId={projectId} />
+            </div>
+            <div className="w-96">
+              <TodoList projectId={projectId} />
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Studio Project Layout - Left Panel - Scene List (only for storyboard) */}
+            {project.tag === 'storyboard' ? (
           <div className="w-80 border-r bg-card flex flex-col">
           <div className="p-4 border-b">
             <div className="flex items-center justify-between mb-3">
@@ -1141,6 +1166,8 @@ export default function ProjectDetailPage() {
             }}
           />
         </div>
+          </>
+        )}
       </div>
 
       {/* Image Viewer Modal */}
@@ -1494,8 +1521,8 @@ export default function ProjectDetailPage() {
         annotation={annotationModalData}
       />
       
-      {/* Storyboard-specific modals */}
-      {project.tag === 'storyboard' && (
+      {/* Studio project-specific modals */}
+      {project.project_type === 'studio' && project.tag === 'storyboard' && (
         <>
           <OverallStoryModal
             open={showOverallStoryModal}
@@ -1504,7 +1531,7 @@ export default function ProjectDetailPage() {
             initialStory={overallStory}
             isReadOnly={false}
           />
-          
+
           <SetListModal
             open={showSetListModal}
             onOpenChange={setShowSetListModal}
@@ -1512,7 +1539,7 @@ export default function ProjectDetailPage() {
             initialSetList={setList}
             isReadOnly={false}
           />
-          
+
           <CharacterListModal
             open={showCharacterListModal}
             onOpenChange={setShowCharacterListModal}
@@ -1520,7 +1547,7 @@ export default function ProjectDetailPage() {
             initialCharacterList={characterList}
             isReadOnly={false}
           />
-          
+
           {/* Scene Script (bottom panel) */}
           {selectedScene && (
             <SceneScript
