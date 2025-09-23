@@ -103,10 +103,12 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
       setIsLoading(true)
       
       // Create project through API
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
       const token = localStorage.getItem('token');
-      
-      const response = await fetch(`${backendUrl}/api/projects`, {
+
+      // Use relative URL if no backend URL is configured (for Next.js API routes)
+      const apiUrl = backendUrl ? `${backendUrl}/api/projects` : '/api/projects';
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
