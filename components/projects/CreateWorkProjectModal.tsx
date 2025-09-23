@@ -6,7 +6,6 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import * as z from 'zod'
 import { Copy, Check, Loader2 } from 'lucide-react'
 import { useProjectStore } from '@/store/useProjectStore'
-import { useRouter } from 'next/navigation'
 import { useToast } from '@/hooks/use-toast'
 import {
   Dialog,
@@ -41,8 +40,7 @@ export function CreateWorkProjectModal({ open, onOpenChange }: CreateWorkProject
   const [inviteCode, setInviteCode] = useState('')
   const [copied, setCopied] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
-  const [createdProjectId, setCreatedProjectId] = useState<string | null>(null)
-  const router = useRouter()
+  const [_createdProjectId, setCreatedProjectId] = useState<string | null>(null)
   const { toast } = useToast()
 
   const {

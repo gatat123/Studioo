@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Plus, Users, Calendar, Filter, Search } from 'lucide-react'
+import { Plus, Search } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -18,7 +17,6 @@ import { CreateWorkProjectModal } from '@/components/projects/CreateWorkProjectM
 import JoinProjectModal from '@/components/projects/JoinProjectModal'
 
 export default function WorkPage() {
-  const router = useRouter()
   const { toast } = useToast()
   const { user } = useAuthStore()
   const [projects, setProjects] = useState([])
@@ -29,10 +27,20 @@ export default function WorkPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showJoinModal, setShowJoinModal] = useState(false)
 
-  // Load projects on mount
+  // Clear localStorage cache and load projects on mount
   useEffect(() => {
+    // Clear any cached project data
+    if (typeof window !== 'undefined') {
+      const keysToRemove = ['project-storage', 'projects-cache', 'work-projects'];
+      keysToRemove.forEach(key => {
+        if (localStorage.getItem(key)) {
+          // Clearing localStorage key
+          localStorage.removeItem(key);
+        }
+      });
+    }
     loadProjects()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Socket.io listeners for real-time updates
   useEffect(() => {
@@ -53,17 +61,23 @@ export default function WorkPage() {
       socket.off('todo:updated')
       socket.off('todo:completed')
     }
-  }, [selectedProject])
+  }, [selectedProject]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadProjects = async () => {
     try {
       setLoading(true)
+      // Loading projects with type: work
       const data = await projectsAPI.getProjects('work')
-      setProjects(data)
-      if (data.length > 0 && !selectedProject) {
-        setSelectedProject(data[0])
+
+      // Filter only work projects on frontend as additional safety
+      const workProjects = data.filter(p => p.projectType === 'work')
+
+      setProjects(workProjects)
+      if (workProjects.length > 0 && !selectedProject) {
+        setSelectedProject(workProjects[0])
       }
     } catch (error) {
+      console.error('[Work Page] Error loading projects:', error)
       toast({
         title: '프로젝트 불러오기 실패',
         description: '프로젝트 목록을 불러올 수 없습니다.',

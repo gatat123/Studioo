@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { MessageSquare, Search, X, ChevronDown, UserPlus, MessageCircle } from 'lucide-react'
+import { MessageSquare, Search, X, ChevronDown, UserPlus, MessageCircle, GripHorizontal } from 'lucide-react'
 import { socketClient } from '@/lib/socket/client'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
@@ -80,6 +80,20 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
   const [friends, setFriends] = useState<Friend[]>([])
   const [friendSearchQuery, setFriendSearchQuery] = useState('')
   // const searchTimeoutRef = useRef<NodeJS.Timeout>() // Not currently used
+
+  // Drag state for minimized modal - 헤더 아래 위치 (top: 70px)
+  const [position, setPosition] = useState({ x: -1, y: 70 }) // x: -1로 초기화하여 첫 위치 설정 보장
+  const [isDragging, setIsDragging] = useState(false)
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const minimizedRef = useRef<HTMLDivElement>(null)
+
+  // Initialize position to top-right corner (헤더 아래)
+  useEffect(() => {
+    if (isMinimized && position.x === -1) {
+      const windowWidth = window.innerWidth
+      setPosition({ x: windowWidth - 280, y: 70 }) // 상단 70px 위치 고정
+    }
+  }, [isMinimized, position.x])
 
   useEffect(() => {
     // Get current user ID from localStorage
@@ -245,7 +259,7 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
     const now = new Date()
     const diff = now.getTime() - messageDate.getTime()
     const oneDay = 24 * 60 * 60 * 1000
-    
+
     if (diff < oneDay) {
       return format(messageDate, 'HH:mm')
     } else if (diff < oneDay * 2) {
@@ -256,6 +270,50 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
       return format(messageDate, 'MM.dd')
     }
   }
+
+  // Drag handlers for minimized modal
+  const handleMouseDown = (e: React.MouseEvent) => {
+    setIsDragging(true)
+    setDragStart({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    })
+  }
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return
+
+      const newX = e.clientX - dragStart.x
+      const newY = e.clientY - dragStart.y
+
+      // Get window dimensions
+      const windowWidth = window.innerWidth
+      const windowHeight = window.innerHeight
+      const modalWidth = minimizedRef.current?.offsetWidth || 200
+      const modalHeight = minimizedRef.current?.offsetHeight || 60
+
+      // Boundary checks
+      const boundedX = Math.max(0, Math.min(newX, windowWidth - modalWidth))
+      const boundedY = Math.max(60, Math.min(newY, windowHeight - modalHeight)) // 60px for header
+
+      setPosition({ x: boundedX, y: boundedY })
+    }
+
+    const handleMouseUp = () => {
+      setIsDragging(false)
+    }
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove)
+        document.removeEventListener('mouseup', handleMouseUp)
+      }
+    }
+  }, [isDragging, dragStart.x, dragStart.y])
 
   const filteredConversations = conversations.filter(conv =>
     conv.friend.nickname.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -299,7 +357,7 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
               stiffness: 300,
               damping: 30
             }}
-            className="fixed z-50 bg-white rounded-lg shadow-2xl border h-[550px] w-[420px] flex flex-col"
+            className="fixed z-50 bg-white dark:bg-gray-800 rounded-lg shadow-2xl border dark:border-gray-700 h-[550px] w-[420px] flex flex-col"
             style={{
               position: 'fixed',
               top: '120px',  // 헤더 아래 여유있게 위치
@@ -515,36 +573,68 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
         )}
       </AnimatePresence>
 
-      {/* Minimized Floating Button */}
+      {/* Minimized Floating Container */}
       <AnimatePresence>
         {isOpen && isMinimized && !selectedFriend && (
           <motion.div
-            initial={{ opacity: 0, scale: 0.8, y: 100 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.8, y: 100 }}
+            ref={minimizedRef}
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
             transition={{
               type: 'spring',
               stiffness: 300,
               damping: 25
             }}
-            className="fixed bottom-6 right-6 z-50"
+            className="fixed z-50"
+            style={{
+              left: `${position.x || (window.innerWidth - 250)}px`,
+              top: `${position.y || 70}px`,
+              cursor: isDragging ? 'move' : 'default'
+            }}
           >
-            <Button
-              size="lg"
-              className="rounded-full h-14 px-5 shadow-lg hover:shadow-xl transition-shadow relative"
-              onClick={() => setIsMinimized(false)}
-            >
-              <MessageSquare className="h-5 w-5 mr-2" />
-              <span className="font-medium">메시지</span>
-              {totalUnread > 0 && (
-                <Badge
-                  className="absolute -top-2 -right-2 h-6 w-6 p-0 flex items-center justify-center"
-                  variant="destructive"
-                >
-                  {totalUnread > 99 ? '99+' : totalUnread}
-                </Badge>
-              )}
-            </Button>
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl border dark:border-gray-700 flex items-center gap-1 p-2 select-none">
+              {/* Drag Handle */}
+              <div
+                onMouseDown={handleMouseDown}
+                className="cursor-move p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                title="드래그하여 이동"
+              >
+                <GripHorizontal className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+              </div>
+
+              {/* Main Button */}
+              <Button
+                variant="ghost"
+                className="h-10 px-3 hover:bg-gray-50 dark:hover:bg-gray-700 relative"
+                onClick={() => setIsMinimized(false)}
+              >
+                <MessageSquare className="h-5 w-5 mr-2" />
+                <span className="font-medium">메시지</span>
+                {totalUnread > 0 && (
+                  <Badge
+                    className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center animate-pulse"
+                    variant="destructive"
+                  >
+                    {totalUnread > 99 ? '99+' : totalUnread}
+                  </Badge>
+                )}
+              </Button>
+
+              {/* Close Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:bg-gray-100 dark:hover:bg-gray-700"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsOpen(false)
+                  setPosition({ x: -1, y: 70 }) // Reset position when closing (헤더 아래)
+                }}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
