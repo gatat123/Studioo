@@ -452,16 +452,6 @@ export default function ProjectSettingsPage() {
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleGenerateInviteCode}
-                className="w-full"
-                disabled={!canEdit}
-              >
-                <UserPlus className="mr-2 h-4 w-4" />
-                {canEdit ? 'Generate New Code' : 'No Permission'}
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>

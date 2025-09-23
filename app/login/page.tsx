@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -13,21 +13,46 @@ import { Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { login, isLoading, error, clearError } = useAuthStore();
+  const { login, isLoading, error, clearError, isAuthenticated } = useAuthStore();
   const [formData, setFormData] = useState({
     username: '',
     password: '',
   });
 
+  // 인증 상태가 변경되면 자동으로 리다이렉션
+  useEffect(() => {
+    if (isAuthenticated) {
+      // Next.js 15에서는 replace가 더 안정적으로 작동
+      router.replace('/studio');
+      // 추가적으로 refresh를 호출하여 서버 상태 동기화
+      router.refresh();
+    }
+  }, [isAuthenticated, router]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     clearError();
-    
+
     try {
       await login(formData);
-      router.push('/studio');
-    } catch {
+
+      // 로그인 성공 후 여러 방법으로 리다이렉션 시도
+      // 1. replace 사용 (push보다 안정적)
+      router.replace('/studio');
+
+      // 2. refresh를 통한 서버 상태 동기화
+      router.refresh();
+
+      // 3. 폴백으로 window.location 사용 (최후의 수단)
+      setTimeout(() => {
+        // 만약 1초 후에도 페이지가 변경되지 않았다면 강제 리다이렉션
+        if (window.location.pathname === '/login') {
+          window.location.href = '/studio';
+        }
+      }, 1000);
+    } catch (error) {
       // Error is handled in the store
+      console.error('Login error:', error);
     }
   };
 

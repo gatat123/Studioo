@@ -66,13 +66,21 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
 
         // Get participants
         const participantsData = await projectsAPI.getParticipants(projectId)
-        setParticipants(participantsData)
-      } catch {
+        // Ensure participantsData is an array
+        if (Array.isArray(participantsData)) {
+          setParticipants(participantsData)
+        } else {
+          console.error('Participants data is not an array:', participantsData)
+          setParticipants([])
+        }
+      } catch (error) {
+        console.error('Failed to load participants:', error)
         toast({
           title: 'Error',
           description: 'Failed to load project members',
           variant: 'destructive',
         })
+        setParticipants([])
       } finally {
         setLoading(false)
       }
@@ -82,7 +90,9 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
   }, [projectId, toast])
 
   const isOwner = project?.creatorId === currentUser?.id
-  const currentParticipant = participants.find(p => p.userId === currentUser?.id)
+  const currentParticipant = Array.isArray(participants)
+    ? participants.find(p => p.userId === currentUser?.id)
+    : undefined
   const canManageMembers = isOwner || currentParticipant?.role === 'owner'
 
   const handleRoleChange = async (participant: ProjectParticipant, newRole: string) => {
@@ -192,8 +202,8 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
 
   // Filter out admin from participants list when in admin mode
   const displayParticipants = isAdminMode && currentUser?.isAdmin
-    ? participants.filter(p => p.userId !== currentUser.id)
-    : participants
+    ? (Array.isArray(participants) ? participants.filter(p => p.userId !== currentUser.id) : [])
+    : (Array.isArray(participants) ? participants : [])
 
   if (loading) {
     return (
