@@ -1,0 +1,130 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String           @id @default(uuid())
+  email           String           @unique
+  username        String           @unique
+  nickname        String
+  password        String
+  profileImageUrl String?
+  role            String           @default("user")
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  deletedAt       DateTime?
+
+  // Relations
+  projects        ProjectMember[]
+  createdTasks    Task[]           @relation("TaskCreatedBy")
+  taskAssignees   TaskAssignee[]
+  todos           Todo[]
+  createdProjects Project[]        @relation("ProjectCreatedBy")
+  deletedProjects Project[]        @relation("ProjectDeletedBy")
+  deletedTasks    Task[]           @relation("TaskDeletedBy")
+
+  @@map("users")
+}
+
+model Project {
+  id          String           @id @default(uuid())
+  name        String
+  description String?
+  status      String           @default("active")
+  createdBy   String
+  deletedBy   String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  creator     User             @relation("ProjectCreatedBy", fields: [createdBy], references: [id])
+  deleter     User?            @relation("ProjectDeletedBy", fields: [deletedBy], references: [id])
+  members     ProjectMember[]
+  tasks       Task[]
+
+  @@map("projects")
+}
+
+model ProjectMember {
+  id        String    @id @default(uuid())
+  projectId String
+  userId    String
+  role      String    @default("member")
+  joinedAt  DateTime  @default(now())
+  deletedAt DateTime?
+
+  // Relations
+  project   Project   @relation(fields: [projectId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
+
+  @@unique([projectId, userId])
+  @@map("project_members")
+}
+
+model Task {
+  id          String         @id @default(uuid())
+  projectId   String
+  title       String
+  description String?
+  status      String         @default("todo")
+  priority    String         @default("medium")
+  dueDate     DateTime?
+  createdBy   String
+  deletedBy   String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  project       Project        @relation(fields: [projectId], references: [id])
+  creator       User           @relation("TaskCreatedBy", fields: [createdBy], references: [id])
+  deleter       User?          @relation("TaskDeletedBy", fields: [deletedBy], references: [id])
+  assignedUsers TaskAssignee[]
+  todos         Todo[]
+
+  @@map("tasks")
+}
+
+model TaskAssignee {
+  id         String    @id @default(uuid())
+  taskId     String
+  userId     String
+  assignedBy String
+  assignedAt DateTime  @default(now())
+
+  // Relations
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([taskId, userId])
+  @@map("task_assignees")
+}
+
+model Todo {
+  id          String    @id @default(uuid())
+  taskId      String
+  userId      String
+  title       String
+  description String?
+  completed   Boolean   @default(false)
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  // Relations
+  task Task @relation(fields: [taskId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("todos")
+}

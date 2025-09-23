@@ -16,39 +16,26 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 
-// Validation schema
-const projectSchema = z.object({
-  name: z.string().min(1, 'Project name is required').max(100, 'Project name is too long'),
-  projectType: z.enum(['studio', 'work'], {
-    required_error: 'Please select a service type',
-  }).default('studio'),
-  type: z.enum(['illustration', 'storyboard'], {
-    required_error: 'Please select a project type',
-  }),
-  description: z.string().max(500, 'Description is too long').optional(),
+// Validation schema for Work projects
+const workProjectSchema = z.object({
+  name: z.string().min(1, '프로젝트 이름을 입력해주세요').max(100, '프로젝트 이름이 너무 깁니다'),
+  description: z.string().max(500, '설명이 너무 깁니다').optional(),
   deadline: z.string().optional(),
 })
 
-type ProjectFormData = z.infer<typeof projectSchema>
+type WorkProjectFormData = z.infer<typeof workProjectSchema>
 
-interface CreateProjectModalProps {
+interface CreateWorkProjectModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalProps) {
+export function CreateWorkProjectModal({ open, onOpenChange }: CreateWorkProjectModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [inviteCode, setInviteCode] = useState('')
@@ -57,8 +44,6 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
   const [createdProjectId, setCreatedProjectId] = useState<string | null>(null)
   const router = useRouter()
   const { toast } = useToast()
-  
-  // Removed unused store methods
 
   const {
     register,
@@ -67,15 +52,14 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
     setValue,
     reset,
     formState: { errors },
-  } = useForm<ProjectFormData>({
-    resolver: zodResolver(projectSchema),
+  } = useForm<WorkProjectFormData>({
+    resolver: zodResolver(workProjectSchema),
     defaultValues: {
       name: '',
       description: '',
     },
   })
 
-  // Removed unused projectType
   // Generate invite code
   const generateInviteCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -93,18 +77,19 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
     } catch {
+      // Silent fail
     }
   }
 
   // Handle form submission
-  const onSubmit = async (data: ProjectFormData) => {
+  const onSubmit = async (data: WorkProjectFormData) => {
     try {
       setIsLoading(true)
-      
+
       // Create project through API
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
       const token = localStorage.getItem('token');
-      
+
       const response = await fetch(`${backendUrl}/api/projects`, {
         method: 'POST',
         headers: {
@@ -115,14 +100,13 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
         body: JSON.stringify({
           name: data.name,
           description: data.description,
-          projectType: data.projectType,
-          tag: data.type as 'illustration' | 'storyboard',
+          projectType: 'work', // Always 'work' for Work projects
           deadline: selectedDate ? selectedDate.toISOString() : undefined,
         }),
       })
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'Failed to create project' }))
+        const errorData = await response.json().catch(() => ({ message: '프로젝트 생성에 실패했습니다' }))
         toast({
           title: '프로젝트 생성 실패',
           description: errorData.message || '프로젝트를 생성하는 중 오류가 발생했습니다.',
@@ -135,7 +119,7 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
       // Backend returns { success: true, data: project }
       const newProject = responseData.data || responseData
       setCreatedProjectId(newProject.id)
-      
+
       // Generate invite code for the created project
       if (newProject.inviteCode) {
         setInviteCode(newProject.inviteCode)
@@ -143,13 +127,13 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
         const code = generateInviteCode()
         setInviteCode(code)
       }
-      
+
       // Show success state
       setShowSuccess(true)
-      
+
       // Refresh projects list
       const fetchProjects = useProjectStore.getState().fetchProjects;
-      await fetchProjects();
+      await fetchProjects('work');
     } catch {
       toast({
         title: '프로젝트 생성 실패',
@@ -181,19 +165,19 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
         {!showSuccess ? (
           <>
             <DialogHeader>
-              <DialogTitle>Create New Project</DialogTitle>
+              <DialogTitle>새 업무 프로젝트 생성</DialogTitle>
               <DialogDescription>
-                Create a new project and invite collaborators to work together.
+                팀과 함께 업무를 관리할 프로젝트를 생성합니다.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="grid gap-4 py-4">
                 {/* Project Name */}
                 <div className="grid gap-2">
-                  <Label htmlFor="name">Project Name</Label>
+                  <Label htmlFor="name">프로젝트명</Label>
                   <Input
                     id="name"
-                    placeholder="Enter project name"
+                    placeholder="예: 2024 Q1 마케팅 캠페인"
                     {...register('name')}
                     disabled={isLoading}
                   />
@@ -202,52 +186,12 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
                   )}
                 </div>
 
-                {/* Service Type */}
-                <div className="grid gap-2">
-                  <Label htmlFor="projectType">Service Type</Label>
-                  <Select
-                    disabled={isLoading}
-                    onValueChange={(value) => setValue('projectType', value as 'studio' | 'work')}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select service type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="studio">Studio (스토리보드 협업)</SelectItem>
-                      <SelectItem value="work">Work (업무 관리)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.projectType && (
-                    <p className="text-sm text-red-500">{errors.projectType.message}</p>
-                  )}
-                </div>
-
-                {/* Project Type */}
-                <div className="grid gap-2">
-                  <Label htmlFor="type">Project Type</Label>
-                  <Select
-                    disabled={isLoading}
-                    onValueChange={(value) => setValue('type', value as 'illustration' | 'storyboard')}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select project type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="illustration">Illustration</SelectItem>
-                      <SelectItem value="storyboard">Storyboard</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.type && (
-                    <p className="text-sm text-red-500">{errors.type.message}</p>
-                  )}
-                </div>
-
                 {/* Description */}
                 <div className="grid gap-2">
-                  <Label htmlFor="description">Description (Optional)</Label>
+                  <Label htmlFor="description">설명 (선택)</Label>
                   <Textarea
                     id="description"
-                    placeholder="Enter project description"
+                    placeholder="프로젝트 설명을 입력해주세요"
                     {...register('description')}
                     disabled={isLoading}
                     rows={3}
@@ -256,9 +200,10 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
                     <p className="text-sm text-red-500">{errors.description.message}</p>
                   )}
                 </div>
+
                 {/* Deadline */}
                 <div className="grid gap-2">
-                  <Label htmlFor="deadline">Deadline (Optional)</Label>
+                  <Label htmlFor="deadline">마감일 (선택)</Label>
                   <div className="relative">
                     <Input
                       id="deadline"
@@ -280,11 +225,11 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
                   onClick={handleClose}
                   disabled={isLoading}
                 >
-                  Cancel
+                  취소
                 </Button>
                 <Button type="submit" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isLoading ? 'Creating...' : 'Create Project'}
+                  {isLoading ? '생성 중...' : '프로젝트 생성'}
                 </Button>
               </DialogFooter>
             </form>
@@ -295,14 +240,14 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
             <DialogHeader>
               <DialogTitle className="text-xl">🎉 프로젝트가 성공적으로 생성되었습니다!</DialogTitle>
               <DialogDescription>
-                이제 팀원들과 함께 작업할 수 있습니다.
+                이제 팀원들과 함께 업무를 관리할 수 있습니다.
               </DialogDescription>
             </DialogHeader>
             <div className="py-6">
               <div className="space-y-6">
                 {/* Project Info */}
                 <div className="p-4 bg-muted/50 rounded-lg">
-                  <Label className="text-sm text-muted-foreground">프로젝트 이름</Label>
+                  <Label className="text-sm text-muted-foreground">프로젝트명</Label>
                   <p className="font-medium text-lg">{watch('name')}</p>
                 </div>
 
@@ -351,7 +296,7 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
                     </div>
                     <div className="flex gap-2">
                       <span className="font-semibold text-primary">3.</span>
-                      <span>팀원은 스튜디오 홈에서 &quot;프로젝트 참가&quot; 버튼을 클릭합니다</span>
+                      <span>팀원은 Work 페이지에서 &quot;프로젝트 참여&quot; 버튼을 클릭합니다</span>
                     </div>
                     <div className="flex gap-2">
                       <span className="font-semibold text-primary">4.</span>
@@ -359,23 +304,14 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
                     </div>
                   </div>
                 </div>
-
-                {/* Tip */}
-                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg">
-                  <p className="text-xs text-blue-700 dark:text-blue-300">
-                    <span className="font-semibold">팁:</span> 프로젝트 설정 페이지에서 언제든지 초대 코드를 확인할 수 있습니다.
-                  </p>
-                </div>
               </div>
             </div>
             <DialogFooter>
               <Button onClick={() => {
-                if (createdProjectId) {
-                  router.push(`/studio/projects/${createdProjectId}`)
-                }
+                // Work projects don't have a detail page yet, just close
                 handleClose()
               }} className="w-full">
-                Go to Project
+                확인
               </Button>
             </DialogFooter>
           </>

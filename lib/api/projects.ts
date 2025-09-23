@@ -9,6 +9,7 @@ import { Project, ProjectParticipant } from '@/types';
 export interface CreateProjectDto {
   name: string;
   description?: string;
+  projectType?: 'studio' | 'work';
   deadline?: string;
   tag?: 'illustration' | 'storyboard';
 }
@@ -37,8 +38,8 @@ export const projectsAPI = {
   /**
    * Get all projects for current user
    */
-  async getProjects(): Promise<Project[]> {
-    const response = await api.get('/api/projects');
+  async getProjects(type: 'studio' | 'work' = 'studio'): Promise<Project[]> {
+    const response = await api.get('/api/projects', { params: { type } });
     // Backend returns { success: true, data: { projects: [...], pagination: {...} } }
     // Extract just the projects array
     return response.data?.projects || response.projects || [];

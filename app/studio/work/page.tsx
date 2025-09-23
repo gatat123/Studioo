@@ -14,7 +14,7 @@ import { socketClient } from '@/lib/socket/client'
 import TaskBoard from '@/components/work/TaskBoard'
 import TodoList from '@/components/work/TodoList'
 import TeamOverview from '@/components/work/TeamOverview'
-import { CreateProjectModal } from '@/components/projects/CreateProjectModal'
+import { CreateWorkProjectModal } from '@/components/projects/CreateWorkProjectModal'
 import JoinProjectModal from '@/components/projects/JoinProjectModal'
 
 export default function WorkPage() {
@@ -58,7 +58,7 @@ export default function WorkPage() {
   const loadProjects = async () => {
     try {
       setLoading(true)
-      const data = await projectsAPI.getProjects()
+      const data = await projectsAPI.getProjects('work')
       setProjects(data)
       if (data.length > 0 && !selectedProject) {
         setSelectedProject(data[0])
@@ -204,7 +204,7 @@ export default function WorkPage() {
       )}
 
       {/* Modals */}
-      <CreateProjectModal
+      <CreateWorkProjectModal
         open={showCreateModal}
         onOpenChange={(open) => {
           setShowCreateModal(open)

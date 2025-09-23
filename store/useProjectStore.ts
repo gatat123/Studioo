@@ -38,9 +38,9 @@ interface ProjectState {
   addComment: (projectId: string, sceneId: string, comment: Comment) => void;
   
   // Async actions (connected to API)
-  fetchProjects: () => Promise<void>;
+  fetchProjects: (type?: 'studio' | 'work') => Promise<void>;
   fetchProject: (projectId: string) => Promise<void>;
-  createProject: (projectData: { name: string; description?: string; deadline?: string; tag?: 'illustration' | 'storyboard' }) => Promise<void>;
+  createProject: (projectData: { name: string; description?: string; projectType?: 'studio' | 'work'; deadline?: string; tag?: 'illustration' | 'storyboard' }) => Promise<void>;
   joinProject: (inviteCode: string) => Promise<void>;
   
   // Settings actions
@@ -247,12 +247,12 @@ export const useProjectStore = create<ProjectState>()(
       },
 
       // Fetch all projects from API
-      fetchProjects: async () => {
+      fetchProjects: async (type: 'studio' | 'work' = 'studio') => {
         set({ isLoading: true, error: null });
-        
+
         try {
-          const projects = await projectsAPI.getProjects();
-          
+          const projects = await projectsAPI.getProjects(type);
+
           // Projects from API already have proper date formats
           const formattedProjects = projects.map(p => ({
             ...p,
@@ -260,7 +260,7 @@ export const useProjectStore = create<ProjectState>()(
             createdAt: p.createdAt,
             updatedAt: p.updatedAt,
           }));
-          
+
           set({ projects: formattedProjects, isLoading: false });
         } catch (error) {
           set({

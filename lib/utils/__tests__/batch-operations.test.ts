@@ -191,7 +191,7 @@ describe('Batch Operations Utils', () => {
   });
 
   describe('generateBatchResponse', () => {
-    it('should generate delete response with warning', () => {
+    it('should generate delete response with warning', async () => {
       const results: BatchResults = {
         successful: [{ id: '1', name: 'Project 1' }],
         failed: [],
@@ -199,14 +199,15 @@ describe('Batch Operations Utils', () => {
       };
 
       const response = generateBatchResponse(results, 'delete', 1);
-      const jsonResponse = JSON.parse(response.body);
+      const body = await response.text();
+      const jsonResponse = JSON.parse(body);
 
       expect(jsonResponse.success).toBe(true);
       expect(jsonResponse.message).toContain('deleted successfully');
       expect(jsonResponse.warning).toBe('Deleted projects cannot be recovered');
     });
 
-    it('should generate restore response without warning', () => {
+    it('should generate restore response without warning', async () => {
       const results: BatchResults = {
         successful: [{ id: '1', name: 'Project 1' }],
         failed: [],
@@ -214,14 +215,15 @@ describe('Batch Operations Utils', () => {
       };
 
       const response = generateBatchResponse(results, 'restore', 1);
-      const jsonResponse = JSON.parse(response.body);
+      const body = await response.text();
+      const jsonResponse = JSON.parse(body);
 
       expect(jsonResponse.success).toBe(true);
       expect(jsonResponse.message).toContain('restored successfully');
       expect(jsonResponse.warning).toBeUndefined();
     });
 
-    it('should include additional data when provided', () => {
+    it('should include additional data when provided', async () => {
       const results: BatchResults = {
         successful: [],
         failed: [],
@@ -234,13 +236,14 @@ describe('Batch Operations Utils', () => {
       };
 
       const response = generateBatchResponse(results, 'delete', 0, additionalData);
-      const jsonResponse = JSON.parse(response.body);
+      const body = await response.text();
+      const jsonResponse = JSON.parse(body);
 
       expect(jsonResponse.customField).toBe('customValue');
       expect(jsonResponse.anotherField).toBe(123);
     });
 
-    it('should handle failed operations correctly', () => {
+    it('should handle failed operations correctly', async () => {
       const results: BatchResults = {
         successful: [],
         failed: [{ id: '1', reason: 'Error' }],
@@ -248,7 +251,8 @@ describe('Batch Operations Utils', () => {
       };
 
       const response = generateBatchResponse(results, 'restore', 2);
-      const jsonResponse = JSON.parse(response.body);
+      const body = await response.text();
+      const jsonResponse = JSON.parse(body);
 
       expect(jsonResponse.success).toBe(false);
       expect(jsonResponse.summary.totalSuccessful).toBe(0);

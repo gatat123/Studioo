@@ -213,8 +213,8 @@ export function ProjectGrid() {
 
   // Load projects on mount and handle URL filter
   useEffect(() => {
-    fetchProjects();
-    
+    fetchProjects('studio'); // Only fetch studio projects
+
     // Get type filter from URL (updated to use 'type' instead of 'filter')
     const urlType = searchParams.get('type');
     if (urlType && (urlType === 'illustration' || urlType === 'storyboard')) {
