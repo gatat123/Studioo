@@ -14,7 +14,7 @@ import { socketClient } from '@/lib/socket/client'
 import TaskBoard from '@/components/work/TaskBoard'
 import TodoList from '@/components/work/TodoList'
 import TeamOverview from '@/components/work/TeamOverview'
-import CreateProjectModal from '@/components/projects/CreateProjectModal'
+import { CreateProjectModal } from '@/components/projects/CreateProjectModal'
 import JoinProjectModal from '@/components/projects/JoinProjectModal'
 
 export default function WorkPage() {
@@ -88,43 +88,7 @@ export default function WorkPage() {
     socket.emit('join:project', { projectId: project.id })
   }
 
-  const handleCreateProject = async (projectData) => {
-    try {
-      const newProject = await projectsAPI.createProject(projectData)
-      await loadProjects()
-      setSelectedProject(newProject)
-      setShowCreateModal(false)
-      toast({
-        title: '프로젝트 생성 완료',
-        description: '새 프로젝트가 생성되었습니다.'
-      })
-    } catch (error) {
-      toast({
-        title: '프로젝트 생성 실패',
-        description: '프로젝트를 생성할 수 없습니다.',
-        variant: 'destructive'
-      })
-    }
-  }
 
-  const handleJoinProject = async (inviteCode) => {
-    try {
-      const project = await projectsAPI.joinProject(inviteCode)
-      await loadProjects()
-      setSelectedProject(project)
-      setShowJoinModal(false)
-      toast({
-        title: '프로젝트 참여 완료',
-        description: '프로젝트에 참여했습니다.'
-      })
-    } catch (error) {
-      toast({
-        title: '프로젝트 참여 실패',
-        description: '초대 코드가 유효하지 않습니다.',
-        variant: 'destructive'
-      })
-    }
-  }
 
   if (loading) {
     return (
@@ -241,14 +205,20 @@ export default function WorkPage() {
 
       {/* Modals */}
       <CreateProjectModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSuccess={handleCreateProject}
+        open={showCreateModal}
+        onOpenChange={(open) => {
+          setShowCreateModal(open)
+          if (!open) {
+            loadProjects() // Reload projects when modal closes
+          }
+        }}
       />
       <JoinProjectModal
-        isOpen={showJoinModal}
-        onClose={() => setShowJoinModal(false)}
-        onSuccess={handleJoinProject}
+        open={showJoinModal}
+        onClose={() => {
+          setShowJoinModal(false)
+          loadProjects() // Reload projects when modal closes
+        }}
       />
     </div>
   )

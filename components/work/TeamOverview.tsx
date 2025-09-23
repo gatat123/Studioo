@@ -98,7 +98,7 @@ export default function TeamOverview({ projectId, searchQuery }: TeamOverviewPro
           taskCount: Math.floor(Math.random() * 10),
           completedTaskCount: Math.floor(Math.random() * 8),
           lastActivity: new Date(Date.now() - Math.random() * 86400000).toISOString(),
-          status: Math.random() > 0.5 ? 'online' : 'offline'
+          status: Math.random() > 0.5 ? 'online' : 'offline' as 'online' | 'offline'
         }))
         setTeamMembers(members)
 
