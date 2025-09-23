@@ -72,6 +72,7 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
     defaultValues: {
       name: '',
       description: '',
+      project_type: 'studio',
     },
   })
 

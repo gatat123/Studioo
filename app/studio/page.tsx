@@ -25,11 +25,15 @@ import Link from 'next/link';
 
 // 통계 컴포넌트 메모이제이션
 const StudioStats = memo(function StudioStats({ projects }: { projects: Project[] }) {
-  const stats = useMemo(() => ({
-    active: projects.filter((p) => p.status === 'active').length,
-    completed: projects.filter((p) => p.status === 'completed').length,
-    total: projects.length
-  }), [projects]);
+  const stats = useMemo(() => {
+    // Filter only studio projects as additional safety
+    const studioProjects = projects.filter((p) => p.project_type === 'studio');
+    return {
+      active: studioProjects.filter((p) => p.status === 'active').length,
+      completed: studioProjects.filter((p) => p.status === 'completed').length,
+      total: studioProjects.length
+    };
+  }, [projects]);
 
   return (
     <div className="flex gap-6 mt-4">
@@ -82,7 +86,7 @@ export default function StudioPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      void fetchProjects();
+      void fetchProjects('studio'); // Only fetch studio projects
     }
   }, [isAuthenticated, fetchProjects]);
   
