@@ -87,16 +87,8 @@ export default function TeamOverview({ projectId, searchQuery }: TeamOverviewPro
 
       if (statsResponse.ok && activitiesResponse.ok) {
         // Process team members with mock data for now
-        const members = participantsResponse.map((participant: {
-          userId: string;
-          user?: {
-            nickname?: string;
-            email?: string;
-            profile_image_url?: string;
-          };
-          role?: string;
-        }) => ({
-          id: participant.userId,
+        const members = participantsResponse.map((participant) => ({
+          id: participant.user_id,
           nickname: participant.user?.nickname || 'Unknown',
           email: participant.user?.email || '',
           profile_image_url: participant.user?.profile_image_url,

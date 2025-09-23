@@ -43,10 +43,6 @@ model User {
   scenes                                             scenes[]
   studios                                            studios?
   user_presence                                      user_presence[]
-  createdTasks                                       Task[]                 @relation("TaskCreatedBy")
-  deletedTasks                                       Task[]                 @relation("TaskDeletedBy")
-  taskAssignees                                      TaskAssignee[]
-  todos                                              Todo[]
 
   @@index([email])
   @@index([nickname])
@@ -79,7 +75,6 @@ model Project {
   studios              studios                @relation(fields: [studio_id], references: [id], onDelete: Cascade)
   scenes               scenes[]
   user_presence        user_presence[]
-  tasks                Task[]
 
   @@index([creator_id])
   @@index([invite_code])
@@ -412,62 +407,4 @@ model user_presence {
   @@unique([user_id, project_id])
   @@index([project_id])
   @@index([status])
-}
-
-model Task {
-  id          String         @id @default(uuid())
-  projectId   String
-  title       String
-  description String?
-  status      String         @default("todo")
-  priority    String         @default("medium")
-  dueDate     DateTime?
-  createdBy   String
-  deletedBy   String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  deletedAt   DateTime?
-
-  // Relations
-  project       Project        @relation(fields: [projectId], references: [id])
-  creator       User           @relation("TaskCreatedBy", fields: [createdBy], references: [id])
-  deleter       User?          @relation("TaskDeletedBy", fields: [deletedBy], references: [id])
-  assignedUsers TaskAssignee[]
-  todos         Todo[]
-
-  @@map("tasks")
-}
-
-model TaskAssignee {
-  id         String    @id @default(uuid())
-  taskId     String
-  userId     String
-  assignedBy String
-  assignedAt DateTime  @default(now())
-
-  // Relations
-  task Task @relation(fields: [taskId], references: [id])
-  user User @relation(fields: [userId], references: [id])
-
-  @@unique([taskId, userId])
-  @@map("task_assignees")
-}
-
-model Todo {
-  id          String    @id @default(uuid())
-  taskId      String
-  userId      String
-  title       String
-  description String?
-  completed   Boolean   @default(false)
-  order       Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  deletedAt   DateTime?
-
-  // Relations
-  task Task @relation(fields: [taskId], references: [id])
-  user User @relation(fields: [userId], references: [id])
-
-  @@map("todos")
 }
