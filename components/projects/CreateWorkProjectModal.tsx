@@ -88,6 +88,15 @@ export function CreateWorkProjectModal({ open, onOpenChange }: CreateWorkProject
       const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3001';
       const token = localStorage.getItem('token');
 
+      const requestBody = {
+        name: data.name,
+        description: data.description,
+        project_type: 'work', // Always 'work' for Work projects
+        deadline: selectedDate ? selectedDate.toISOString() : undefined,
+      };
+
+      console.log('Creating Work project with data:', requestBody);
+
       const response = await fetch(`${backendUrl}/api/projects`, {
         method: 'POST',
         headers: {
@@ -95,12 +104,7 @@ export function CreateWorkProjectModal({ open, onOpenChange }: CreateWorkProject
           ...(token && { 'Authorization': `Bearer ${token}` })
         },
         credentials: 'include',
-        body: JSON.stringify({
-          name: data.name,
-          description: data.description,
-          project_type: 'work', // Always 'work' for Work projects
-          deadline: selectedDate ? selectedDate.toISOString() : undefined,
-        }),
+        body: JSON.stringify(requestBody),
       })
 
       if (!response.ok) {
@@ -114,8 +118,12 @@ export function CreateWorkProjectModal({ open, onOpenChange }: CreateWorkProject
       }
 
       const responseData = await response.json()
+      console.log('Work project creation response:', responseData);
+
       // Backend returns { success: true, data: project }
       const newProject = responseData.data || responseData
+      console.log('Created Work project:', newProject);
+
       setCreatedProjectId(newProject.id)
 
       // Generate invite code for the created project

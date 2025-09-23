@@ -9,7 +9,7 @@ import { Project, ProjectParticipant } from '@/types';
 export interface CreateProjectDto {
   name: string;
   description?: string;
-  projectType?: 'studio' | 'work';
+  project_type?: 'studio' | 'work';  // Changed to snake_case to match backend
   deadline?: string;
   tag?: 'illustration' | 'storyboard';
 }

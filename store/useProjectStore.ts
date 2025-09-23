@@ -40,7 +40,7 @@ interface ProjectState {
   // Async actions (connected to API)
   fetchProjects: (type?: 'studio' | 'work') => Promise<void>;
   fetchProject: (projectId: string) => Promise<void>;
-  createProject: (projectData: { name: string; description?: string; projectType?: 'studio' | 'work'; deadline?: string; tag?: 'illustration' | 'storyboard' }) => Promise<void>;
+  createProject: (projectData: { name: string; description?: string; project_type?: 'studio' | 'work'; deadline?: string; tag?: 'illustration' | 'storyboard' }) => Promise<void>;
   joinProject: (inviteCode: string) => Promise<void>;
   
   // Settings actions
