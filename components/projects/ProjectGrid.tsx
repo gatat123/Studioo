@@ -37,9 +37,9 @@ interface Project {
   deadline?: Date | string;
   tag?: 'illustration' | 'storyboard';
   status: 'active' | 'completed' | 'archived';
-  hasUpdates: boolean;
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  has_updates: boolean;
+  created_at: Date | string;
+  updated_at: Date | string;
   thumbnail?: string;
 }
 
@@ -257,8 +257,8 @@ export function ProjectGrid() {
           return aDeadline - bDeadline;
         case 'date':
         default:
-          const aUpdated = new Date(a.updatedAt).getTime();
-          const bUpdated = new Date(b.updatedAt).getTime();
+          const aUpdated = new Date(a.updated_at).getTime();
+          const bUpdated = new Date(b.updated_at).getTime();
           return bUpdated - aUpdated;
       }
     });

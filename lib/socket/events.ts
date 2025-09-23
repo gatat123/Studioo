@@ -54,7 +54,7 @@ export const SOCKET_EVENTS = {
 
 // Event Payload Types
 export interface HistoryUpdatePayload {
-  projectId: string;
+  project_id: string;
   type: 'comment' | 'scene' | 'image' | 'annotation';
   action: 'create' | 'update' | 'delete';
   data: {
@@ -67,38 +67,38 @@ export interface HistoryUpdatePayload {
 }
 
 export interface CommentEventPayload {
-  projectId: string;
-  sceneId?: string;
+  project_id: string;
+  scene_id?: string;
   comment: Comment;
   user?: Partial<User>;
 }
 
 export interface SceneEventPayload {
-  projectId: string;
+  project_id: string;
   scene: Scene;
   user?: Partial<User>;
 }
 
 export interface ImageEventPayload {
-  projectId: string;
-  sceneId: string;
+  project_id: string;
+  scene_id: string;
   image: Partial<Image>;
   type: 'lineart' | 'art';
   user?: Partial<User>;
 }
 
 export interface ImageVersionChangePayload {
-  projectId: string;
-  sceneId: string;
-  imageId: string;
+  project_id: string;
+  scene_id: string;
+  image_id: string;
   newVersion: number;
   imageType: 'lineart' | 'art';
   user?: Partial<User>;
 }
 
 export interface AnnotationEventPayload {
-  projectId: string;
-  imageId: string;
+  project_id: string;
+  image_id: string;
   annotation: {
     id: string;
     type: string;
@@ -109,8 +109,8 @@ export interface AnnotationEventPayload {
 }
 
 export interface PresenceEventPayload {
-  projectId: string;
-  userId: string;
+  project_id: string;
+  user_id: string;
   user: Partial<User>;
   status?: 'online' | 'away' | 'offline';
   location?: string;
@@ -118,15 +118,15 @@ export interface PresenceEventPayload {
 }
 
 export interface TypingEventPayload {
-  projectId: string;
-  userId: string;
+  project_id: string;
+  user_id: string;
   user: Partial<User>;
   location: string;
   isTyping: boolean;
 }
 
 export interface ProjectUpdatePayload {
-  projectId: string;
+  project_id: string;
   updates: Partial<Project>;
   user?: Partial<User>;
 }
@@ -139,23 +139,23 @@ export type SocketEventMap = {
   // Comment Events
   [SOCKET_EVENTS.COMMENT_NEW]: (payload: CommentEventPayload) => void;
   [SOCKET_EVENTS.COMMENT_UPDATE]: (payload: CommentEventPayload) => void;
-  [SOCKET_EVENTS.COMMENT_DELETE]: (payload: { projectId: string; commentId: string; user?: Partial<User> }) => void;
+  [SOCKET_EVENTS.COMMENT_DELETE]: (payload: { project_id: string; comment_id: string; user?: Partial<User> }) => void;
 
   // Scene Events
   [SOCKET_EVENTS.SCENE_CREATE]: (payload: SceneEventPayload) => void;
   [SOCKET_EVENTS.SCENE_UPDATE]: (payload: SceneEventPayload) => void;
-  [SOCKET_EVENTS.SCENE_DELETE]: (payload: { projectId: string; sceneId: string; user?: Partial<User> }) => void;
+  [SOCKET_EVENTS.SCENE_DELETE]: (payload: { project_id: string; scene_id: string; user?: Partial<User> }) => void;
 
   // Image Events
   [SOCKET_EVENTS.IMAGE_UPLOAD]: (payload: ImageEventPayload) => void;
   [SOCKET_EVENTS.IMAGE_UPDATE]: (payload: ImageEventPayload) => void;
-  [SOCKET_EVENTS.IMAGE_DELETE]: (payload: { projectId: string; imageId: string; user?: Partial<User> }) => void;
+  [SOCKET_EVENTS.IMAGE_DELETE]: (payload: { project_id: string; image_id: string; user?: Partial<User> }) => void;
   [SOCKET_EVENTS.IMAGE_VERSION_CHANGE]: (payload: ImageVersionChangePayload) => void;
 
   // Annotation Events
   [SOCKET_EVENTS.ANNOTATION_CREATE]: (payload: AnnotationEventPayload) => void;
   [SOCKET_EVENTS.ANNOTATION_UPDATE]: (payload: AnnotationEventPayload) => void;
-  [SOCKET_EVENTS.ANNOTATION_DELETE]: (payload: { projectId: string; annotationId: string; user?: Partial<User> }) => void;
+  [SOCKET_EVENTS.ANNOTATION_DELETE]: (payload: { project_id: string; annotation_id: string; user?: Partial<User> }) => void;
 
   // Presence Events
   [SOCKET_EVENTS.USER_JOIN]: (payload: PresenceEventPayload) => void;

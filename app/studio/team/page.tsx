@@ -85,7 +85,7 @@ function TeamPageContent() {
       socketClient.off('presence_update')
       if (selectedChannel) {
         // @ts-expect-error - Custom event not in typed events
-        socketClient.socket?.emit('leave:channel', { channelId: selectedChannel.id })
+        socketClient.socket?.emit('leave:channel', { channel_id: selectedChannel.id })
       }
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -94,7 +94,7 @@ function TeamPageContent() {
     if (selectedChannel) {
       // Join channel using correct Socket.io event names
       // @ts-expect-error - Custom event not in typed events
-      socketClient.socket?.emit('join_channel', { channelId: selectedChannel.id })
+      socketClient.socket?.emit('join_channel', { channel_id: selectedChannel.id })
       
       // Listen for real-time channel messages
       // @ts-expect-error - Custom event not in typed events
@@ -158,7 +158,7 @@ function TeamPageContent() {
       
       return () => {
         // @ts-expect-error - Custom event not in typed events
-        socketClient.socket?.emit('leave_channel', { channelId: selectedChannel.id })
+        socketClient.socket?.emit('leave_channel', { channel_id: selectedChannel.id })
         socketClient.off('new_channel_message')
         socketClient.off('member_joined_channel')
         socketClient.off('member_left_channel')
@@ -190,9 +190,9 @@ function TeamPageContent() {
     }
   }, [selectedChannel, toast])
   
-  const loadChannelMembers = async (channelId: string) => {
+  const loadChannelMembers = async (channel_id: string) => {
     try {
-      const members = await channelsAPI.getMembers(channelId)
+      const members = await channelsAPI.getMembers(channel_id)
       // Initialize all members as offline, Socket.io will update actual status
       const membersWithOfflineStatus = members.map(member => ({
         ...member,
@@ -208,8 +208,8 @@ function TeamPageContent() {
       if (socketClient.isConnected()) {
         // Request presence status through public emit method
         socketClient.emit('request_presence_status' as never, {
-          channelId,
-          userIds: members.map(m => m.userId)
+          channel_id,
+          user_ids: members.map(m => m.userId)
         } as never)
       }
     } catch {
@@ -217,10 +217,10 @@ function TeamPageContent() {
     }
   }
   
-  const loadMessages = useCallback(async (channelId: string, cursor?: string) => {
+  const loadMessages = useCallback(async (channel_id: string, cursor?: string) => {
     try {
       setLoading(true)
-      const result = await channelsAPI.getMessages(channelId, 50, cursor)
+      const result = await channelsAPI.getMessages(channel_id, 50, cursor)
       
       if (cursor) {
         // Append to existing messages for pagination
@@ -253,12 +253,12 @@ function TeamPageContent() {
       senderId: currentUser?.id || '',
       content: newMessage.trim(),
       type: 'text',
-      createdAt: new Date().toISOString(),
+      created_at: new Date().toISOString(),
       sender: {
         id: currentUser?.id || '',
         username: currentUser?.username || '',
         nickname: currentUser?.nickname || '',
-        profileImageUrl: currentUser?.profileImageUrl
+        profile_image_url: currentUser?.profile_image_url
       }
     } as ChannelMessage
     
@@ -270,7 +270,7 @@ function TeamPageContent() {
     // Send through Socket.io for real-time delivery
     // @ts-expect-error - Custom event not in typed events
     socketClient.socket?.emit('send_channel_message', {
-      channelId: selectedChannel.id,
+      channel_id: selectedChannel.id,
       content: newMessage.trim(),
       type: 'text',
       tempId
@@ -316,13 +316,13 @@ function TeamPageContent() {
     if (!isTyping && selectedChannel) {
       setIsTyping(true)
       // @ts-expect-error - Custom event not in typed events
-      socketClient.socket?.emit('typing_start_channel', { channelId: selectedChannel.id })
+      socketClient.socket?.emit('typing_start_channel', { channel_id: selectedChannel.id })
       
       setTimeout(() => {
         setIsTyping(false)
         if (selectedChannel) {
           // @ts-expect-error - Custom event not in typed events
-        socketClient.socket?.emit('typing_stop_channel', { channelId: selectedChannel.id })
+        socketClient.socket?.emit('typing_stop_channel', { channel_id: selectedChannel.id })
         }
       }, 2000)
     }
@@ -370,7 +370,7 @@ function TeamPageContent() {
         
         // Emit socket event
         // @ts-expect-error - Custom event not in typed events
-        socketClient.socket?.emit('leave_channel', { channelId: selectedChannel.id })
+        socketClient.socket?.emit('leave_channel', { channel_id: selectedChannel.id })
       } else {
         // Failed to leave channel
       }
@@ -540,7 +540,7 @@ function TeamPageContent() {
         {/* Channel Members */}
         {selectedChannel && (() => {
           // Check if admin is viewing as admin (from admin dashboard)
-          const isAdminMode = searchParams.get('channel') === selectedChannel.id && currentUser?.isAdmin
+          const isAdminMode = searchParams.get('channel') === selectedChannel.id && currentUser?.is_admin
           // Filter out admin from members if in admin mode
           const displayMembers = isAdminMode
             ? channelMembers.filter(m => m.userId !== currentUser?.id)
@@ -554,7 +554,7 @@ function TeamPageContent() {
                 <div key={member.id} className="flex items-center gap-2">
                   <div className="relative">
                     <Avatar className="h-8 w-8">
-                      <AvatarImage src={member.user.profileImageUrl} />
+                      <AvatarImage src={member.user.profile_image_url} />
                       <AvatarFallback className="text-xs">
                         {member.user.nickname[0].toUpperCase()}
                       </AvatarFallback>
@@ -593,7 +593,7 @@ function TeamPageContent() {
                   <h2 className="font-semibold">{selectedChannel.name}</h2>
                   <Badge variant="outline">
                     {(() => {
-                      const isAdminMode = searchParams.get('channel') === selectedChannel.id && currentUser?.isAdmin
+                      const isAdminMode = searchParams.get('channel') === selectedChannel.id && currentUser?.is_admin
                       const onlineMembers = channelMembers.filter(m => {
                         // If admin mode, exclude admin from count
                         if (isAdminMode && m.userId === currentUser?.id) return false
@@ -633,7 +633,7 @@ function TeamPageContent() {
                       <DropdownMenuSeparator />
                       {/* Show delete option only for admins or channel creators */}
                       {(channelMembers.find(m => m.userId === currentUser?.id && m.role === 'admin') ||
-                        selectedChannel?.creatorId === currentUser?.id) && (
+                        selectedChannel?.creator_id === currentUser?.id) && (
                         <DropdownMenuItem
                           className="text-destructive"
                           onClick={() => setDeleteChannelOpen(true)}
@@ -689,7 +689,7 @@ function TeamPageContent() {
                       isOwnMessage && "flex-row-reverse"
                     )}>
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={message.sender.profileImageUrl} />
+                        <AvatarImage src={message.sender.profile_image_url} />
                         <AvatarFallback className="text-xs">
                           {message.sender.nickname[0].toUpperCase()}
                         </AvatarFallback>
@@ -712,7 +712,7 @@ function TeamPageContent() {
                             <p className="text-sm">{message.content}</p>
                           </div>
                           <span className="text-xs text-muted-foreground mt-1">
-                            {new Date(message.createdAt).toLocaleTimeString('ko-KR', { 
+                            {new Date(message.created_at).toLocaleTimeString('ko-KR', { 
                               hour: '2-digit', 
                               minute: '2-digit'
                             })}

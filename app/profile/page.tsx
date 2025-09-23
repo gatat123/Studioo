@@ -28,7 +28,7 @@ export default function ProfilePage() {
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
-    profileImageUrl: ''
+    profile_image_url: ''
   });
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function ProfilePage() {
         ...prev,
         email: user.email || '',
         bio: user.bio || '',
-        profileImageUrl: user.profileImageUrl || ''
+        profile_image_url: user.profile_image_url || ''
       }));
     }
   }, [user]);
@@ -182,7 +182,7 @@ export default function ProfilePage() {
         // 프로필 이미지 URL 업데이트
         setProfileData(prev => ({
           ...prev,
-          profileImageUrl: data.fileDetails?.url || data.user?.profileImageUrl || ''
+          profile_image_url: data.fileDetails?.url || data.user?.profile_image_url || ''
         }));
         
         // 전역 상태 업데이트
@@ -190,7 +190,7 @@ export default function ProfilePage() {
         if (authStore.user) {
           authStore.setUser({
             ...authStore.user,
-            profileImageUrl: data.fileDetails?.url || data.user?.profileImageUrl
+            profile_image_url: data.fileDetails?.url || data.user?.profile_image_url
           });
         }
         
@@ -261,7 +261,7 @@ export default function ProfilePage() {
                 {/* Profile Image */}
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-24 w-24">
-                    <AvatarImage src={profileData.profileImageUrl} />
+                    <AvatarImage src={profileData.profile_image_url} />
                     <AvatarFallback className="text-2xl">
                       {user.nickname?.[0]?.toUpperCase() || user.username?.[0]?.toUpperCase()}
                     </AvatarFallback>
@@ -452,7 +452,7 @@ export default function ProfilePage() {
                   <div>
                     <p className="text-sm font-medium text-gray-500">계정 상태</p>
                     <p className="text-sm">
-                      {user.isActive ? '활성' : '비활성'}
+                      {user.is_active ? '활성' : '비활성'}
                     </p>
                   </div>
                   <div>
@@ -461,7 +461,7 @@ export default function ProfilePage() {
                       가입일
                     </p>
                     <p className="text-sm">
-                      {user.createdAt && format(new Date(user.createdAt), 'yyyy년 MM월 dd일', { locale: ko })}
+                      {user.created_at && format(new Date(user.created_at), 'yyyy년 MM월 dd일', { locale: ko })}
                     </p>
                   </div>
                   <div>
@@ -470,7 +470,7 @@ export default function ProfilePage() {
                       권한
                     </p>
                     <p className="text-sm">
-                      {user.isAdmin ? '관리자' : '일반 사용자'}
+                      {user.is_admin ? '관리자' : '일반 사용자'}
                     </p>
                   </div>
                 </div>

@@ -146,7 +146,7 @@ export default function ChannelInvitesDropdown() {
                       </div>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-5 w-5">
-                          <AvatarImage src={invitation.inviter.profileImageUrl} />
+                          <AvatarImage src={invitation.inviter.profile_image_url} />
                           <AvatarFallback className="text-xs">
                             {invitation.inviter.nickname[0]}
                           </AvatarFallback>

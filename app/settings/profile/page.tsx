@@ -17,7 +17,7 @@ interface UserProfile {
   email: string
   nickname: string
   bio?: string
-  profileImageUrl?: string
+  profile_image_url?: string
 }
 
 export default function ProfilePage() {
@@ -272,7 +272,7 @@ export default function ProfilePage() {
           <CardContent className="space-y-6">
             <div className="flex items-center gap-6">
               <Avatar className="h-24 w-24">
-                <AvatarImage src={profile?.profileImageUrl} />
+                <AvatarImage src={profile?.profile_image_url} />
                 <AvatarFallback>
                   {profile?.nickname?.[0]?.toUpperCase() || profile?.username?.[0]?.toUpperCase() || 'U'}
                 </AvatarFallback>
@@ -293,7 +293,7 @@ export default function ProfilePage() {
                   <Camera className="h-4 w-4 mr-2" />
                   {uploadingImage ? '업로드 중...' : '사진 변경'}
                 </Button>
-                {profile?.profileImageUrl && (
+                {profile?.profile_image_url && (
                   <Button 
                     variant="outline"
                     onClick={handleRemoveImage}

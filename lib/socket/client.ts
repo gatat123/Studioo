@@ -102,22 +102,22 @@ class SocketClient {
     [key: string]: unknown;
   }) {
     this.emit(SOCKET_EVENTS.COMMENT_NEW, {
-      projectId,
+      project_id: projectId,
       comment: { ...comment, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as unknown as Parameters<SocketEventMap[typeof SOCKET_EVENTS.COMMENT_NEW]>[0]['comment'],
-      sceneId: undefined
+      scene_id: undefined
     });
   }
 
   updateComment(projectId: string, commentId: string, content: string) {
     this.emit(SOCKET_EVENTS.COMMENT_UPDATE, {
-      projectId,
+      project_id: projectId,
       comment: { id: commentId, content, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as unknown as Parameters<SocketEventMap[typeof SOCKET_EVENTS.COMMENT_UPDATE]>[0]['comment'],
-      sceneId: undefined
+      scene_id: undefined
     });
   }
 
   deleteComment(projectId: string, commentId: string) {
-    this.emit(SOCKET_EVENTS.COMMENT_DELETE, { projectId, commentId });
+    this.emit(SOCKET_EVENTS.COMMENT_DELETE, { project_id: projectId, comment_id: commentId });
   }
 
   // History update notification
@@ -128,7 +128,7 @@ class SocketClient {
     metadata?: Record<string, unknown>;
   }) {
     this.emit(SOCKET_EVENTS.HISTORY_UPDATE, {
-      projectId,
+      project_id: projectId,
       type,
       action,
       data: {

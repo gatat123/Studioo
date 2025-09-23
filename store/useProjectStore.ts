@@ -257,8 +257,8 @@ export const useProjectStore = create<ProjectState>()(
           const formattedProjects = projects.map(p => ({
             ...p,
             deadline: p.deadline ? p.deadline : null,
-            createdAt: p.createdAt,
-            updatedAt: p.updatedAt,
+            created_at: p.created_at,
+            updated_at: p.updated_at,
           }));
 
           set({ projects: formattedProjects, isLoading: false });
@@ -282,8 +282,8 @@ export const useProjectStore = create<ProjectState>()(
           const formattedProject = {
             ...project,
             deadline: project.deadline ? project.deadline : null,
-            createdAt: project.createdAt,
-            updatedAt: project.updatedAt,
+            created_at: project.created_at,
+            updated_at: project.updated_at,
           };
           
           set({ currentProject: formattedProject, isLoading: false });
@@ -307,8 +307,8 @@ export const useProjectStore = create<ProjectState>()(
           const formattedProject = {
             ...newProject,
             deadline: newProject.deadline ? newProject.deadline : null,
-            createdAt: newProject.createdAt,
-            updatedAt: newProject.updatedAt,
+            created_at: newProject.created_at,
+            updated_at: newProject.updated_at,
           };
           
           get().addProject(formattedProject);
@@ -333,8 +333,8 @@ export const useProjectStore = create<ProjectState>()(
           const formattedProject = {
             ...project,
             deadline: project.deadline ? project.deadline : null,
-            createdAt: project.createdAt,
-            updatedAt: project.updatedAt,
+            created_at: project.created_at,
+            updated_at: project.updated_at,
           };
           
           get().addProject(formattedProject);
@@ -352,7 +352,7 @@ export const useProjectStore = create<ProjectState>()(
       generateInviteCode: async (projectId) => {
         try {
           const { inviteCode } = await projectsAPI.generateInviteCode(projectId);
-          get().updateProject(projectId, { inviteCode });
+          get().updateProject(projectId, { invite_code: inviteCode });
           return inviteCode;
         } catch {
           

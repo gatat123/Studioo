@@ -16,7 +16,7 @@ import { format, isToday, isYesterday, differenceInDays } from 'date-fns'
 import { ko } from 'date-fns/locale'
 
 interface HistorySectionProps {
-  projectId: string
+  project_id: string
   sceneId?: string
   comments: Comment[]
   onCommentsUpdate: (comments: Comment[]) => void
@@ -38,7 +38,7 @@ interface HistoryItem {
 }
 
 export function HistorySection({
-  projectId,
+  project_id: project_id,
   sceneId,
   comments: initialComments,
   onCommentsUpdate,
@@ -67,7 +67,7 @@ export function HistorySection({
         type: isAnnotation ? 'annotation' : 'comment',
         content: displayContent,
         user: comment.user || comment.author,
-        timestamp: comment.createdAt,
+        timestamp: comment.created_at,
         metadata: comment.metadata,
         isNew: false
       } as HistoryItem
@@ -89,11 +89,11 @@ export function HistorySection({
     }
 
     // Join project room
-    socketClient.joinProject(projectId)
+    socketClient.joinProject(project_id)
 
     // History update listener
     const handleHistoryUpdate = (payload: HistoryUpdatePayload) => {
-      if (payload.projectId !== projectId) return
+      if (payload.project_id !== project_id) return
 
       const newItem: HistoryItem = {
         id: payload.data.id,
@@ -120,11 +120,11 @@ export function HistorySection({
 
     // Comment event listeners
     const handleNewComment = async (payload: CommentEventPayload) => {
-      if (payload.projectId !== projectId) return
+      if (payload.project_id !== project_id) return
 
       // Refetch comments to ensure data consistency
       try {
-        const updatedComments = await commentsAPI.getProjectComments(projectId)
+        const updatedComments = await commentsAPI.getProjectComments(project_id)
         setComments(updatedComments)
         onCommentsUpdate(updatedComments)
 
@@ -138,7 +138,7 @@ export function HistorySection({
               ? newComment.content.substring(12) || '주석을 남겼습니다'
               : newComment.content,
             user: newComment.user || newComment.author,
-            timestamp: newComment.createdAt,
+            timestamp: newComment.created_at,
             metadata: newComment.metadata,
             isNew: true
           }
@@ -158,7 +158,7 @@ export function HistorySection({
     }
 
     const handleCommentUpdate = async (payload: CommentEventPayload) => {
-      if (payload.projectId !== projectId) return
+      if (payload.project_id !== project_id) return
 
       // Update local comment
       setComments(prev => prev.map(c =>
@@ -173,27 +173,27 @@ export function HistorySection({
       ))
     }
 
-    const handleCommentDelete = (payload: { projectId: string; commentId: string }) => {
-      if (payload.projectId !== projectId) return
+    const handleCommentDelete = (payload: { project_id: string; comment_id: string }) => {
+      if (payload.project_id !== project_id) return
 
       // Remove from comments
-      setComments(prev => prev.filter(c => c.id !== payload.commentId))
+      setComments(prev => prev.filter(c => c.id !== payload.comment_id))
 
       // Mark as deleted in history (don't remove, keep for audit)
       setHistoryItems(prev => prev.map(item =>
-        item.id === payload.commentId
+        item.id === payload.comment_id
           ? { ...item, content: '[삭제된 댓글]', type: 'system' as const }
           : item
       ))
     }
 
     // Typing indicator listeners
-    const handleTypingStart = (payload: { projectId: string; userId: string; user: { nickname?: string }; location: string }) => {
-      if (payload.projectId !== projectId) return
-      if (payload.userId === localStorage.getItem('userId')) return
+    const handleTypingStart = (payload: { project_id: string; user_id: string; user: { nickname?: string }; location: string }) => {
+      if (payload.project_id !== project_id) return
+      if (payload.user_id === localStorage.getItem('userId')) return
 
       // Clear existing timeout if any
-      const existing = typingUsers.get(payload.userId)
+      const existing = typingUsers.get(payload.user_id)
       if (existing?.timeout) {
         clearTimeout(existing.timeout)
       }
@@ -202,14 +202,14 @@ export function HistorySection({
       const timeout = setTimeout(() => {
         setTypingUsers(prev => {
           const next = new Map(prev)
-          next.delete(payload.userId)
+          next.delete(payload.user_id)
           return next
         })
       }, 3000)
 
       setTypingUsers(prev => {
         const next = new Map(prev)
-        next.set(payload.userId, {
+        next.set(payload.user_id, {
           nickname: payload.user?.nickname || 'Someone',
           timeout
         })
@@ -217,16 +217,16 @@ export function HistorySection({
       })
     }
 
-    const handleTypingStop = (payload: { projectId: string; userId: string }) => {
-      if (payload.projectId !== projectId) return
+    const handleTypingStop = (payload: { project_id: string; user_id: string }) => {
+      if (payload.project_id !== project_id) return
 
       setTypingUsers(prev => {
         const next = new Map(prev)
-        const existing = next.get(payload.userId)
+        const existing = next.get(payload.user_id)
         if (existing?.timeout) {
           clearTimeout(existing.timeout)
         }
-        next.delete(payload.userId)
+        next.delete(payload.user_id)
         return next
       })
     }
@@ -253,7 +253,7 @@ export function HistorySection({
         if (user.timeout) clearTimeout(user.timeout)
       })
     }
-  }, [projectId, onCommentsUpdate, toast, typingUsers])
+  }, [project_id, onCommentsUpdate, toast, typingUsers])
 
   // Handle comment input typing
   const handleCommentChange = (value: string) => {
@@ -262,8 +262,8 @@ export function HistorySection({
     if (value && !isTyping) {
       setIsTyping(true)
       socketClient.emit(SOCKET_EVENTS.TYPING_START, {
-        projectId,
-        userId: localStorage.getItem('userId') || '',
+        project_id: project_id,
+        user_id: localStorage.getItem('userId') || '',
         user: {
           id: localStorage.getItem('userId'),
           nickname: localStorage.getItem('userNickname')
@@ -274,8 +274,8 @@ export function HistorySection({
     } else if (!value && isTyping) {
       setIsTyping(false)
       socketClient.emit(SOCKET_EVENTS.TYPING_STOP, {
-        projectId,
-        userId: localStorage.getItem('userId') || '',
+        project_id: project_id,
+        user_id: localStorage.getItem('userId') || '',
         user: {
           id: localStorage.getItem('userId'),
           nickname: localStorage.getItem('userNickname')
@@ -295,8 +295,8 @@ export function HistorySection({
 
     // Emit typing stop
     socketClient.emit(SOCKET_EVENTS.TYPING_STOP, {
-      projectId,
-      userId: localStorage.getItem('userId') || '',
+      project_id,
+      user_id: localStorage.getItem('userId') || '',
       user: {
         id: localStorage.getItem('userId'),
         nickname: localStorage.getItem('userNickname')
@@ -307,7 +307,7 @@ export function HistorySection({
 
     try {
       const comment = await commentsAPI.createComment({
-        projectId,
+        projectId: project_id,
         sceneId,
         content: newComment
       })
@@ -322,7 +322,7 @@ export function HistorySection({
         type: 'comment',
         content: comment.content,
         user: comment.user || comment.author,
-        timestamp: comment.createdAt,
+        timestamp: comment.created_at,
         metadata: comment.metadata,
         isNew: false
       }
@@ -330,8 +330,8 @@ export function HistorySection({
 
       // Emit to other users
       socketClient.emit(SOCKET_EVENTS.COMMENT_NEW, {
-        projectId,
-        sceneId,
+        project_id: project_id,
+        scene_id: sceneId,
         comment,
         user: comment.user || comment.author
       })
@@ -403,7 +403,7 @@ export function HistorySection({
           variant="ghost"
           onClick={async () => {
             try {
-              const updatedComments = await commentsAPI.getProjectComments(projectId)
+              const updatedComments = await commentsAPI.getProjectComments(project_id)
               setComments(updatedComments)
               onCommentsUpdate(updatedComments)
               const items = convertCommentsToHistory(updatedComments)
@@ -521,8 +521,8 @@ export function HistorySection({
               if (isTyping) {
                 setIsTyping(false)
                 socketClient.emit(SOCKET_EVENTS.TYPING_STOP, {
-                  projectId,
-                  userId: localStorage.getItem('userId') || '',
+                  project_id: project_id,
+                  user_id: localStorage.getItem('userId') || '',
                   user: {
                     id: localStorage.getItem('userId'),
                     nickname: localStorage.getItem('userNickname')

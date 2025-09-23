@@ -68,7 +68,7 @@ export default function NotificationDropdown() {
       sender: {
         id: string;
         nickname: string;
-        profileImageUrl?: string;
+        profile_image_url?: string;
       };
       channel?: {
         name: string;
@@ -88,7 +88,7 @@ export default function NotificationDropdown() {
             channelName: data.message.channel?.name,
             senderId: data.message.senderId,
             senderName: data.message.sender.nickname,
-            senderAvatar: data.message.sender.profileImageUrl
+            senderAvatar: data.message.sender.profile_image_url
           }
         };
 
@@ -118,7 +118,7 @@ export default function NotificationDropdown() {
       inviter: {
         id: string;
         nickname: string;
-        profileImageUrl?: string;
+        profile_image_url?: string;
       };
     } }) => {
       const notification: Notification = {
@@ -134,7 +134,7 @@ export default function NotificationDropdown() {
           inviteId: data.invite.id,
           senderId: data.invite.inviterId,
           senderName: data.invite.inviter.nickname,
-          senderAvatar: data.invite.inviter.profileImageUrl
+          senderAvatar: data.invite.inviter.profile_image_url
         }
       };
 
@@ -156,7 +156,7 @@ export default function NotificationDropdown() {
       sender: {
         id: string;
         nickname: string;
-        profileImageUrl?: string;
+        profile_image_url?: string;
       };
       message?: string;
     }) => {
@@ -170,7 +170,7 @@ export default function NotificationDropdown() {
         metadata: {
           senderId: data.sender.id,
           senderName: data.sender.nickname,
-          senderAvatar: data.sender.profileImageUrl
+          senderAvatar: data.sender.profile_image_url
         }
       };
 
@@ -194,7 +194,7 @@ export default function NotificationDropdown() {
       if ('Notification' in window && Notification.permission === 'granted') {
         new Notification('친구 요청', {
           body: `${data.sender.nickname}님이 친구 요청을 보냈습니다`,
-          icon: data.sender.profileImageUrl || '/default-avatar.png',
+          icon: data.sender.profile_image_url || '/default-avatar.png',
           tag: 'friend-request'
         });
       }

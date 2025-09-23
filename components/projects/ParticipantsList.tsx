@@ -49,7 +49,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
   const [loading, setLoading] = useState(true)
   interface Project {
     id: string
-    creatorId: string
+    creator_id: string
     name: string
   }
 
@@ -89,9 +89,9 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
     loadParticipants()
   }, [projectId, toast])
 
-  const isOwner = project?.creatorId === currentUser?.id
+  const isOwner = project?.creator_id === currentUser?.id
   const currentParticipant = Array.isArray(participants)
-    ? participants.find(p => p.userId === currentUser?.id)
+    ? participants.find(p => p.user_id === currentUser?.id)
     : undefined
   const canManageMembers = isOwner || currentParticipant?.role === 'owner'
 
@@ -108,7 +108,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
     try {
       await projectsAPI.updateParticipantRole(
         projectId,
-        participant.userId,
+        participant.user_id,
         newRole as 'owner' | 'editor' | 'viewer' | 'member'
       )
 
@@ -142,7 +142,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
     }
 
     try {
-      await projectsAPI.removeParticipant(projectId, participant.userId)
+      await projectsAPI.removeParticipant(projectId, participant.user_id)
 
       setParticipants(prev => prev.filter(p => p.id !== participant.id))
 
@@ -201,8 +201,8 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
   }
 
   // Filter out admin from participants list when in admin mode
-  const displayParticipants = isAdminMode && currentUser?.isAdmin
-    ? (Array.isArray(participants) ? participants.filter(p => p.userId !== currentUser.id) : [])
+  const displayParticipants = isAdminMode && currentUser?.is_admin
+    ? (Array.isArray(participants) ? participants.filter(p => p.user_id !== currentUser.id) : [])
     : (Array.isArray(participants) ? participants : [])
 
   if (loading) {
@@ -235,7 +235,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
                 <TableCell>
                   <div className="flex items-center space-x-3">
                     <Avatar>
-                      <AvatarImage src={participant.user?.profileImageUrl} />
+                      <AvatarImage src={participant.user?.profile_image_url} />
                       <AvatarFallback>
                         {(participant.user?.nickname || participant.user?.username || 'U').slice(0, 2).toUpperCase()}
                       </AvatarFallback>
@@ -247,7 +247,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
                   </div>
                 </TableCell>
                 <TableCell>
-                  {canManageMembers && participant.role !== 'owner' && participant.userId !== project?.creatorId ? (
+                  {canManageMembers && participant.role !== 'owner' && participant.user_id !== project?.creator_id ? (
                     <Select
                       defaultValue={participant.role}
                       onValueChange={(value) => handleRoleChange(participant, value)}
@@ -281,17 +281,17 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
                       <div className="flex items-center gap-1">
                         {getRoleIcon(participant.role)}
                         {participant.role}
-                        {participant.userId === project?.creatorId && ' (Creator)'}
+                        {participant.user_id === project?.creator_id && ' (Creator)'}
                       </div>
                     </Badge>
                   )}
                 </TableCell>
                 <TableCell className="text-gray-500">
-                  {formatJoinDate(participant.joinedAt)}
+                  {formatJoinDate(participant.joined_at)}
                 </TableCell>
                 {canManageMembers && (
                   <TableCell className="text-right">
-                    {participant.role !== 'owner' && participant.userId !== project?.creatorId && (
+                    {participant.role !== 'owner' && participant.user_id !== project?.creator_id && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button

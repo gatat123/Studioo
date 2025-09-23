@@ -152,9 +152,9 @@ export default function ProjectDetailPage() {
       // Toast is now handled by HistorySection
     })
 
-    socketClient.on(SOCKET_EVENTS.HISTORY_UPDATE, (data: { projectId: string; type: string; action: string }) => {
+    socketClient.on(SOCKET_EVENTS.HISTORY_UPDATE, (data: { project_id: string; type: string; action: string }) => {
       // Handle history updates
-      if (data.projectId === projectId) {
+      if (data.project_id === projectId) {
         // Refresh relevant data based on update type
         if (data.type === 'comment') {
           void fetchComments()
@@ -250,13 +250,13 @@ export default function ProjectDetailPage() {
             // Fallback to virtual scene if API fails
             scenesData = [{
               id: `${projectId}-default`,
-              projectId,
-              sceneNumber: 1,
+              project_id: projectId,
+              scene_number: 1,
               description: '일러스트',
               notes: '',
               images: [],
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString()
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
             }];
           }
         }
@@ -273,14 +273,14 @@ export default function ProjectDetailPage() {
         lineArtImages: scene.images?.filter((img: Image) => img.type === 'lineart')
           .map((img: Image) => ({
             ...img,
-            url: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+            url: img.file_url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
+            file_url: img.file_url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
           })) || [],
         artImages: scene.images?.filter((img: Image) => img.type === 'art')
           .map((img: Image) => ({
             ...img,
-            url: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+            url: img.file_url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
+            file_url: img.file_url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
           })) || []
       }))
 
@@ -291,9 +291,9 @@ export default function ProjectDetailPage() {
 
       // Set story data if available (storyboard only)
       if (storyData?.story) {
-        setOverallStory(storyData.story.overallStory || '')
-        setSetList(storyData.story.setList || [])
-        setCharacterList(storyData.story.characterList || [])
+        setOverallStory(storyData.story.overall_story || '')
+        setSetList(storyData.story.set_list || [])
+        setCharacterList(storyData.story.character_list || [])
       }
 
       // Auto-select scene based on project type
@@ -345,7 +345,7 @@ export default function ProjectDetailPage() {
       
       // Emit Socket.io event for real-time update
       socketClient.emit(SOCKET_EVENTS.SCENE_CREATE, {
-        projectId,
+        project_id: projectId,
         scene: processedScene,
         user: { id: localStorage.getItem('userId'), nickname: localStorage.getItem('userNickname') }
       })
@@ -482,14 +482,14 @@ export default function ProjectDetailPage() {
       // Convert Image to ProjectImage type
       const projectImage: ProjectImage = {
         id: newImage.id,
-        sceneId: newImage.sceneId,
+        scene_id: newImage.scene_id,
         type: newImage.type,
-        fileUrl: newImage.fileUrl,
-        url: newImage.fileUrl, // Set url same as fileUrl for consistency
-        uploadedAt: newImage.uploadedAt || new Date().toISOString(),
-        uploadedBy: newImage.uploadedBy,
+        file_url: newImage.file_url,
+        url: newImage.file_url, // Set url same as fileUrl for consistency
+        uploaded_at: newImage.uploaded_at || new Date().toISOString(),
+        uploaded_by: newImage.uploaded_by,
         uploader: newImage.uploader,
-        isCurrent: true
+        is_current: true
       }
       
       
@@ -506,11 +506,11 @@ export default function ProjectDetailPage() {
             
             // Mark all existing images of same type as not current
             updatedScene.images = updatedScene.images.map((img: Image) =>
-              img.type === type ? { ...img, isCurrent: false } : img
+              img.type === type ? { ...img, is_current: false } : img
             )
             
             // Add new image as current
-            updatedScene.images.push({ ...projectImage, isCurrent: true })
+            updatedScene.images.push({ ...projectImage, is_current: true })
             
             // Also update legacy arrays for backward compatibility
             if (type === 'lineart') {
@@ -528,8 +528,8 @@ export default function ProjectDetailPage() {
       
       // Emit Socket.io event for real-time update
       socketClient.emit(SOCKET_EVENTS.IMAGE_UPLOAD, {
-        projectId,
-        sceneId: sceneToUse.id,
+        project_id: projectId,
+        scene_id: sceneToUse.id,
         image: projectImage,
         type,
         user: { id: localStorage.getItem('userId'), nickname: localStorage.getItem('userNickname') }
@@ -697,7 +697,7 @@ export default function ProjectDetailPage() {
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <Badge variant="outline" className="text-xs">
-                            씬 {scene.sceneNumber || index + 1}
+                            씬 {scene.scene_number || index + 1}
                           </Badge>
                         </div>
                         <p className="text-sm font-medium">{scene.description || `씬 ${index + 1}`}</p>
@@ -808,10 +808,10 @@ export default function ProjectDetailPage() {
                           const currentImage = imageViewMode === 'lineart'
                             ? (selectedLineartVersion
                                 ? images.find((img: Image) => (img as ProjectImage).version === selectedLineartVersion)
-                                : images.find((img: Image) => img.isCurrent) || images[images.length - 1])
+                                : images.find((img: Image) => img.is_current) || images[images.length - 1])
                             : (selectedArtVersion
                                 ? images.find((img: Image) => (img as ProjectImage).version === selectedArtVersion)
-                                : images.find((img: Image) => img.isCurrent) || images[images.length - 1])
+                                : images.find((img: Image) => img.is_current) || images[images.length - 1])
                           
                           if (currentImage) {
                             setAnnotationImage(currentImage)
@@ -839,7 +839,7 @@ export default function ProjectDetailPage() {
                           const fixedHistory = history.map((img: ProjectImage, index: number) => ({
                             ...img,
                             url: img.url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-                            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
+                            file_url: img.file_url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
                             version: (img as ProjectImage).version || history.length - index // Add version if missing
                           }))
                           setImageHistory(fixedHistory)
@@ -898,7 +898,7 @@ export default function ProjectDetailPage() {
                               // Show only the current version image
                               const currentImage = selectedLineartVersion ?
                                 lineartImages.find((img: Image) => (img as ProjectImage).version === selectedLineartVersion) :
-                                lineartImages.find((img: Image) => img.isCurrent) || lineartImages[lineartImages.length - 1]; // Current or Latest version
+                                lineartImages.find((img: Image) => img.is_current) || lineartImages[lineartImages.length - 1]; // Current or Latest version
                               
                               if (!currentImage) return null;
                               
@@ -906,7 +906,7 @@ export default function ProjectDetailPage() {
                                 <div key={currentImage.id} className="relative group">
                                   <div className="relative w-full aspect-video">
                                     <NextImage
-                                      src={(currentImage as ProjectImage).url || (currentImage as ProjectImage).fileUrl}
+                                      src={(currentImage as ProjectImage).url || (currentImage as ProjectImage).file_url}
                                       alt="Line art"
                                       fill
                                       className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all object-contain"
@@ -938,7 +938,7 @@ export default function ProjectDetailPage() {
                                       onClick={() => {
                                         // Download functionality
                                         const link = document.createElement('a')
-                                        link.href = (currentImage as ProjectImage).url || (currentImage as ProjectImage).fileUrl
+                                        link.href = (currentImage as ProjectImage).url || (currentImage as ProjectImage).file_url
                                         link.download = `lineart-v${(currentImage as ProjectImage).version}.png`
                                         link.click()
                                       }}
@@ -1009,7 +1009,7 @@ export default function ProjectDetailPage() {
                               // Show only the current version image
                               const currentImage = selectedArtVersion ?
                                 artImages.find((img: Image) => (img as ProjectImage).version === selectedArtVersion) :
-                                artImages.find((img: Image) => img.isCurrent) || artImages[artImages.length - 1]; // Current or Latest version
+                                artImages.find((img: Image) => img.is_current) || artImages[artImages.length - 1]; // Current or Latest version
                               
                               if (!currentImage) return null;
                               
@@ -1017,7 +1017,7 @@ export default function ProjectDetailPage() {
                                 <div key={currentImage.id} className="relative group">
                                   <div className="relative w-full aspect-video">
                                     <NextImage
-                                      src={(currentImage as ProjectImage).url || (currentImage as ProjectImage).fileUrl}
+                                      src={(currentImage as ProjectImage).url || (currentImage as ProjectImage).file_url}
                                       alt="Art"
                                       fill
                                       className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all object-contain"
@@ -1049,7 +1049,7 @@ export default function ProjectDetailPage() {
                                       onClick={() => {
                                         // Download functionality
                                         const link = document.createElement('a')
-                                        link.href = (currentImage as ProjectImage).url || (currentImage as ProjectImage).fileUrl
+                                        link.href = (currentImage as ProjectImage).url || (currentImage as ProjectImage).file_url
                                         link.download = `art-v${(currentImage as ProjectImage).version}.png`
                                         link.click()
                                       }}
@@ -1131,7 +1131,7 @@ export default function ProjectDetailPage() {
         {/* Right Panel - History Section with integrated comments */}
         <div className="w-96 border-l bg-card flex flex-col h-full overflow-hidden">
           <HistorySection
-            projectId={projectId}
+            project_id={projectId}
             sceneId={selectedScene?.id}
             comments={comments}
             onCommentsUpdate={handleCommentsUpdate}
@@ -1152,7 +1152,7 @@ export default function ProjectDetailPage() {
           <div className="relative max-w-[90vw] max-h-[90vh]">
             <div className="relative w-full h-full">
               <NextImage
-                src={selectedImage.url || selectedImage.fileUrl}
+                src={selectedImage.url || selectedImage.file_url}
                 alt="Image viewer"
                 width={1920}
                 height={1080}
@@ -1225,7 +1225,7 @@ export default function ProjectDetailPage() {
               transform: `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${zoomLevel / 100})`,
             }}>
               <NextImage
-                src={selectedImage.url || selectedImage.fileUrl}
+                src={selectedImage.url || selectedImage.file_url}
                 alt="Preview"
                 width={1920}
                 height={1080}
@@ -1312,7 +1312,7 @@ export default function ProjectDetailPage() {
                 <div key={img.id} className="space-y-2">
                   <div className="relative w-full aspect-video">
                     <NextImage
-                      src={img.url || img.fileUrl}
+                      src={img.url || img.file_url}
                       alt={`Version ${img.version}`}
                       fill
                       className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow object-cover"
@@ -1342,8 +1342,8 @@ export default function ProjectDetailPage() {
                         // 히스토리도 업데이트
                         const updatedHistory = imageHistory.map(histImg => ({
                           ...histImg,
-                          isCurrent: histImg.id === img.id ? true :
-                                    (histImg.type === img.type ? false : histImg.isCurrent)
+                          is_current: histImg.id === img.id ? true :
+                                    (histImg.type === img.type ? false : histImg.is_current)
                         }))
                         setImageHistory(updatedHistory)
                         
@@ -1365,12 +1365,12 @@ export default function ProjectDetailPage() {
                   <div className="text-xs space-y-1">
                     <div className="flex items-center gap-2">
                       <p className="font-medium">버전 {img.version}</p>
-                      {img.isCurrent && (
+                      {img.is_current && (
                         <Badge variant="default" className="text-xs">현재</Badge>
                       )}
                     </div>
                     <p className="text-muted-foreground">
-                      {new Date(img.uploadedAt).toLocaleString()}
+                      {new Date(img.uploaded_at).toLocaleString()}
                     </p>
                     <p className="text-muted-foreground">
                       {img.uploader?.nickname || 'Unknown'}
@@ -1407,7 +1407,7 @@ export default function ProjectDetailPage() {
               {compareImages.left && (
                 <div className="relative w-full h-[calc(100%-40px)]">
                   <NextImage
-                    src={compareImages.left.url || compareImages.left.fileUrl}
+                    src={compareImages.left.url || compareImages.left.file_url}
                     alt="Left comparison"
                     fill
                     className="object-contain rounded-lg"
@@ -1421,7 +1421,7 @@ export default function ProjectDetailPage() {
               {compareImages.right && (
                 <div className="relative w-full h-[calc(100%-40px)]">
                   <NextImage
-                    src={compareImages.right.url || compareImages.right.fileUrl}
+                    src={compareImages.right.url || compareImages.right.file_url}
                     alt="Right comparison"
                     fill
                     className="object-contain rounded-lg"
@@ -1457,13 +1457,13 @@ export default function ProjectDetailPage() {
             try {
               // Create annotation comment with metadata
               const comment = await commentsAPI.createComment({
-                projectId,
+                projectId: projectId,
                 sceneId: selectedScene?.id,
                 content: `[ANNOTATION]${text || '주석을 남겼습니다'}`,
                 metadata: {
-                  annotationImage: canvasDataUrl,
-                  originalImageId: annotationImage.id,
-                  imageType: annotationImage.type
+                  annotation_image: canvasDataUrl,
+                  original_image_id: annotationImage.id,
+                  image_type: annotationImage.type
                 }
               })
               
@@ -1525,7 +1525,7 @@ export default function ProjectDetailPage() {
           {selectedScene && (
             <SceneScript
               sceneId={selectedScene.id}
-              sceneNumber={selectedScene.sceneNumber || scenes.indexOf(selectedScene) + 1}
+              sceneNumber={selectedScene.scene_number || scenes.indexOf(selectedScene) + 1}
               isReadOnly={false}
             />
           )}

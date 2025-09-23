@@ -22,7 +22,7 @@ export default function AdminLayout({
         // If we have persisted auth state, use it
         if (isAuthenticated && user) {
           // Verify the user is admin
-          if (!user.isAdmin) {
+          if (!user.is_admin) {
             router.push('/studio');
             return;
           }
@@ -34,7 +34,7 @@ export default function AdminLayout({
           const currentUser = useAuthStore.getState().user;
           const currentAuth = useAuthStore.getState().isAuthenticated;
 
-          if (!currentAuth || !currentUser || !currentUser.isAdmin) {
+          if (!currentAuth || !currentUser || !currentUser.is_admin) {
             router.push('/studio');
             return;
           }
@@ -57,7 +57,7 @@ export default function AdminLayout({
   }
 
   // Verify admin status
-  if (!user?.isAdmin) {
+  if (!user?.is_admin) {
     return null;
   }
 

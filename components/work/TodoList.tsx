@@ -1,14 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Check, X, Trash2, Clock, User } from 'lucide-react'
+import { Plus, Check, X, Trash2, Clock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
 
@@ -21,7 +21,7 @@ interface Todo {
   user?: {
     id: string
     nickname: string
-    profileImageUrl?: string
+    profile_image_url?: string
   }
   taskId?: string
   task?: {
@@ -36,7 +36,7 @@ interface TodoListProps {
   searchQuery?: string
 }
 
-export default function TodoList({ projectId, userId, searchQuery }: TodoListProps) {
+export default function TodoList({ projectId, userId: _userId, searchQuery }: TodoListProps) {
   const { toast } = useToast()
   const { user: currentUser } = useAuthStore()
   const [todos, setTodos] = useState<Todo[]>([])
@@ -48,7 +48,7 @@ export default function TodoList({ projectId, userId, searchQuery }: TodoListPro
 
   useEffect(() => {
     loadTodos()
-  }, [projectId, activeTab])
+  }, [projectId, activeTab]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadTodos = async () => {
     try {
@@ -366,7 +366,7 @@ export default function TodoList({ projectId, userId, searchQuery }: TodoListPro
                                   {activeTab === 'team' && todo.user && (
                                     <div className="flex items-center gap-1">
                                       <Avatar className="h-5 w-5">
-                                        <AvatarImage src={todo.user.profileImageUrl} />
+                                        <AvatarImage src={todo.user.profile_image_url} />
                                         <AvatarFallback>
                                           {todo.user.nickname.slice(0, 2).toUpperCase()}
                                         </AvatarFallback>
@@ -424,7 +424,7 @@ export default function TodoList({ projectId, userId, searchQuery }: TodoListPro
                                 {activeTab === 'team' && todo.user && (
                                   <div className="flex items-center gap-1">
                                     <Avatar className="h-5 w-5">
-                                      <AvatarImage src={todo.user.profileImageUrl} />
+                                      <AvatarImage src={todo.user.profile_image_url} />
                                       <AvatarFallback>
                                         {todo.user.nickname.slice(0, 2).toUpperCase()}
                                       </AvatarFallback>

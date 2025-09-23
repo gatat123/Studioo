@@ -38,11 +38,11 @@ interface SceneWithImages extends Scene {
 }
 
 interface ArchivedProjectViewProps {
-  projectId: string
+  project_id: string
   isArchived?: boolean
 }
 
-export function ArchivedProjectView({ projectId, isArchived: _isArchived = true }: ArchivedProjectViewProps) {
+export function ArchivedProjectView({ project_id: projectId, isArchived: _isArchived = true }: ArchivedProjectViewProps) {
   const router = useRouter()
   const { toast } = useToast()
 
@@ -72,13 +72,13 @@ export function ArchivedProjectView({ projectId, isArchived: _isArchived = true 
         if (!scenesData.length) {
           scenesData = [{
             id: `${projectId}-default`,
-            projectId,
-            sceneNumber: 1,
+            project_id: projectId,
+            scene_number: 1,
             description: '일러스트',
             notes: '',
             images: [],
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           }];
         }
       }
@@ -89,14 +89,14 @@ export function ArchivedProjectView({ projectId, isArchived: _isArchived = true 
         lineArtImages: scene.images?.filter((img: Image) => img.type === 'lineart')
           .map((img: Image) => ({
             ...img,
-            url: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+            url: img.file_url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
+            file_url: img.file_url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
           })) || [],
         artImages: scene.images?.filter((img: Image) => img.type === 'art')
           .map((img: Image) => ({
             ...img,
-            url: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-            fileUrl: img.fileUrl?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+            url: img.file_url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
+            file_url: img.file_url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
           })) || []
       }))
 
@@ -235,7 +235,7 @@ export function ArchivedProjectView({ projectId, isArchived: _isArchived = true 
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
                           <Badge variant="outline" className="text-xs">
-                            씬 {scene.sceneNumber || index + 1}
+                            씬 {scene.scene_number || index + 1}
                           </Badge>
                         </div>
                         <p className="text-sm font-medium">{scene.description || `씬 ${index + 1}`}</p>
@@ -315,7 +315,7 @@ export function ArchivedProjectView({ projectId, isArchived: _isArchived = true 
                               // Get lineart images from the images array
                               const lineartImages = selectedScene?.images?.filter((img: Image) => img.type === 'lineart') || [];
                               // Show only the current version image
-                              const currentImage = lineartImages.find((img: Image) => img.isCurrent) || lineartImages[lineartImages.length - 1];
+                              const currentImage = lineartImages.find((img: Image) => img.is_current) || lineartImages[lineartImages.length - 1];
 
                               if (!currentImage) return null;
 
@@ -323,7 +323,7 @@ export function ArchivedProjectView({ projectId, isArchived: _isArchived = true 
                                 <div key={currentImage.id} className="relative group">
                                   <div className="relative w-full aspect-video">
                                     <NextImage
-                                      src={(currentImage as ProjectImage).url || (currentImage as ProjectImage).fileUrl}
+                                      src={(currentImage as ProjectImage).url || (currentImage as ProjectImage).file_url}
                                       alt="Line art"
                                       fill
                                       className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all object-contain"
@@ -338,7 +338,7 @@ export function ArchivedProjectView({ projectId, isArchived: _isArchived = true 
                                       className="h-8 w-8"
                                       onClick={() => {
                                         const link = document.createElement('a')
-                                        link.href = (currentImage as ProjectImage).url || (currentImage as ProjectImage).fileUrl
+                                        link.href = (currentImage as ProjectImage).url || (currentImage as ProjectImage).file_url
                                         link.download = `lineart-v${(currentImage as ProjectImage).version}.png`
                                         link.click()
                                       }}
@@ -371,7 +371,7 @@ export function ArchivedProjectView({ projectId, isArchived: _isArchived = true 
                               // Get art images from the images array
                               const artImages = selectedScene?.images?.filter((img: Image) => img.type === 'art') || [];
                               // Show only the current version image
-                              const currentImage = artImages.find((img: Image) => img.isCurrent) || artImages[artImages.length - 1];
+                              const currentImage = artImages.find((img: Image) => img.is_current) || artImages[artImages.length - 1];
 
                               if (!currentImage) return null;
 
@@ -379,7 +379,7 @@ export function ArchivedProjectView({ projectId, isArchived: _isArchived = true 
                                 <div key={currentImage.id} className="relative group">
                                   <div className="relative w-full aspect-video">
                                     <NextImage
-                                      src={(currentImage as ProjectImage).url || (currentImage as ProjectImage).fileUrl}
+                                      src={(currentImage as ProjectImage).url || (currentImage as ProjectImage).file_url}
                                       alt="Art"
                                       fill
                                       className="rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-all object-contain"
@@ -394,7 +394,7 @@ export function ArchivedProjectView({ projectId, isArchived: _isArchived = true 
                                       className="h-8 w-8"
                                       onClick={() => {
                                         const link = document.createElement('a')
-                                        link.href = (currentImage as ProjectImage).url || (currentImage as ProjectImage).fileUrl
+                                        link.href = (currentImage as ProjectImage).url || (currentImage as ProjectImage).file_url
                                         link.download = `art-v${(currentImage as ProjectImage).version}.png`
                                         link.click()
                                       }}
@@ -462,7 +462,7 @@ export function ArchivedProjectView({ projectId, isArchived: _isArchived = true 
                             {isAnnotation ? '주석' : '댓글'}
                           </Badge>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(comment.createdAt).toLocaleString()}
+                            {new Date(comment.created_at).toLocaleString()}
                           </p>
                         </div>
 
@@ -493,7 +493,7 @@ export function ArchivedProjectView({ projectId, isArchived: _isArchived = true 
           <div className="relative max-w-[90vw] max-h-[90vh]">
             <div className="relative w-full h-full">
               <NextImage
-                src={selectedImage.url || selectedImage.fileUrl}
+                src={selectedImage.url || selectedImage.file_url}
                 alt="Image viewer"
                 width={1920}
                 height={1080}

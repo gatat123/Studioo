@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
-import { CalendarIcon, Copy, Trash2, UserPlus, Users, Settings, Bell, Archive } from 'lucide-react'
+import { CalendarIcon, Copy, Trash2, Users, Settings, Bell, Archive } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -75,7 +75,7 @@ interface Project {
   tag?: 'illustration' | 'storyboard'
   deadline?: string | Date
   status?: 'active' | 'completed' | 'archived'
-  inviteCode?: string
+  invite_code?: string
 }
 
 export default function ProjectSettingsPage() {
@@ -112,11 +112,11 @@ export default function ProjectSettingsPage() {
           ...data,
           deadline: data.deadline ? String(data.deadline) : undefined
         })
-        setInviteCode(data.inviteCode || '')
+        setInviteCode(data.invite_code || '')
 
         // Check user permissions
-        const userIsOwner = data.creatorId === currentUser?.id
-        const participant = data.participants?.find(p => p.userId === currentUser?.id)
+        const userIsOwner = data.creator_id === currentUser?.id
+        const participant = data.participants?.find(p => p.user_id === currentUser?.id)
         const userCanEdit = userIsOwner || participant?.role === 'owner' || participant?.role === 'editor'
 
         setIsOwner(userIsOwner)
@@ -195,7 +195,7 @@ export default function ProjectSettingsPage() {
     }
   }
 
-  const handleGenerateInviteCode = async () => {
+  const _handleGenerateInviteCode = async () => {
     try {
       const result = await projectsAPI.generateInviteCode(projectId)
       setInviteCode(result.inviteCode)

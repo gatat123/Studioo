@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Activity, TrendingUp, CheckCircle, Clock, Users, BarChart, Calendar, Target } from 'lucide-react'
+import { Activity, TrendingUp, CheckCircle, Clock, Target } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Progress } from '@/components/ui/progress'
@@ -15,7 +15,7 @@ interface TeamMember {
   id: string
   nickname: string
   email: string
-  profileImageUrl?: string
+  profile_image_url?: string
   role: string
   todoCount: number
   completedTodoCount: number
@@ -32,7 +32,7 @@ interface Activity {
   user: {
     id: string
     nickname: string
-    profileImageUrl?: string
+    profile_image_url?: string
   }
   createdAt: string
 }
@@ -62,7 +62,7 @@ export default function TeamOverview({ projectId, searchQuery }: TeamOverviewPro
 
   useEffect(() => {
     loadTeamData()
-  }, [projectId])
+  }, [projectId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadTeamData = async () => {
     try {
@@ -87,11 +87,19 @@ export default function TeamOverview({ projectId, searchQuery }: TeamOverviewPro
 
       if (statsResponse.ok && activitiesResponse.ok) {
         // Process team members with mock data for now
-        const members = participantsResponse.map((participant: any) => ({
+        const members = participantsResponse.map((participant: {
+          userId: string;
+          user?: {
+            nickname?: string;
+            email?: string;
+            profile_image_url?: string;
+          };
+          role?: string;
+        }) => ({
           id: participant.userId,
           nickname: participant.user?.nickname || 'Unknown',
           email: participant.user?.email || '',
-          profileImageUrl: participant.user?.profileImageUrl,
+          profile_image_url: participant.user?.profile_image_url,
           role: participant.role,
           todoCount: Math.floor(Math.random() * 20),
           completedTodoCount: Math.floor(Math.random() * 15),
@@ -124,21 +132,21 @@ export default function TeamOverview({ projectId, searchQuery }: TeamOverviewPro
             id: '1',
             type: 'task_completed',
             description: '프로젝트 디자인 리뷰 완료',
-            user: members[0] || { id: '1', nickname: 'User', profileImageUrl: '' },
+            user: members[0] || { id: '1', nickname: 'User', profile_image_url: '' },
             createdAt: new Date(Date.now() - 3600000).toISOString()
           },
           {
             id: '2',
             type: 'todo_created',
             description: '새 Todo 추가: API 문서 작성',
-            user: members[1] || members[0] || { id: '1', nickname: 'User', profileImageUrl: '' },
+            user: members[1] || members[0] || { id: '1', nickname: 'User', profile_image_url: '' },
             createdAt: new Date(Date.now() - 7200000).toISOString()
           },
           {
             id: '3',
             type: 'comment_added',
             description: '디자인 시안에 피드백 추가',
-            user: members[2] || members[0] || { id: '1', nickname: 'User', profileImageUrl: '' },
+            user: members[2] || members[0] || { id: '1', nickname: 'User', profile_image_url: '' },
             createdAt: new Date(Date.now() - 10800000).toISOString()
           }
         ]
@@ -294,7 +302,7 @@ export default function TeamOverview({ projectId, searchQuery }: TeamOverviewPro
                       <div key={member.id} className="flex items-center justify-between p-4 rounded-lg border">
                         <div className="flex items-center gap-3">
                           <Avatar>
-                            <AvatarImage src={member.profileImageUrl} />
+                            <AvatarImage src={member.profile_image_url} />
                             <AvatarFallback>
                               {member.nickname.slice(0, 2).toUpperCase()}
                             </AvatarFallback>
@@ -358,7 +366,7 @@ export default function TeamOverview({ projectId, searchQuery }: TeamOverviewPro
                               </p>
                             </div>
                             <Avatar className="h-6 w-6">
-                              <AvatarImage src={activity.user.profileImageUrl} />
+                              <AvatarImage src={activity.user.profile_image_url} />
                               <AvatarFallback>
                                 {activity.user.nickname.slice(0, 2).toUpperCase()}
                               </AvatarFallback>
@@ -400,7 +408,7 @@ export default function TeamOverview({ projectId, searchQuery }: TeamOverviewPro
                       {teamMembers.slice(0, 3).map((member) => (
                         <div key={member.id} className="flex items-center gap-3">
                           <Avatar className="h-8 w-8">
-                            <AvatarImage src={member.profileImageUrl} />
+                            <AvatarImage src={member.profile_image_url} />
                             <AvatarFallback>
                               {member.nickname.slice(0, 2).toUpperCase()}
                             </AvatarFallback>

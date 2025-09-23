@@ -39,14 +39,14 @@ export const projectsAPI = {
    * Get all projects for current user
    */
   async getProjects(type: 'studio' | 'work' = 'studio'): Promise<Project[]> {
-    console.log('[projectsAPI] Requesting projects with type:', type);
+    // Requesting projects with type
     const response = await api.get('/api/projects', { params: { type } });
-    console.log('[projectsAPI] Raw API response:', response);
+    // Raw API response received
 
     // Backend returns { success: true, data: { projects: [...], pagination: {...} } }
     // Extract just the projects array
     const projects = response.data?.projects || response.projects || [];
-    console.log('[projectsAPI] Extracted projects:', projects);
+    // Extracted projects from response
 
     return projects;
   },

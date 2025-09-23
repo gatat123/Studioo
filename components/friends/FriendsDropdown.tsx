@@ -36,7 +36,7 @@ interface Friend {
     id: string;
     username: string;
     nickname: string;
-    profileImageUrl?: string;
+    profile_image_url?: string;
     isActive: boolean;
     isOnline?: boolean;
     lastLoginAt?: string;
@@ -52,13 +52,13 @@ interface FriendRequest {
     id: string;
     username: string;
     nickname: string;
-    profileImageUrl?: string;
+    profile_image_url?: string;
   };
   receiver?: {
     id: string;
     username: string;
     nickname: string;
-    profileImageUrl?: string;
+    profile_image_url?: string;
   };
   message?: string;
   createdAt: string;
@@ -68,7 +68,7 @@ interface SearchResult {
   id: string;
   username: string;
   nickname: string;
-  profileImageUrl?: string;
+  profile_image_url?: string;
   status?: 'friends' | 'request_sent' | 'request_received' | 'none';
   requestId?: string;
 }
@@ -129,7 +129,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
 
     // 친구 요청 받음 - 요청 목록에만 추가
     const handleFriendRequestReceived = (data: {
-      sender?: { id: string; username: string; nickname: string; profileImageUrl?: string };
+      sender?: { id: string; username: string; nickname: string; profile_image_url?: string };
       message?: string;
       requestId?: string;
     }) => {
@@ -150,7 +150,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
 
     // 친구 요청 수락됨 - 친구 목록에 추가, 요청에서 제거
     const handleFriendRequestAccepted = (data: {
-      acceptedBy?: { id: string; username: string; nickname: string; profileImageUrl?: string };
+      acceptedBy?: { id: string; username: string; nickname: string; profile_image_url?: string };
     }) => {
       
       // 보낸 요청에서 제거 (내가 보낸 요청이 수락된 경우)
@@ -168,7 +168,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
               id: data.acceptedBy.id,
               username: data.acceptedBy.username,
               nickname: data.acceptedBy.nickname,
-              profileImageUrl: data.acceptedBy.profileImageUrl,
+              profile_image_url: data.acceptedBy.profile_image_url,
               isActive: true,
               isOnline: true
             },
@@ -369,7 +369,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                 id: acceptedRequest.sender.id,
                 username: acceptedRequest.sender.username,
                 nickname: acceptedRequest.sender.nickname,
-                profileImageUrl: acceptedRequest.sender.profileImageUrl,
+                profile_image_url: acceptedRequest.sender.profile_image_url,
                 isActive: true,
                 isOnline: true
               },
@@ -527,7 +527,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                     <div key={user.id} className="flex items-center justify-between p-2 hover:bg-gray-50">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
-                          <AvatarImage src={user.profileImageUrl} />
+                          <AvatarImage src={user.profile_image_url} />
                           <AvatarFallback className="text-xs">{getInitials(user.nickname)}</AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col">
@@ -596,7 +596,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                           <div className="flex items-center gap-2">
                             <div className="relative">
                               <Avatar className="h-8 w-8">
-                                <AvatarImage src={friendship.friend.profileImageUrl} />
+                                <AvatarImage src={friendship.friend.profile_image_url} />
                                 <AvatarFallback className="text-xs">{getInitials(friendship.friend.nickname)}</AvatarFallback>
                               </Avatar>
                               <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-green-500 text-green-500" />
@@ -692,7 +692,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                           <div className="flex items-center gap-2">
                             <div className="relative">
                               <Avatar className="h-8 w-8 opacity-60">
-                                <AvatarImage src={friendship.friend.profileImageUrl} />
+                                <AvatarImage src={friendship.friend.profile_image_url} />
                                 <AvatarFallback className="text-xs">{getInitials(friendship.friend.nickname)}</AvatarFallback>
                               </Avatar>
                               <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-gray-400 text-gray-400" />
@@ -796,7 +796,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                     <div key={request.id} className="flex items-center justify-between p-2 rounded bg-blue-50 mb-1">
                       <div className="flex items-center gap-2">
                         <Avatar className="h-8 w-8">
-                          <AvatarImage src={request.sender?.profileImageUrl} />
+                          <AvatarImage src={request.sender?.profile_image_url} />
                           <AvatarFallback className="text-xs">
                             {getInitials(request.sender?.nickname || '')}
                           </AvatarFallback>

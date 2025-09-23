@@ -65,7 +65,7 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
         const imagesWithScenes = await Promise.all(
           scenes.map(async (scene) => {
             const currentImage = scene.images?.find(
-              (img: Image) => img.type === imageType && img.isCurrent
+              (img: Image) => img.type === imageType && img.is_current
             )
 
             // Load script data for each scene
@@ -385,7 +385,7 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
                     {/* Scene Number Badge */}
                     <div className="absolute top-24 left-8 z-10">
                       <div className="bg-white/10 backdrop-blur text-white px-3 py-1 rounded-full text-sm font-medium">
-                        씬 {scene.sceneNumber || index + 1}
+                        씬 {scene.scene_number || index + 1}
                       </div>
                     </div>
 
@@ -395,14 +395,14 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
                         // eslint-disable-next-line @next/next/no-img-element
                         <img
                           src={(image as {url?: string; fileUrl?: string}).url || (image as {url?: string; fileUrl?: string}).fileUrl}
-                          alt={`Scene ${scene.sceneNumber}`}
+                          alt={`Scene ${scene.scene_number}`}
                           className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
                         />
                       ) : (
                         <div className="flex items-center justify-center bg-gray-900 rounded-lg w-full h-full">
                           <div className="text-center text-gray-500">
                             <p className="text-lg font-medium mb-1">이미지 없음</p>
-                            <p className="text-sm">씬 {scene.sceneNumber || index + 1}</p>
+                            <p className="text-sm">씬 {scene.scene_number || index + 1}</p>
                           </div>
                         </div>
                       )}

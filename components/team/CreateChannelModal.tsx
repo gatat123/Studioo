@@ -43,7 +43,7 @@ export function CreateChannelModal({ open, onOpenChange, onChannelCreated, studi
     try {
       await channelsAPI.createChannel({
         ...formData,
-        studioId
+        studio_id: studioId
       })
       
       toast({

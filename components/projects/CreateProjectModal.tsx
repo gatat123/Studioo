@@ -31,7 +31,7 @@ import { Textarea } from '@/components/ui/textarea'
 // Validation schema
 const projectSchema = z.object({
   name: z.string().min(1, 'Project name is required').max(100, 'Project name is too long'),
-  projectType: z.enum(['studio', 'work'], {
+  project_type: z.enum(['studio', 'work'], {
     required_error: 'Please select a service type',
   }).default('studio'),
   type: z.enum(['illustration', 'storyboard'], {
@@ -115,7 +115,7 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
         body: JSON.stringify({
           name: data.name,
           description: data.description,
-          projectType: data.projectType,
+          project_type: data.project_type,
           tag: data.type as 'illustration' | 'storyboard',
           deadline: selectedDate ? selectedDate.toISOString() : undefined,
         }),
@@ -137,8 +137,8 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
       setCreatedProjectId(newProject.id)
       
       // Generate invite code for the created project
-      if (newProject.inviteCode) {
-        setInviteCode(newProject.inviteCode)
+      if (newProject.invite_code) {
+        setInviteCode(newProject.invite_code)
       } else {
         const code = generateInviteCode()
         setInviteCode(code)
@@ -204,10 +204,10 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
 
                 {/* Service Type */}
                 <div className="grid gap-2">
-                  <Label htmlFor="projectType">Service Type</Label>
+                  <Label htmlFor="project_type">Service Type</Label>
                   <Select
                     disabled={isLoading}
-                    onValueChange={(value) => setValue('projectType', value as 'studio' | 'work')}
+                    onValueChange={(value) => setValue('project_type', value as 'studio' | 'work')}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select service type" />
@@ -217,8 +217,8 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
                       <SelectItem value="work">Work (업무 관리)</SelectItem>
                     </SelectContent>
                   </Select>
-                  {errors.projectType && (
-                    <p className="text-sm text-red-500">{errors.projectType.message}</p>
+                  {errors.project_type && (
+                    <p className="text-sm text-red-500">{errors.project_type.message}</p>
                   )}
                 </div>
 

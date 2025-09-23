@@ -5,11 +5,11 @@ export interface Channel {
   name: string
   description?: string
   type: 'public' | 'private' | 'direct'
-  creatorId: string
-  studioId?: string
-  isArchived: boolean
-  createdAt: string
-  updatedAt: string
+  creator_id: string
+  studio_id?: string
+  is_archived: boolean
+  created_at: string
+  updated_at: string
   _count?: {
     members: number
     messages: number
@@ -27,7 +27,7 @@ export interface ChannelMember {
     id: string
     username: string
     nickname: string
-    profileImageUrl?: string
+    profile_image_url?: string
     bio?: string
     lastLoginAt?: string
     isActive: boolean
@@ -44,12 +44,12 @@ export interface ChannelMessage {
   metadata?: Record<string, unknown>
   editedAt?: string
   deletedAt?: string
-  createdAt: string
+  created_at: string
   sender: {
     id: string
     username: string
     nickname: string
-    profileImageUrl?: string
+    profile_image_url?: string
   }
   files?: ChannelFile[]
 }
@@ -64,14 +64,14 @@ export interface ChannelFile {
   fileSize: number
   mimeType: string
   metadata?: Record<string, unknown>
-  createdAt: string
+  created_at: string
 }
 
 export interface CreateChannelData {
   name: string
   description?: string
   type?: 'public' | 'private'
-  studioId?: string
+  studio_id?: string
 }
 
 export interface SendMessageData {
@@ -93,7 +93,7 @@ export interface ChannelInvitation {
   status: 'pending' | 'accepted' | 'rejected' | 'expired'
   expiresAt?: string
   acceptedAt?: string
-  createdAt: string
+  created_at: string
   channel: {
     id: string
     name: string
@@ -103,7 +103,7 @@ export interface ChannelInvitation {
       id: string
       username: string
       nickname: string
-      profileImageUrl?: string
+      profile_image_url?: string
     }
     _count?: {
       members: number
@@ -114,7 +114,7 @@ export interface ChannelInvitation {
     id: string
     username: string
     nickname: string
-    profileImageUrl?: string
+    profile_image_url?: string
   }
 }
 

@@ -1,9 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, MoreVertical, Calendar, User, AlertCircle } from 'lucide-react'
+import { Plus, MoreVertical, Calendar, ChevronRight, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,7 +13,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -30,7 +30,7 @@ interface Task {
   assignedUsers?: Array<{
     id: string
     nickname: string
-    profileImageUrl?: string
+    profile_image_url?: string
   }>
   todoCount?: number
   completedTodoCount?: number
@@ -50,12 +50,20 @@ const TASK_COLUMNS = [
 
 export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
   const { toast } = useToast()
-  const { user } = useAuthStore()
+  const { user: _user } = useAuthStore()
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [selectedColumn, setSelectedColumn] = useState('')
   const [draggedTask, setDraggedTask] = useState<Task | null>(null)
+  const [participants, setParticipants] = useState<Array<{
+    user_id: string
+    user?: {
+      nickname?: string
+      username?: string
+    }
+  }>>([])
+  const [selectedParticipant, setSelectedParticipant] = useState<string | null>(null)
 
   // Form state
   const [newTaskTitle, setNewTaskTitle] = useState('')
@@ -65,7 +73,25 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
 
   useEffect(() => {
     loadTasks()
-  }, [projectId])
+    loadParticipants()
+  }, [projectId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadParticipants = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/projects/${projectId}/participants`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setParticipants(data)
+      }
+    } catch (error) {
+      console.error('Failed to load participants:', error)
+    }
+  }
 
   const loadTasks = async () => {
     try {
@@ -242,6 +268,13 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
   }
 
   const filteredTasks = tasks.filter(task => {
+    // Filter by selected participant
+    if (selectedParticipant) {
+      const hasAssignee = task.assignedUsers?.some(u => u.id === selectedParticipant)
+      if (!hasAssignee) return false
+    }
+
+    // Filter by search query
     if (!searchQuery) return true
     return task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
            task.description?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -256,8 +289,33 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
   }
 
   return (
-    <div className="h-full">
-      <div className="grid grid-cols-4 gap-4 h-full">
+    <div className="h-full flex flex-col">
+      {/* Participant Filter */}
+      <div className="mb-4 flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+        <Users className="h-4 w-4 text-gray-600" />
+        <span className="text-sm font-medium text-gray-700">참여자별 보기:</span>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            variant={!selectedParticipant ? 'default' : 'outline'}
+            onClick={() => setSelectedParticipant(null)}
+          >
+            전체
+          </Button>
+          {participants.map((participant) => (
+            <Button
+              key={participant.user_id}
+              size="sm"
+              variant={selectedParticipant === participant.user_id ? 'default' : 'outline'}
+              onClick={() => setSelectedParticipant(participant.user_id)}
+            >
+              {participant.user?.nickname || participant.user?.username}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-4 gap-4 flex-1">
         {TASK_COLUMNS.map((column) => (
           <div
             key={column.id}
@@ -330,6 +388,38 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
                           )}
                         </div>
 
+                        {/* Status Move Button */}
+                        {column.id === 'todo' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full h-7 text-xs"
+                            onClick={() => handleUpdateTaskStatus(task.id, 'in_progress')}
+                          >
+                            진행중으로 <ChevronRight className="ml-1 h-3 w-3" />
+                          </Button>
+                        )}
+                        {column.id === 'in_progress' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full h-7 text-xs"
+                            onClick={() => handleUpdateTaskStatus(task.id, 'review')}
+                          >
+                            검토로 <ChevronRight className="ml-1 h-3 w-3" />
+                          </Button>
+                        )}
+                        {column.id === 'review' && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full h-7 text-xs"
+                            onClick={() => handleUpdateTaskStatus(task.id, 'done')}
+                          >
+                            완료로 <ChevronRight className="ml-1 h-3 w-3" />
+                          </Button>
+                        )}
+
                         {task.dueDate && (
                           <div className="flex items-center text-xs text-gray-500">
                             <Calendar className="h-3 w-3 mr-1" />
@@ -341,7 +431,7 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
                           <div className="flex -space-x-2">
                             {task.assignedUsers.slice(0, 3).map((user) => (
                               <Avatar key={user.id} className="h-6 w-6 border-2 border-white">
-                                <AvatarImage src={user.profileImageUrl} />
+                                <AvatarImage src={user.profile_image_url} />
                                 <AvatarFallback className="text-xs">
                                   {user.nickname.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>

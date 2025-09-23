@@ -14,6 +14,6 @@ export default function ArchivedProjectPage({ params }: ArchivedProjectPageProps
   const projectId = resolvedParams.id
 
   return (
-    <ArchivedProjectView projectId={projectId} isArchived={true} />
+    <ArchivedProjectView project_id={projectId} isArchived={true} />
   )
 }

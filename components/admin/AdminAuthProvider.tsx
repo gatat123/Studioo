@@ -50,7 +50,7 @@ export default function AdminAuthProvider({ children }: AdminAuthProviderProps) 
   // Monitor auth state changes
   useEffect(() => {
     // Only redirect if explicitly not authenticated or not an admin
-    if (isAuthenticated === false || (user && !user.isAdmin)) {
+    if (isAuthenticated === false || (user && !user.is_admin)) {
       router.push('/studio');
     }
   }, [isAuthenticated, user, router]);

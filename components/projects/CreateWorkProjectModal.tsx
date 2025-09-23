@@ -98,7 +98,7 @@ export function CreateWorkProjectModal({ open, onOpenChange }: CreateWorkProject
         body: JSON.stringify({
           name: data.name,
           description: data.description,
-          projectType: 'work', // Always 'work' for Work projects
+          project_type: 'work', // Always 'work' for Work projects
           deadline: selectedDate ? selectedDate.toISOString() : undefined,
         }),
       })
@@ -119,8 +119,8 @@ export function CreateWorkProjectModal({ open, onOpenChange }: CreateWorkProject
       setCreatedProjectId(newProject.id)
 
       // Generate invite code for the created project
-      if (newProject.inviteCode) {
-        setInviteCode(newProject.inviteCode)
+      if (newProject.invite_code) {
+        setInviteCode(newProject.invite_code)
       } else {
         const code = generateInviteCode()
         setInviteCode(code)

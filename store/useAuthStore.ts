@@ -39,12 +39,12 @@ export const useAuthStore = create<AuthState>()(
           if (response.user) {
             const user: User = {
               ...response.user,
-              profileImageUrl: response.user.profileImageUrl || undefined,
-              createdAt: response.user.createdAt || new Date().toISOString(),
-              updatedAt: response.user.updatedAt || new Date().toISOString(),
-              isActive: response.user.isActive !== undefined ? response.user.isActive : true,
+              profile_image_url: response.user.profile_image_url || undefined,
+              created_at: response.user.created_at || new Date().toISOString(),
+              updated_at: response.user.updated_at || new Date().toISOString(),
+              is_active: response.user.is_active !== undefined ? response.user.is_active : true,
               // 임시로 특정 사용자를 관리자로 설정 (테스트용)
-              isAdmin: response.user.username === 'gatat123' ? true : response.user.isAdmin
+              is_admin: response.user.username === 'gatat123' ? true : response.user.is_admin
             };
             
             // Set authentication token
@@ -82,12 +82,12 @@ export const useAuthStore = create<AuthState>()(
           if (response.user) {
             const user: User = {
               ...response.user,
-              profileImageUrl: response.user.profileImageUrl || undefined,
-              createdAt: response.user.createdAt || new Date().toISOString(),
-              updatedAt: response.user.updatedAt || new Date().toISOString(),
-              isActive: response.user.isActive !== undefined ? response.user.isActive : true,
+              profile_image_url: response.user.profile_image_url || undefined,
+              created_at: response.user.created_at || new Date().toISOString(),
+              updated_at: response.user.updated_at || new Date().toISOString(),
+              is_active: response.user.is_active !== undefined ? response.user.is_active : true,
               // 임시로 특정 사용자를 관리자로 설정 (테스트용)
-              isAdmin: response.user.username === 'gatat123' ? true : response.user.isAdmin
+              is_admin: response.user.username === 'gatat123' ? true : response.user.is_admin
             };
             
             // Set authentication token
@@ -210,12 +210,12 @@ export const useAuthStore = create<AuthState>()(
           if (sessionUser) {
             const user: User = {
               ...sessionUser,
-              profileImageUrl: sessionUser.profileImageUrl || undefined,
-              createdAt: sessionUser.createdAt || new Date().toISOString(),
-              updatedAt: sessionUser.updatedAt || new Date().toISOString(),
-              isActive: sessionUser.isActive !== undefined ? sessionUser.isActive : true,
+              profile_image_url: sessionUser.profile_image_url || undefined,
+              created_at: sessionUser.created_at || new Date().toISOString(),
+              updated_at: sessionUser.updated_at || new Date().toISOString(),
+              is_active: sessionUser.is_active !== undefined ? sessionUser.is_active : true,
               // 임시로 특정 사용자를 관리자로 설정 (테스트용)
-              isAdmin: sessionUser.username === 'gatat123' ? true : sessionUser.isAdmin
+              is_admin: sessionUser.username === 'gatat123' ? true : sessionUser.is_admin
             };
 
             set({

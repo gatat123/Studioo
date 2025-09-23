@@ -133,30 +133,48 @@ export default function WorkPage() {
 
       {/* Project Selector */}
       <div className="p-4 border-b bg-gray-50">
-        <div className="flex items-center gap-4">
-          <div className="flex-1">
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {projects.map((project) => (
-                <Button
-                  key={project.id}
-                  variant={selectedProject?.id === project.id ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => handleProjectSelect(project)}
-                  className="whitespace-nowrap"
-                >
-                  {project.name}
-                </Button>
-              ))}
+        <div className="flex flex-col gap-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">프로젝트 목록</h2>
+            <div className="relative w-64">
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+              <Input
+                placeholder="검색..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
             </div>
           </div>
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
-            <Input
-              placeholder="검색..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
-            />
+          <div className="flex gap-3 overflow-x-auto pb-2">
+            {projects.map((project) => (
+              <Card
+                key={project.id}
+                className={`min-w-[280px] cursor-pointer transition-all ${
+                  selectedProject?.id === project.id
+                    ? 'ring-2 ring-primary shadow-lg'
+                    : 'hover:shadow-md'
+                }`}
+                onClick={() => handleProjectSelect(project)}
+              >
+                <CardContent className="p-4">
+                  <div className="space-y-2">
+                    <h3 className="font-semibold text-base">{project.name}</h3>
+                    <p className="text-sm text-gray-600 line-clamp-2">
+                      {project.description || '설명이 없습니다'}
+                    </p>
+                    {project.deadline && (
+                      <div className="flex items-center gap-1 text-xs text-gray-500">
+                        <span>마감일:</span>
+                        <span className="font-medium">
+                          {new Date(project.deadline).toLocaleDateString('ko-KR')}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       </div>
@@ -167,23 +185,29 @@ export default function WorkPage() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
             <TabsList className="m-4">
               <TabsTrigger value="tasks">업무 보드</TabsTrigger>
-              <TabsTrigger value="todos">개인 Todo</TabsTrigger>
               <TabsTrigger value="team">팀 현황</TabsTrigger>
             </TabsList>
 
             <TabsContent value="tasks" className="flex-1 overflow-hidden px-4">
-              <TaskBoard
-                projectId={selectedProject.id}
-                searchQuery={searchQuery}
-              />
-            </TabsContent>
+              <div className="h-full flex gap-4">
+                {/* Main Task Board */}
+                <div className="flex-1">
+                  <TaskBoard
+                    projectId={selectedProject.id}
+                    searchQuery={searchQuery}
+                  />
+                </div>
 
-            <TabsContent value="todos" className="flex-1 overflow-hidden px-4">
-              <TodoList
-                projectId={selectedProject.id}
-                userId={user?.id}
-                searchQuery={searchQuery}
-              />
+                {/* Personal Todo Sidebar */}
+                <div className="w-80 border-l pl-4">
+                  <h3 className="text-lg font-semibold mb-4">개인 Todo</h3>
+                  <TodoList
+                    projectId={selectedProject.id}
+                    userId={user?.id}
+                    searchQuery={searchQuery}
+                  />
+                </div>
+              </div>
             </TabsContent>
 
             <TabsContent value="team" className="flex-1 overflow-hidden px-4">

@@ -132,7 +132,7 @@ export default function StudioPage() {
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" className="rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user?.profileImageUrl || undefined} />
+                        <AvatarImage src={user?.profile_image_url || undefined} />
                         <AvatarFallback>
                           {user?.nickname?.[0]?.toUpperCase() || user?.username?.[0]?.toUpperCase()}
                         </AvatarFallback>
@@ -159,7 +159,7 @@ export default function StudioPage() {
                         <span>설정</span>
                       </Link>
                     </DropdownMenuItem>
-                    {user?.isAdmin && (
+                    {user?.is_admin && (
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>

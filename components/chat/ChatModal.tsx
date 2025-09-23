@@ -17,7 +17,7 @@ interface Friend {
   id: string;
   username: string;
   nickname?: string; // Made optional for compatibility
-  profileImageUrl?: string;
+  profile_image_url?: string;
   isActive?: boolean;
 }
 
@@ -33,13 +33,13 @@ interface Message {
     id: string;
     username: string;
     nickname: string;
-    profileImageUrl?: string;
+    profile_image_url?: string;
   };
   receiver: {
     id: string;
     username: string;
     nickname: string;
-    profileImageUrl?: string;
+    profile_image_url?: string;
   };
 }
 
@@ -191,13 +191,13 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose, o
         id: currentUserId,
         username: '',
         nickname: '',
-        profileImageUrl: undefined
+        profile_image_url: undefined
       },
       receiver: {
         id: friend.id,
         username: friend.username,
         nickname: friend.nickname || friend.username,
-        profileImageUrl: friend.profileImageUrl
+        profile_image_url: friend.profile_image_url
       }
     };
 
@@ -307,7 +307,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose, o
           )}
           <div className="flex items-center gap-3">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={friend.profileImageUrl} />
+              <AvatarImage src={friend.profile_image_url} />
               <AvatarFallback>{getInitials(friend.nickname)}</AvatarFallback>
             </Avatar>
             <div>
