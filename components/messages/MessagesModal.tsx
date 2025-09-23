@@ -289,7 +289,7 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
 
       {/* Messages Modal */}
       <AnimatePresence>
-        {isOpen && !selectedFriend && (
+        {isOpen && !selectedFriend && !isMinimized && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -299,11 +299,7 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
               stiffness: 300,
               damping: 30
             }}
-            className={cn(
-              "fixed z-50 bg-white rounded-lg shadow-2xl border",
-              isMinimized ? "h-14 w-80" : "h-[550px] w-[420px]",
-              "flex flex-col"
-            )}
+            className="fixed z-50 bg-white rounded-lg shadow-2xl border h-[550px] w-[420px] flex flex-col"
             style={{
               position: 'fixed',
               top: '250px',  // 헤더 아래 위치 (100px 더 아래로)
@@ -312,9 +308,8 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
             }}
           >
             {/* Header */}
-            <div 
-              className="flex items-center justify-between p-4 border-b cursor-pointer select-none"
-              onClick={() => setIsMinimized(!isMinimized)}
+            <div
+              className="flex items-center justify-between p-4 border-b select-none"
             >
               <div className="flex items-center gap-2">
                 <h3 className="font-semibold text-lg">메시지</h3>
@@ -351,9 +346,7 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
               </div>
             </div>
 
-            {!isMinimized && (
-              <>
-                {/* Tabs */}
+            {/* Tabs */}
                 <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'messages' | 'friends')} className="flex-1 flex flex-col">
                   <TabsList className="grid w-full grid-cols-2 mx-3 mt-2" style={{ width: 'calc(100% - 24px)' }}>
                     <TabsTrigger value="messages" className="relative">
@@ -518,8 +511,40 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
                   </ScrollArea>
                 </TabsContent>
               </Tabs>
-              </>
-            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Minimized Floating Button */}
+      <AnimatePresence>
+        {isOpen && isMinimized && !selectedFriend && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8, y: 100 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 100 }}
+            transition={{
+              type: 'spring',
+              stiffness: 300,
+              damping: 25
+            }}
+            className="fixed bottom-6 right-6 z-50"
+          >
+            <Button
+              size="lg"
+              className="rounded-full h-14 px-5 shadow-lg hover:shadow-xl transition-shadow relative"
+              onClick={() => setIsMinimized(false)}
+            >
+              <MessageSquare className="h-5 w-5 mr-2" />
+              <span className="font-medium">메시지</span>
+              {totalUnread > 0 && (
+                <Badge
+                  className="absolute -top-2 -right-2 h-6 w-6 p-0 flex items-center justify-center"
+                  variant="destructive"
+                >
+                  {totalUnread > 99 ? '99+' : totalUnread}
+                </Badge>
+              )}
+            </Button>
           </motion.div>
         )}
       </AnimatePresence>

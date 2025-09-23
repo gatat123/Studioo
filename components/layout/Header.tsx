@@ -45,11 +45,8 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
   const [isFriendsOpen, setIsFriendsOpen] = useState(false);
   const { toast } = useToast();
 
-  const navLinks = [
-    { href: '/studio', label: 'Studio' },
-    { href: '/studio/projects', label: 'Projects' },
-    { href: '/studio/recent', label: 'Recent' },
-  ];
+  // Navigation links removed - Studio, Projects, Recent buttons are no longer needed
+  const navLinks: { href: string; label: string }[] = [];
 
   // Listen for new invitations via Socket.io
   useEffect(() => {
