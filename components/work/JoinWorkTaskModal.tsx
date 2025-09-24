@@ -88,11 +88,11 @@ export default function JoinWorkTaskModal({ open, onClose }: JoinWorkTaskModalPr
               <Label htmlFor="inviteCode">초대 코드</Label>
               <Input
                 id="inviteCode"
-                placeholder="8자리 초대 코드 입력"
+                placeholder="초대 코드 입력"
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                 disabled={isLoading}
-                maxLength={8}
+                maxLength={20}
                 className="font-mono text-lg tracking-wider"
               />
             </div>
