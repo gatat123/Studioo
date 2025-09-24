@@ -99,12 +99,15 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     // Handle subtask created
     const handleSubtaskCreated = (data: { subtask: SubTask }) => {
       console.log(`[TaskBoard] Subtask created:`, data)
-      setSubtasks(prev => [...prev, data.subtask])
+      // Add with animation effect
+      setSubtasks(prev => [...prev, { ...data.subtask, _isNew: true }])
 
-      // Notify parent component about the update
-      if (onTaskUpdate) {
-        onTaskUpdate()
-      }
+      // Remove animation flag after animation completes
+      setTimeout(() => {
+        setSubtasks(prev => prev.map(task =>
+          task.id === data.subtask.id ? { ...task, _isNew: undefined } : task
+        ))
+      }, 500)
     }
 
     // Handle subtask updated
@@ -124,10 +127,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
         ))
       }
 
-      // Notify parent component about the update
-      if (onTaskUpdate) {
-        onTaskUpdate()
-      }
+      // Don't notify parent to avoid full refresh
     }
 
     // Handle subtask status changed (more specific event)
@@ -151,10 +151,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
         }로 이동했습니다.`,
       })
 
-      // Notify parent component about the update
-      if (onTaskUpdate) {
-        onTaskUpdate()
-      }
+      // Don't notify parent to avoid full refresh
     }
 
     // Handle subtask deleted
@@ -174,10 +171,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
         return updated
       })
 
-      // Notify parent component about the update
-      if (onTaskUpdate) {
-        onTaskUpdate()
-      }
+      // Don't notify parent to avoid full refresh
     }
 
     // Handle subtask comment created
@@ -222,10 +216,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
     const handleJoinedWorkTask = (data: { workTaskId: string, roomId: string }) => {
       console.log(`[TaskBoard] Successfully joined work-task room:`, data)
-      // Refresh subtasks after joining room to ensure we have latest data
-      setTimeout(() => {
-        loadSubTasks()
-      }, 500)
+      // Don't refresh - rely on socket events for updates
     }
 
     // Register event listeners
@@ -844,7 +835,9 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                   .map((task) => (
                     <Card
                       key={task.id}
-                      className="cursor-move hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] hover:-translate-y-1"
+                      className={`cursor-move hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] hover:-translate-y-1 ${
+                        (task as any)._isNew ? 'animate-in fade-in-0 slide-in-from-bottom-2 duration-500' : ''
+                      }`}
                       draggable
                       onDragStart={(e) => handleDragStart(e, task)}
                       onDragEnd={(e) => {
