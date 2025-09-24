@@ -13,17 +13,15 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
 import { workTasksAPI, WorkTask } from '@/lib/api/work-tasks'
+import { socketClient } from '@/lib/socket/client'
 
 interface TaskBoardProps {
   searchQuery?: string
   onTaskCreated?: () => void
+  onTaskUpdate?: () => void
 }
 
 const TASK_COLUMNS = [
@@ -33,25 +31,44 @@ const TASK_COLUMNS = [
   { id: 'completed', title: '완료', color: 'bg-green-50' },
 ]
 
-export default function TaskBoard({ searchQuery, onTaskCreated }: TaskBoardProps) {
+export default function TaskBoard({ searchQuery, onTaskCreated, onTaskUpdate }: TaskBoardProps) {
   const { toast } = useToast()
   const { user: _user } = useAuthStore()
   const [tasks, setTasks] = useState<WorkTask[]>([])
   const [loading, setLoading] = useState(true)
-  const [showCreateDialog, setShowCreateDialog] = useState(false)
-  const [selectedColumn, setSelectedColumn] = useState('')
   const [draggedTask, setDraggedTask] = useState<WorkTask | null>(null)
   const [selectedParticipant, setSelectedParticipant] = useState<string | null>(null)
-
-  // Form state
-  const [newTaskTitle, setNewTaskTitle] = useState('')
-  const [newTaskDescription, setNewTaskDescription] = useState('')
-  const [newTaskPriority, setNewTaskPriority] = useState('medium')
-  const [newTaskDueDate, setNewTaskDueDate] = useState('')
 
   useEffect(() => {
     loadTasks()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Socket.io listeners for real-time updates
+  useEffect(() => {
+    const socket = socketClient.connect()
+
+    const handleReloadTasks = () => {
+      loadTasks()
+      // Also notify parent component about the update
+      if (onTaskUpdate) {
+        onTaskUpdate()
+      }
+    }
+
+    socket.on('task:created', handleReloadTasks)
+    socket.on('task:updated', handleReloadTasks)
+    socket.on('task:deleted', handleReloadTasks)
+    socket.on('work-task:updated', handleReloadTasks)
+    socket.on('work-task:deleted', handleReloadTasks)
+
+    return () => {
+      socket.off('task:created', handleReloadTasks)
+      socket.off('task:updated', handleReloadTasks)
+      socket.off('task:deleted', handleReloadTasks)
+      socket.off('work-task:updated', handleReloadTasks)
+      socket.off('work-task:deleted', handleReloadTasks)
+    }
+  }, [onTaskUpdate]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadTasks = async () => {
     try {
@@ -70,55 +87,6 @@ export default function TaskBoard({ searchQuery, onTaskCreated }: TaskBoardProps
     }
   }
 
-  const handleCreateTask = async () => {
-    if (!newTaskTitle.trim()) {
-      toast({
-        title: '입력 오류',
-        description: '업무 제목을 입력해주세요.',
-        variant: 'destructive'
-      })
-      return
-    }
-
-    try {
-      const newTask = await workTasksAPI.createWorkTask({
-        title: newTaskTitle,
-        description: newTaskDescription || undefined,
-        priority: newTaskPriority as 'low' | 'medium' | 'high' | 'urgent',
-        dueDate: newTaskDueDate || undefined,
-      })
-
-      // Update the task status if a specific column was selected
-      if (selectedColumn && selectedColumn !== 'pending') {
-        const updatedTask = await workTasksAPI.updateWorkTask(newTask.id, {
-          status: selectedColumn as 'pending' | 'in_progress' | 'review' | 'completed' | 'cancelled'
-        })
-        setTasks([...tasks, updatedTask])
-      } else {
-        setTasks([...tasks, newTask])
-      }
-
-      setShowCreateDialog(false)
-      resetForm()
-
-      // Call the parent callback to refresh data
-      if (onTaskCreated) {
-        onTaskCreated()
-      }
-
-      toast({
-        title: '업무 생성 완료',
-        description: '새 업무가 추가되었습니다.',
-      })
-    } catch (error) {
-      console.error('Failed to create work task:', error)
-      toast({
-        title: '업무 생성 실패',
-        description: '업무를 생성할 수 없습니다.',
-        variant: 'destructive'
-      })
-    }
-  }
 
   const handleUpdateTaskStatus = async (taskId: string, newStatus: string) => {
     try {
@@ -133,6 +101,11 @@ export default function TaskBoard({ searchQuery, onTaskCreated }: TaskBoardProps
         title: '업무 상태 변경',
         description: '업무 상태가 업데이트되었습니다.',
       })
+
+      // Call the onTaskUpdate callback to refresh parent component
+      if (onTaskUpdate) {
+        onTaskUpdate()
+      }
     } catch (error) {
       console.error('Failed to update task status:', error)
       toast({
@@ -151,6 +124,11 @@ export default function TaskBoard({ searchQuery, onTaskCreated }: TaskBoardProps
         title: '업무 삭제 완료',
         description: '업무가 삭제되었습니다.',
       })
+
+      // Call the onTaskUpdate callback to refresh parent component
+      if (onTaskUpdate) {
+        onTaskUpdate()
+      }
     } catch (error) {
       console.error('Failed to delete work task:', error)
       toast({
@@ -161,12 +139,6 @@ export default function TaskBoard({ searchQuery, onTaskCreated }: TaskBoardProps
     }
   }
 
-  const resetForm = () => {
-    setNewTaskTitle('')
-    setNewTaskDescription('')
-    setNewTaskPriority('medium')
-    setNewTaskDueDate('')
-  }
 
   const handleDragStart = (e: React.DragEvent, task: WorkTask) => {
     setDraggedTask(task)
@@ -383,85 +355,10 @@ export default function TaskBoard({ searchQuery, onTaskCreated }: TaskBoardProps
                     </Card>
                   ))}
 
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start text-gray-600"
-                  onClick={() => {
-                    setSelectedColumn(column.id)
-                    setShowCreateDialog(true)
-                  }}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  업무 추가
-                </Button>
               </div>
             </ScrollArea>
           </div>
         ))}
-      </div>
-
-      {/* Create Task Dialog */}
-      <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>새 업무 추가</DialogTitle>
-            <DialogDescription>
-              프로젝트에 새로운 업무를 추가합니다.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">제목</label>
-              <Input
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="업무 제목을 입력하세요"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium">설명</label>
-              <Textarea
-                value={newTaskDescription}
-                onChange={(e) => setNewTaskDescription(e.target.value)}
-                placeholder="업무 설명을 입력하세요 (선택사항)"
-                rows={3}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium">우선순위</label>
-                <Select value={newTaskPriority} onValueChange={setNewTaskPriority}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="urgent">긴급</SelectItem>
-                    <SelectItem value="high">높음</SelectItem>
-                    <SelectItem value="medium">보통</SelectItem>
-                    <SelectItem value="low">낮음</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">마감일</label>
-                <Input
-                  type="date"
-                  value={newTaskDueDate}
-                  onChange={(e) => setNewTaskDueDate(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
-                취소
-              </Button>
-              <Button onClick={handleCreateTask}>
-                추가
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }

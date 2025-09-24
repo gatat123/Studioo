@@ -1,11 +1,24 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Search } from 'lucide-react'
+import { Plus, Search, MoreVertical, Trash2, Link2, Check, Copy, Key } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
 import { workTasksAPI } from '@/lib/api/work-tasks'
 import { projectsAPI } from '@/lib/api/projects' // Keep for temporary compatibility
@@ -27,6 +40,8 @@ export default function WorkPage() {
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showJoinModal, setShowJoinModal] = useState(false)
+  const [showInviteCodeDialog, setShowInviteCodeDialog] = useState(false)
+  const [selectedInviteCode, setSelectedInviteCode] = useState('')
 
   // Clear localStorage cache and load projects on mount
   useEffect(() => {
@@ -105,6 +120,42 @@ export default function WorkPage() {
     socket.emit('join:work-task', { workTaskId: workTask.id })
   }
 
+  const handleDeleteWorkTask = async (workTaskId: string) => {
+    try {
+      await workTasksAPI.deleteWorkTask(workTaskId)
+      toast({
+        title: '업무 삭제 완료',
+        description: '업무가 성공적으로 삭제되었습니다.',
+      })
+      // Reload work tasks after deletion
+      await loadWorkTasks()
+      // Clear selected work task if it was deleted
+      if (selectedWorkTask?.id === workTaskId) {
+        setSelectedWorkTask(null)
+      }
+    } catch (error) {
+      console.error('[Work Page] Error deleting work task:', error)
+      toast({
+        title: '업무 삭제 실패',
+        description: '업무를 삭제할 수 없습니다.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleShowInviteCode = (inviteCode: string) => {
+    setSelectedInviteCode(inviteCode)
+    setShowInviteCodeDialog(true)
+  }
+
+  const handleCopyInviteCode = () => {
+    navigator.clipboard.writeText(selectedInviteCode)
+    toast({
+      title: '초대코드 복사 완료',
+      description: '초대코드가 클립보드에 복사되었습니다.',
+    })
+  }
+
 
 
   if (loading) {
@@ -162,7 +213,44 @@ export default function WorkPage() {
               >
                 <CardContent className="p-4">
                   <div className="space-y-2">
-                    <h3 className="font-semibold text-base">{workTask.title}</h3>
+                    <div className="flex items-start justify-between">
+                      <h3 className="font-semibold text-base flex-1">{workTask.title}</h3>
+                      {/* Show dropdown menu only for creator */}
+                      {user?.id === workTask.createdById && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 -mt-1">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {workTask.inviteCode && (
+                              <DropdownMenuItem
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleShowInviteCode(workTask.inviteCode)
+                                }}
+                              >
+                                <Key className="mr-2 h-4 w-4" />
+                                초대코드 확인
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (confirm('정말로 이 업무를 삭제하시겠습니까?')) {
+                                  handleDeleteWorkTask(workTask.id)
+                                }
+                              }}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              삭제
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
                     <p className="text-sm text-gray-600 line-clamp-2">
                       {workTask.description || '설명이 없습니다'}
                     </p>
@@ -207,6 +295,7 @@ export default function WorkPage() {
                   <TaskBoard
                     searchQuery={searchQuery}
                     onTaskCreated={loadWorkTasks}
+                    onTaskUpdate={loadWorkTasks}
                   />
                 </div>
 
@@ -250,6 +339,36 @@ export default function WorkPage() {
           </Card>
         </div>
       )}
+
+      {/* Invite Code Dialog */}
+      <Dialog open={showInviteCodeDialog} onOpenChange={setShowInviteCodeDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>초대코드</DialogTitle>
+            <DialogDescription>
+              이 초대코드를 공유하여 다른 사용자를 업무에 참여시킬 수 있습니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center space-x-2">
+            <div className="grid flex-1 gap-2">
+              <Input
+                id="invite-code"
+                value={selectedInviteCode}
+                readOnly
+                className="font-mono text-lg"
+              />
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              className="px-3"
+              onClick={handleCopyInviteCode}
+            >
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Modals */}
       <CreateWorkTaskModal
