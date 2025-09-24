@@ -160,6 +160,102 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       // Don't notify parent to avoid full refresh
     }
 
+    // Handle subtask order updated (drag and drop)
+    const handleSubtaskOrderUpdated = (data: {
+      subtaskId: string,
+      newStatus: string,
+      newPosition: number,
+      previousStatus?: string,
+      previousPosition?: number
+    }) => {
+      console.log(`[TaskBoard] ✅ Subtask order updated event received:`, {
+        subtaskId: data.subtaskId,
+        newStatus: data.newStatus,
+        newPosition: data.newPosition,
+        previousStatus: data.previousStatus,
+        previousPosition: data.previousPosition
+      })
+
+      // Update subtasks order
+      setSubtasks(prev => {
+        const newSubtasks = [...prev]
+        const index = newSubtasks.findIndex(task => task.id === data.subtaskId)
+        if (index !== -1) {
+          // Update status and position
+          newSubtasks[index] = {
+            ...newSubtasks[index],
+            status: data.newStatus as any,
+            position: data.newPosition
+          }
+
+          // Re-sort tasks in the affected column
+          const tasksInColumn = newSubtasks
+            .filter(t => t.status === data.newStatus)
+            .sort((a, b) => a.position - b.position)
+
+          console.log(`[TaskBoard] Order updated for subtask ${data.subtaskId}: status=${data.newStatus}, position=${data.newPosition}`)
+        }
+        return newSubtasks
+      })
+
+      // Show toast notification for drag and drop
+      toast({
+        title: '세부 업무 순서 변경',
+        description: `세부 업무가 ${
+          data.newStatus === 'todo' ? '할 일' :
+          data.newStatus === 'in_progress' ? '진행중' :
+          data.newStatus === 'review' ? '검토' : '완료'
+        } 칼럼으로 이동했습니다.`,
+      })
+    }
+
+    // Handle subtask status updated (button click)
+    const handleSubtaskStatusUpdated = (data: {
+      subtaskId: string,
+      previousStatus: string,
+      newStatus: string,
+      subtask?: SubTask
+    }) => {
+      console.log(`[TaskBoard] ✅ Subtask status updated event received:`, {
+        subtaskId: data.subtaskId,
+        previousStatus: data.previousStatus,
+        newStatus: data.newStatus
+      })
+
+      // Update subtask status
+      if (data.subtask) {
+        setSubtasks(prev => {
+          const newSubtasks = [...prev]
+          const index = newSubtasks.findIndex(task => task.id === data.subtaskId)
+          if (index !== -1) {
+            newSubtasks[index] = { ...data.subtask! }
+            console.log(`[TaskBoard] Status button update for subtask at index ${index}: ${data.previousStatus} -> ${data.newStatus}`)
+          }
+          return newSubtasks
+        })
+      } else {
+        setSubtasks(prev => {
+          const newSubtasks = [...prev]
+          const index = newSubtasks.findIndex(task => task.id === data.subtaskId)
+          if (index !== -1) {
+            newSubtasks[index] = { ...newSubtasks[index], status: data.newStatus as any }
+            console.log(`[TaskBoard] Status button update for subtask at index ${index}: ${data.previousStatus} -> ${data.newStatus}`)
+          }
+          return newSubtasks
+        })
+      }
+
+      // Show toast notification
+      toast({
+        title: '세부 업무 상태 변경',
+        description: `상태가 ${
+          data.newStatus === 'todo' ? '할 일' :
+          data.newStatus === 'in_progress' ? '진행중' :
+          data.newStatus === 'review' ? '검토' : '완료'
+        }로 변경되었습니다.`,
+      })
+    }
+
     // Handle subtask status changed (more specific event)
     const handleSubtaskStatusChanged = (data: {
       subtask: SubTask
@@ -290,6 +386,8 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     socket.on('subtask:updated', handleSubtaskUpdated)
     socket.on('subtask:status-changed', handleSubtaskStatusChanged)
     socket.on('subtask:deleted', handleSubtaskDeleted)
+    socket.on('subtaskOrderUpdated', handleSubtaskOrderUpdated)
+    socket.on('subtaskStatusUpdated', handleSubtaskStatusUpdated)
     socket.on('subtask-comment:created', handleSubtaskCommentCreated)
     socket.on('subtask-comment:updated', handleSubtaskCommentUpdated)
     socket.on('subtask-comment:deleted', handleSubtaskCommentDeleted)
@@ -308,6 +406,8 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       socket.off('subtask:updated', handleSubtaskUpdated)
       socket.off('subtask:status-changed', handleSubtaskStatusChanged)
       socket.off('subtask:deleted', handleSubtaskDeleted)
+      socket.off('subtaskOrderUpdated', handleSubtaskOrderUpdated)
+      socket.off('subtaskStatusUpdated', handleSubtaskStatusUpdated)
       socket.off('subtask-comment:created', handleSubtaskCommentCreated)
       socket.off('subtask-comment:updated', handleSubtaskCommentUpdated)
       socket.off('subtask-comment:deleted', handleSubtaskCommentDeleted)
@@ -762,6 +862,19 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       // Calculate new position (add to end of column)
       const tasksInColumn = subtasks.filter(t => t.status === status)
       const newPosition = tasksInColumn.length
+
+      // Emit socket event for drag and drop
+      const socket = socketClient.connect()
+      socket.emit('subtask:order-update', {
+        workTaskId: selectedWorkTask?.id,
+        subtaskId: draggedTask.id,
+        previousStatus: draggedTask.status,
+        previousPosition: draggedTask.position,
+        newStatus: status,
+        newPosition: newPosition
+      })
+      console.log(`[TaskBoard] Emitting subtask:order-update event for drag and drop`)
+
       handleUpdateSubTaskStatus(draggedTask.id, status, newPosition)
     }
     setDraggedTask(null)
@@ -1076,7 +1189,19 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                             onClick={(e) => {
                               e.stopPropagation()
                               const targetTasks = filteredSubTasks.filter(t => t.status === 'in_progress')
-                              handleUpdateSubTaskStatus(task.id, 'in_progress', targetTasks.length)
+                              const newPosition = targetTasks.length
+
+                              // Emit socket event for status button click
+                              const socket = socketClient.connect()
+                              socket.emit('subtask:status-update', {
+                                workTaskId: selectedWorkTask?.id,
+                                subtaskId: task.id,
+                                previousStatus: task.status,
+                                newStatus: 'in_progress'
+                              })
+                              console.log(`[TaskBoard] Emitting subtask:status-update event for status button click`)
+
+                              handleUpdateSubTaskStatus(task.id, 'in_progress', newPosition)
                             }}
                           >
                             <ChevronRight className="h-4 w-4 mr-1" />
@@ -1091,7 +1216,19 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                             onClick={(e) => {
                               e.stopPropagation()
                               const targetTasks = filteredSubTasks.filter(t => t.status === 'review')
-                              handleUpdateSubTaskStatus(task.id, 'review', targetTasks.length)
+                              const newPosition = targetTasks.length
+
+                              // Emit socket event for status button click
+                              const socket = socketClient.connect()
+                              socket.emit('subtask:status-update', {
+                                workTaskId: selectedWorkTask?.id,
+                                subtaskId: task.id,
+                                previousStatus: task.status,
+                                newStatus: 'review'
+                              })
+                              console.log(`[TaskBoard] Emitting subtask:status-update event for status button click`)
+
+                              handleUpdateSubTaskStatus(task.id, 'review', newPosition)
                             }}
                           >
                             <ChevronRight className="h-4 w-4 mr-1" />
@@ -1106,7 +1243,19 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                             onClick={(e) => {
                               e.stopPropagation()
                               const targetTasks = filteredSubTasks.filter(t => t.status === 'done')
-                              handleUpdateSubTaskStatus(task.id, 'done', targetTasks.length)
+                              const newPosition = targetTasks.length
+
+                              // Emit socket event for status button click
+                              const socket = socketClient.connect()
+                              socket.emit('subtask:status-update', {
+                                workTaskId: selectedWorkTask?.id,
+                                subtaskId: task.id,
+                                previousStatus: task.status,
+                                newStatus: 'done'
+                              })
+                              console.log(`[TaskBoard] Emitting subtask:status-update event for status button click`)
+
+                              handleUpdateSubTaskStatus(task.id, 'done', newPosition)
                             }}
                           >
                             <ChevronRight className="h-4 w-4 mr-1" />
