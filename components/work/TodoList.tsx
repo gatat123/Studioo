@@ -44,7 +44,10 @@ export default function TodoList({ searchQuery, onCommentCreated }: TodoListProp
             task.createdById === currentUser?.id ||
             task.participants?.some(p => p.userId === currentUser?.id)
           )
-        : data
+        : data.filter(task =>
+            // Team tasks: exclude tasks created by current user
+            task.createdById !== currentUser?.id
+          )
 
       setTasks(filteredTasks)
     } catch (error) {
@@ -232,8 +235,8 @@ export default function TodoList({ searchQuery, onCommentCreated }: TodoListProp
               </CardTitle>
               <CardDescription>
                 {activeTab === 'my'
-                  ? '참여중인 업무의 댓글을 관리하세요.'
-                  : '팀 업무의 댓글과 진행 상황을 확인하세요.'}
+                  ? '내가 생성하거나 참여중인 업무의 댓글을 관리하세요.'
+                  : '다른 팀원이 생성한 업무의 댓글과 진행 상황을 확인하세요.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="h-[calc(100%-5rem)]">
@@ -434,8 +437,8 @@ export default function TodoList({ searchQuery, onCommentCreated }: TodoListProp
                     <div className="text-center py-12">
                       <p className="text-gray-500">
                         {activeTab === 'my'
-                          ? '참여중인 업무가 없습니다.'
-                          : '팀 업무가 없습니다.'}
+                          ? '내가 생성하거나 참여중인 업무가 없습니다.'
+                          : '다른 팀원이 생성한 업무가 없습니다.'}
                       </p>
                     </div>
                   )}
