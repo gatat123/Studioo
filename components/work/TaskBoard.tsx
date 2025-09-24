@@ -73,6 +73,9 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
   const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({})
   const [fileInputRefs, setFileInputRefs] = useState<Record<string, HTMLInputElement | null>>({})
 
+  // Socket 연결 상태
+  const [isSocketConnected, setIsSocketConnected] = useState(false)
+
   useEffect(() => {
     if (selectedWorkTask) {
       loadSubTasks()
@@ -209,10 +212,12 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     // Handle socket connection events
     const handleSocketConnected = () => {
       console.log(`[TaskBoard] Socket connected`)
+      setIsSocketConnected(true)
     }
 
     const handleSocketDisconnected = () => {
       console.log(`[TaskBoard] Socket disconnected`)
+      setIsSocketConnected(false)
     }
 
     const handleJoinedWorkTask = (data: { workTaskId: string, roomId: string }) => {
@@ -399,6 +404,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       const user = useAuthStore.getState().user
       const userId = user?.id
 
+      // Just call the API - the socket event will update the state
       const newSubTask = await workTasksAPI.createSubTask(selectedWorkTask.id, {
         title: newTaskTitle,
         description: newTaskDescription,
@@ -407,9 +413,8 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
         assigneeId: userId // Set the creator as the assignee
       })
 
-      setSubtasks([...subtasks, newSubTask])
-
-      // Initialize empty comments and attachments for new subtask
+      // Socket event handler (handleSubtaskCreated) will update the state
+      // Just initialize empty comments and attachments for new subtask
       setSubtaskComments(prev => ({
         ...prev,
         [newSubTask.id]: []
@@ -440,18 +445,12 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     if (!selectedWorkTask) return
 
     try {
-      const updatedSubTask = await workTasksAPI.updateSubTask(selectedWorkTask.id, subtaskId, {
+      // Just call the API - the socket event will update the state
+      await workTasksAPI.updateSubTask(selectedWorkTask.id, subtaskId, {
         status: newStatus as 'todo' | 'in_progress' | 'review' | 'done',
         position: newPosition
       })
-
-      setSubtasks(subtasks.map(task =>
-        task.id === subtaskId ? updatedSubTask : task
-      ))
-      toast({
-        title: '세부 업무 상태 변경',
-        description: '세부 업무 상태가 업데이트되었습니다.',
-      })
+      // Toast will be shown by the socket event handler (handleSubtaskStatusChanged)
     } catch (error) {
       console.error('Failed to update subtask status:', error)
       toast({
@@ -466,8 +465,9 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     if (!selectedWorkTask) return
 
     try {
+      // Just call the API - the socket event will update the state
       await workTasksAPI.deleteSubTask(selectedWorkTask.id, subtaskId)
-      setSubtasks(subtasks.filter(task => task.id !== subtaskId))
+      // Socket event handler (handleSubtaskDeleted) will update the state and clean up comments/attachments
       toast({
         title: '세부 업무 삭제 완료',
         description: '세부 업무가 삭제되었습니다.',
@@ -492,15 +492,13 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     if (!selectedWorkTask || !editingTask || !editingTaskTitle.trim()) return
 
     try {
-      const updatedTask = await workTasksAPI.updateSubTask(selectedWorkTask.id, editingTask, {
+      // Just call the API - the socket event will update the state
+      await workTasksAPI.updateSubTask(selectedWorkTask.id, editingTask, {
         title: editingTaskTitle.trim(),
         description: editingTaskDescription.trim() || null
       })
 
-      setSubtasks(subtasks.map(task =>
-        task.id === editingTask ? updatedTask : task
-      ))
-
+      // Socket event handler (handleSubtaskUpdated) will update the state
       setEditingTask(null)
       setEditingTaskTitle('')
       setEditingTaskDescription('')
@@ -732,9 +730,15 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
               <p className="text-sm text-gray-600 mt-1">{selectedWorkTask.description}</p>
             )}
           </div>
-          <Badge variant="outline">
-            세부 작업 {subtasks.length}개
-          </Badge>
+          <div className="flex items-center gap-2">
+            <Badge variant={isSocketConnected ? "success" : "destructive"} className="flex items-center gap-1">
+              <span className={`h-2 w-2 rounded-full ${isSocketConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
+              {isSocketConnected ? '실시간 연결됨' : '연결 끊김'}
+            </Badge>
+            <Badge variant="outline">
+              세부 작업 {subtasks.length}개
+            </Badge>
+          </div>
         </div>
       </div>
 
