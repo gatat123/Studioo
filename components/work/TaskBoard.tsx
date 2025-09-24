@@ -648,15 +648,34 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
   const handleDragStart = (e: React.DragEvent, task: SubTask) => {
     setDraggedTask(task)
     e.dataTransfer.effectAllowed = 'move'
+    // Add dragging style
+    const element = e.target as HTMLElement
+    element.style.opacity = '0.5'
+    element.style.transform = 'scale(0.95)'
   }
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
+    // Add visual feedback for drop zone
+    const element = e.currentTarget as HTMLElement
+    element.classList.add('ring-2', 'ring-blue-400', 'ring-opacity-50')
   }
 
   const handleDrop = (e: React.DragEvent, status: string) => {
     e.preventDefault()
+    // Reset drop zone styles
+    const element = e.currentTarget as HTMLElement
+    element.classList.remove('ring-2', 'ring-blue-400', 'ring-opacity-50')
+
+    // Reset dragging styles
+    const draggedElements = document.querySelectorAll('[draggable]')
+    draggedElements.forEach(el => {
+      const element = el as HTMLElement
+      element.style.opacity = ''
+      element.style.transform = ''
+    })
+
     if (draggedTask && draggedTask.status !== status) {
       // Calculate new position (add to end of column)
       const tasksInColumn = subtasks.filter(t => t.status === status)
@@ -731,7 +750,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={isSocketConnected ? "success" : "destructive"} className="flex items-center gap-1">
+            <Badge variant={isSocketConnected ? "default" : "destructive"} className="flex items-center gap-1">
               <span className={`h-2 w-2 rounded-full ${isSocketConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
               {isSocketConnected ? '실시간 연결됨' : '연결 끊김'}
             </Badge>
@@ -787,8 +806,12 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
         {TASK_COLUMNS.map((column) => (
           <div
             key={column.id}
-            className={`${column.color} rounded-lg p-4 h-full flex flex-col`}
+            className={`${column.color} rounded-lg p-4 h-full flex flex-col transition-all duration-300 hover:shadow-lg`}
             onDragOver={handleDragOver}
+            onDragLeave={(e) => {
+              const element = e.currentTarget as HTMLElement
+              element.classList.remove('ring-2', 'ring-blue-400', 'ring-opacity-50')
+            }}
             onDrop={(e) => handleDrop(e, column.id)}
           >
             <div className="flex items-center justify-between mb-4">
@@ -814,21 +837,26 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
             </div>
 
             <ScrollArea className="flex-1">
-              <div className="space-y-3">
+              <div className="space-y-3 transition-all duration-300">
                 {filteredSubTasks
                   .filter(task => task.status === column.id)
                   .sort((a, b) => a.position - b.position)
                   .map((task) => (
                     <Card
                       key={task.id}
-                      className="cursor-move hover:shadow-md transition-shadow"
+                      className="cursor-move hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] hover:-translate-y-1"
                       draggable
                       onDragStart={(e) => handleDragStart(e, task)}
+                      onDragEnd={(e) => {
+                        const element = e.target as HTMLElement
+                        element.style.opacity = ''
+                        element.style.transform = ''
+                      }}
                     >
                       <CardHeader className="p-4">
                         <div className="flex items-start justify-between">
                           {editingTask === task.id ? (
-                            <div className="flex-1 mr-2">
+                            <div className="flex-1 mr-2 animate-in fade-in-0 duration-200">
                               <Input
                                 value={editingTaskTitle}
                                 onChange={(e) => setEditingTaskTitle(e.target.value)}
