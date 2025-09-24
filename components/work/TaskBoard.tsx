@@ -359,6 +359,7 @@ export default function TaskBoard({ searchQuery, onTaskCreated, onTaskUpdate }: 
             </ScrollArea>
           </div>
         ))}
+      </div>
     </div>
   )
 }

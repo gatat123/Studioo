@@ -13,15 +13,17 @@ export const authAPI = {
    */
   async register(data: RegisterData): Promise<AuthResponse> {
     const response = await api.post('/api/auth/register', data) as AuthResponse;
-    
+
     // Store auth data - backend returns accessToken, not token
     const token = response.accessToken || response.token;
     if (token) {
       setAuthToken(token);
-      localStorage.setItem('userId', response.user.id);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      if (response.user) {
+        localStorage.setItem('userId', response.user.id);
+        localStorage.setItem('user', JSON.stringify(response.user));
+      }
     }
-    
+
     return response;
   },
 
