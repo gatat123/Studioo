@@ -15,14 +15,15 @@ import { workTasksAPI, WorkTask, WorkTaskComment } from '@/lib/api/work-tasks'
 
 interface TodoListProps {
   searchQuery?: string
+  onCommentCreated?: () => void
 }
 
-export default function TodoList({ searchQuery }: TodoListProps) {
+export default function TodoList({ searchQuery, onCommentCreated }: TodoListProps) {
   const { toast } = useToast()
   const { user: currentUser } = useAuthStore()
   const [tasks, setTasks] = useState<WorkTask[]>([])
   const [loading, setLoading] = useState(true)
-  const [newComment, setNewComment] = useState('')
+  const [newComments, setNewComments] = useState<Record<string, string>>({})
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
   const [selectedTask, setSelectedTask] = useState<WorkTask | null>(null)
@@ -59,7 +60,8 @@ export default function TodoList({ searchQuery }: TodoListProps) {
   }
 
   const handleCreateComment = async (taskId: string) => {
-    if (!newComment.trim()) {
+    const commentText = newComments[taskId] || ''
+    if (!commentText.trim()) {
       toast({
         title: '입력 오류',
         description: '댓글 내용을 입력해주세요.',
@@ -69,7 +71,7 @@ export default function TodoList({ searchQuery }: TodoListProps) {
     }
 
     try {
-      const newCommentObj = await workTasksAPI.addComment(taskId, newComment)
+      const newCommentObj = await workTasksAPI.addComment(taskId, commentText)
 
       // Update the task with the new comment
       setTasks(tasks.map(task =>
@@ -78,7 +80,14 @@ export default function TodoList({ searchQuery }: TodoListProps) {
           : task
       ))
 
-      setNewComment('')
+      // Clear the comment for this specific task
+      setNewComments(prev => ({ ...prev, [taskId]: '' }))
+
+      // Call the parent callback to refresh data
+      if (onCommentCreated) {
+        onCommentCreated()
+      }
+
       toast({
         title: '댓글 추가 완료',
         description: '새 댓글이 추가되었습니다.',
@@ -362,8 +371,8 @@ export default function TodoList({ searchQuery }: TodoListProps) {
                               <div className="flex gap-2">
                                 <Input
                                   placeholder="댓글 추가..."
-                                  value={newComment}
-                                  onChange={(e) => setNewComment(e.target.value)}
+                                  value={newComments[task.id] || ''}
+                                  onChange={(e) => setNewComments(prev => ({ ...prev, [task.id]: e.target.value }))}
                                   onKeyPress={(e) => {
                                     if (e.key === 'Enter') {
                                       handleCreateComment(task.id)

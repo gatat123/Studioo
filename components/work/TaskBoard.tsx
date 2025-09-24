@@ -23,6 +23,7 @@ import { workTasksAPI, WorkTask } from '@/lib/api/work-tasks'
 
 interface TaskBoardProps {
   searchQuery?: string
+  onTaskCreated?: () => void
 }
 
 const TASK_COLUMNS = [
@@ -32,7 +33,7 @@ const TASK_COLUMNS = [
   { id: 'completed', title: '완료', color: 'bg-green-50' },
 ]
 
-export default function TaskBoard({ searchQuery }: TaskBoardProps) {
+export default function TaskBoard({ searchQuery, onTaskCreated }: TaskBoardProps) {
   const { toast } = useToast()
   const { user: _user } = useAuthStore()
   const [tasks, setTasks] = useState<WorkTask[]>([])
@@ -99,6 +100,12 @@ export default function TaskBoard({ searchQuery }: TaskBoardProps) {
 
       setShowCreateDialog(false)
       resetForm()
+
+      // Call the parent callback to refresh data
+      if (onTaskCreated) {
+        onTaskCreated()
+      }
+
       toast({
         title: '업무 생성 완료',
         description: '새 업무가 추가되었습니다.',

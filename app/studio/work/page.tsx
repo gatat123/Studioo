@@ -206,6 +206,7 @@ export default function WorkPage() {
                 <div className="flex-1">
                   <TaskBoard
                     searchQuery={searchQuery}
+                    onTaskCreated={loadWorkTasks}
                   />
                 </div>
 
@@ -214,6 +215,7 @@ export default function WorkPage() {
                   <h3 className="text-lg font-semibold mb-4">업무 댓글</h3>
                   <TodoList
                     searchQuery={searchQuery}
+                    onCommentCreated={loadWorkTasks}
                   />
                 </div>
               </div>
