@@ -7,20 +7,21 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
-import { projectsAPI } from '@/lib/api/projects'
+import { workTasksAPI } from '@/lib/api/work-tasks'
+import { projectsAPI } from '@/lib/api/projects' // Keep for temporary compatibility
 import { useAuthStore } from '@/store/useAuthStore'
 import { socketClient } from '@/lib/socket/client'
 import TaskBoard from '@/components/work/TaskBoard'
 import TodoList from '@/components/work/TodoList'
 import TeamOverview from '@/components/work/TeamOverview'
-import { CreateWorkProjectModal } from '@/components/projects/CreateWorkProjectModal'
-import JoinProjectModal from '@/components/projects/JoinProjectModal'
+import { CreateWorkTaskModal } from '@/components/work/CreateWorkTaskModal'
+import JoinWorkTaskModal from '@/components/work/JoinWorkTaskModal'
 
 export default function WorkPage() {
   const { toast } = useToast()
   const { user } = useAuthStore()
-  const [projects, setProjects] = useState([])
-  const [selectedProject, setSelectedProject] = useState(null)
+  const [workTasks, setWorkTasks] = useState([])
+  const [selectedWorkTask, setSelectedWorkTask] = useState(null)
   const [activeTab, setActiveTab] = useState('tasks')
   const [searchQuery, setSearchQuery] = useState('')
   const [loading, setLoading] = useState(true)
@@ -39,7 +40,7 @@ export default function WorkPage() {
         }
       });
     }
-    loadProjects()
+    loadWorkTasks()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Socket.io listeners for real-time updates
@@ -61,26 +62,23 @@ export default function WorkPage() {
       socket.off('todo:updated')
       socket.off('todo:completed')
     }
-  }, [selectedProject]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedWorkTask]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadProjects = async () => {
+  const loadWorkTasks = async () => {
     try {
       setLoading(true)
-      // Loading projects with type: work
-      const data = await projectsAPI.getProjects('work')
+      // Load work tasks using the new API
+      const data = await workTasksAPI.getWorkTasks()
 
-      // Filter only work projects on frontend as additional safety
-      const workProjects = data.filter(p => p.project_type === 'work')
-
-      setProjects(workProjects)
-      if (workProjects.length > 0 && !selectedProject) {
-        setSelectedProject(workProjects[0])
+      setWorkTasks(data)
+      if (data.length > 0 && !selectedWorkTask) {
+        setSelectedWorkTask(data[0])
       }
     } catch (error) {
-      console.error('[Work Page] Error loading projects:', error)
+      console.error('[Work Page] Error loading work tasks:', error)
       toast({
-        title: '프로젝트 불러오기 실패',
-        description: '프로젝트 목록을 불러올 수 없습니다.',
+        title: '업무 불러오기 실패',
+        description: '업무 목록을 불러올 수 없습니다.',
         variant: 'destructive'
       })
     } finally {
@@ -90,16 +88,16 @@ export default function WorkPage() {
 
   const handleTaskUpdate = () => {
     // Trigger re-render of child components
-    if (selectedProject) {
-      setSelectedProject({ ...selectedProject })
+    if (selectedWorkTask) {
+      setSelectedWorkTask({ ...selectedWorkTask })
     }
   }
 
-  const handleProjectSelect = (project) => {
-    setSelectedProject(project)
-    // Join project room for real-time updates
+  const handleWorkTaskSelect = (workTask) => {
+    setSelectedWorkTask(workTask)
+    // Join work task room for real-time updates
     const socket = socketClient.connect()
-    socket.emit('join:project', { projectId: project.id })
+    socket.emit('join:work-task', { workTaskId: workTask.id })
   }
 
 
@@ -122,11 +120,11 @@ export default function WorkPage() {
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setShowJoinModal(true)} variant="outline">
-            프로젝트 참여
+            업무 참여
           </Button>
           <Button onClick={() => setShowCreateModal(true)}>
             <Plus className="mr-2 h-4 w-4" />
-            새 프로젝트
+            새 업무
           </Button>
         </div>
       </div>
@@ -135,7 +133,7 @@ export default function WorkPage() {
       <div className="p-4 border-b bg-gray-50">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">프로젝트 목록</h2>
+            <h2 className="text-lg font-semibold">업무 목록</h2>
             <div className="relative w-64">
               <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
               <Input
@@ -147,30 +145,39 @@ export default function WorkPage() {
             </div>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2">
-            {projects.map((project) => (
+            {workTasks.map((workTask) => (
               <Card
-                key={project.id}
+                key={workTask.id}
                 className={`min-w-[280px] cursor-pointer transition-all ${
-                  selectedProject?.id === project.id
+                  selectedWorkTask?.id === workTask.id
                     ? 'ring-2 ring-primary shadow-lg'
                     : 'hover:shadow-md'
                 }`}
-                onClick={() => handleProjectSelect(project)}
+                onClick={() => handleWorkTaskSelect(workTask)}
               >
                 <CardContent className="p-4">
                   <div className="space-y-2">
-                    <h3 className="font-semibold text-base">{project.name}</h3>
+                    <h3 className="font-semibold text-base">{workTask.title}</h3>
                     <p className="text-sm text-gray-600 line-clamp-2">
-                      {project.description || '설명이 없습니다'}
+                      {workTask.description || '설명이 없습니다'}
                     </p>
-                    {project.deadline && (
-                      <div className="flex items-center gap-1 text-xs text-gray-500">
-                        <span>마감일:</span>
-                        <span className="font-medium">
-                          {new Date(project.deadline).toLocaleDateString('ko-KR')}
+                    <div className="flex items-center justify-between">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        workTask.priority === 'urgent' ? 'bg-red-100 text-red-800' :
+                        workTask.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                        workTask.priority === 'medium' ? 'bg-blue-100 text-blue-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {workTask.priority === 'urgent' ? '긴급' :
+                         workTask.priority === 'high' ? '높음' :
+                         workTask.priority === 'medium' ? '보통' : '낮음'}
+                      </span>
+                      {workTask.dueDate && (
+                        <span className="text-xs text-gray-500">
+                          마감: {new Date(workTask.dueDate).toLocaleDateString('ko-KR')}
                         </span>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -180,7 +187,7 @@ export default function WorkPage() {
       </div>
 
       {/* Main Content */}
-      {selectedProject ? (
+      {selectedWorkTask ? (
         <div className="flex-1 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
             <TabsList className="m-4">
@@ -193,7 +200,7 @@ export default function WorkPage() {
                 {/* Main Task Board */}
                 <div className="flex-1">
                   <TaskBoard
-                    projectId={selectedProject.id}
+                    projectId={selectedWorkTask.id}
                     searchQuery={searchQuery}
                   />
                 </div>
@@ -202,7 +209,7 @@ export default function WorkPage() {
                 <div className="w-80 border-l pl-4">
                   <h3 className="text-lg font-semibold mb-4">개인 Todo</h3>
                   <TodoList
-                    projectId={selectedProject.id}
+                    projectId={selectedWorkTask.id}
                     userId={user?.id}
                     searchQuery={searchQuery}
                   />
@@ -212,7 +219,7 @@ export default function WorkPage() {
 
             <TabsContent value="team" className="flex-1 overflow-hidden px-4">
               <TeamOverview
-                projectId={selectedProject.id}
+                projectId={selectedWorkTask.id}
                 searchQuery={searchQuery}
               />
             </TabsContent>
@@ -222,18 +229,18 @@ export default function WorkPage() {
         <div className="flex-1 flex items-center justify-center">
           <Card className="w-96">
             <CardHeader>
-              <CardTitle>프로젝트가 없습니다</CardTitle>
+              <CardTitle>업무가 없습니다</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-gray-600 mb-4">
-                새 프로젝트를 생성하거나 기존 프로젝트에 참여해주세요.
+                새 업무를 생성하거나 기존 업무에 참여해주세요.
               </p>
               <div className="flex gap-2">
                 <Button onClick={() => setShowCreateModal(true)} className="flex-1">
-                  새 프로젝트 생성
+                  새 업무 생성
                 </Button>
                 <Button onClick={() => setShowJoinModal(true)} variant="outline" className="flex-1">
-                  프로젝트 참여
+                  업무 참여
                 </Button>
               </div>
             </CardContent>
@@ -242,20 +249,20 @@ export default function WorkPage() {
       )}
 
       {/* Modals */}
-      <CreateWorkProjectModal
+      <CreateWorkTaskModal
         open={showCreateModal}
         onOpenChange={(open) => {
           setShowCreateModal(open)
           if (!open) {
-            loadProjects() // Reload projects when modal closes
+            loadWorkTasks() // Reload work tasks when modal closes
           }
         }}
       />
-      <JoinProjectModal
+      <JoinWorkTaskModal
         open={showJoinModal}
         onClose={() => {
           setShowJoinModal(false)
-          loadProjects() // Reload projects when modal closes
+          loadWorkTasks() // Reload work tasks when modal closes
         }}
       />
     </div>
