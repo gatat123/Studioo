@@ -39,8 +39,8 @@ export const projectsAPI = {
    * Get all projects for current user
    */
   async getProjects(type: 'studio' | 'work' = 'studio'): Promise<Project[]> {
-    // Requesting projects with type
-    const response = await api.get('/api/projects', { params: { type } });
+    // Requesting projects with type - adding as query parameter in URL
+    const response = await api.get(`/api/projects?type=${type}`);
     // Raw API response received
 
     // Backend returns { success: true, data: { projects: [...], pagination: {...} } }
