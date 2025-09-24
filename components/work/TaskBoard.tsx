@@ -400,6 +400,53 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskCreated
                             {new Date(task.dueDate).toLocaleDateString()}
                           </div>
                         )}
+
+                        {/* Status Change Button */}
+                        {task.status === 'todo' && (
+                          <Button
+                            size="sm"
+                            className="w-full mt-2"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              const targetTasks = filteredSubTasks.filter(t => t.status === 'in_progress')
+                              handleUpdateSubTaskStatus(task.id, 'in_progress', targetTasks.length)
+                            }}
+                          >
+                            <ChevronRight className="h-4 w-4 mr-1" />
+                            진행
+                          </Button>
+                        )}
+                        {task.status === 'in_progress' && (
+                          <Button
+                            size="sm"
+                            className="w-full mt-2"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              const targetTasks = filteredSubTasks.filter(t => t.status === 'review')
+                              handleUpdateSubTaskStatus(task.id, 'review', targetTasks.length)
+                            }}
+                          >
+                            <ChevronRight className="h-4 w-4 mr-1" />
+                            검토
+                          </Button>
+                        )}
+                        {task.status === 'review' && (
+                          <Button
+                            size="sm"
+                            className="w-full mt-2"
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              const targetTasks = filteredSubTasks.filter(t => t.status === 'done')
+                              handleUpdateSubTaskStatus(task.id, 'done', targetTasks.length)
+                            }}
+                          >
+                            <ChevronRight className="h-4 w-4 mr-1" />
+                            완료
+                          </Button>
+                        )}
                       </CardFooter>
                     </Card>
                   ))}
