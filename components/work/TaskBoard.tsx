@@ -371,6 +371,19 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskCreated
                             {task.description}
                           </CardDescription>
                         )}
+                        {/* Creator Info */}
+                        {task.createdBy && (
+                          <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+                            <span>생성자:</span>
+                            <Avatar className="h-4 w-4">
+                              <AvatarImage src={task.createdBy.profileImageUrl} />
+                              <AvatarFallback className="text-[10px]">
+                                {task.createdBy.nickname[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="font-medium">{task.createdBy.nickname}</span>
+                          </div>
+                        )}
                       </CardHeader>
 
                       <CardFooter className="p-4 pt-0 flex flex-col gap-2">
@@ -384,12 +397,15 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskCreated
                              task.priority === 'medium' ? '보통' : '낮음'}
                           </Badge>
                           {task.assignee && (
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={task.assignee.profileImageUrl} />
-                              <AvatarFallback className="text-xs">
-                                {task.assignee.nickname[0]}
-                              </AvatarFallback>
-                            </Avatar>
+                            <div className="flex items-center gap-1">
+                              <span className="text-xs text-gray-500">담당:</span>
+                              <Avatar className="h-5 w-5">
+                                <AvatarImage src={task.assignee.profileImageUrl} />
+                                <AvatarFallback className="text-xs">
+                                  {task.assignee.nickname[0]}
+                                </AvatarFallback>
+                              </Avatar>
+                            </div>
                           )}
                         </div>
 
