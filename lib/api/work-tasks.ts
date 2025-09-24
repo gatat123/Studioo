@@ -84,8 +84,38 @@ export const workTasksAPI = {
    * Get all work tasks for the authenticated user
    */
   async getWorkTasks(): Promise<WorkTask[]> {
-    const response = await api.get('/api/work-tasks')
-    return response.data || response.workTasks || response || []
+    try {
+      const response = await api.get('/api/work-tasks')
+
+      // Ensure we always return an array
+      if (Array.isArray(response)) {
+        return response
+      }
+
+      if (response && typeof response === 'object') {
+        // Check for the new API response structure first
+        if (response.success && Array.isArray(response.data?.workTasks)) {
+          return response.data.workTasks
+        }
+        // Legacy response structures
+        if (Array.isArray(response.data)) {
+          return response.data
+        }
+        if (Array.isArray(response.workTasks)) {
+          return response.workTasks
+        }
+        if (Array.isArray(response.items)) {
+          return response.items
+        }
+      }
+
+      console.warn('[workTasksAPI] Unexpected response structure:', response)
+      return []
+    } catch (error) {
+      console.error('[workTasksAPI] Error fetching work tasks:', error)
+      // Return empty array on error to prevent map failures
+      return []
+    }
   },
 
   /**

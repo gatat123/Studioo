@@ -70,12 +70,17 @@ export default function WorkPage() {
       // Load work tasks using the new API
       const data = await workTasksAPI.getWorkTasks()
 
-      setWorkTasks(data)
-      if (data.length > 0 && !selectedWorkTask) {
-        setSelectedWorkTask(data[0])
+      // Ensure data is always an array to prevent map errors
+      const workTasksArray = Array.isArray(data) ? data : []
+      setWorkTasks(workTasksArray)
+
+      if (workTasksArray.length > 0 && !selectedWorkTask) {
+        setSelectedWorkTask(workTasksArray[0])
       }
     } catch (error) {
       console.error('[Work Page] Error loading work tasks:', error)
+      // Set empty array on error to prevent map failures
+      setWorkTasks([])
       toast({
         title: '업무 불러오기 실패',
         description: '업무 목록을 불러올 수 없습니다.',
@@ -145,7 +150,7 @@ export default function WorkPage() {
             </div>
           </div>
           <div className="flex gap-3 overflow-x-auto pb-2">
-            {workTasks.map((workTask) => (
+            {(Array.isArray(workTasks) ? workTasks : []).map((workTask) => (
               <Card
                 key={workTask.id}
                 className={`min-w-[280px] cursor-pointer transition-all ${
