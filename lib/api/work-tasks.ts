@@ -309,6 +309,34 @@ export const workTasksAPI = {
   },
 
   /**
+   * Get all comments for a subtask
+   */
+  async getSubTaskComments(workTaskId: string, subtaskId: string): Promise<SubTaskComment[]> {
+    try {
+      const response = await api.get(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/comments`)
+
+      if (Array.isArray(response)) {
+        return response
+      }
+
+      if (response && typeof response === 'object') {
+        if (Array.isArray(response.data)) {
+          return response.data
+        }
+        if (Array.isArray(response.comments)) {
+          return response.comments
+        }
+      }
+
+      console.warn('[workTasksAPI] Unexpected subtask comments response structure:', response)
+      return []
+    } catch (error) {
+      console.error('[workTasksAPI] Error fetching subtask comments:', error)
+      return []
+    }
+  },
+
+  /**
    * Add a comment to subtask
    */
   async addSubTaskComment(workTaskId: string, subtaskId: string, content: string): Promise<SubTaskComment> {

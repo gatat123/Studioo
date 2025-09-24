@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, MoreVertical, Calendar, ChevronRight, Users } from 'lucide-react'
+import { Plus, MoreVertical, Calendar, ChevronRight, Users, MessageCircle, Send } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
-import { workTasksAPI, WorkTask, SubTask } from '@/lib/api/work-tasks'
+import { workTasksAPI, WorkTask, SubTask, SubTaskComment } from '@/lib/api/work-tasks'
 import { socketClient } from '@/lib/socket/client'
 import {
   Dialog,
@@ -28,11 +28,15 @@ import {
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
 
 interface TaskBoardProps {
   searchQuery?: string
   selectedWorkTask: WorkTask | null
-  onTaskCreated?: () => void
   onTaskUpdate?: () => void
 }
 
@@ -43,7 +47,7 @@ const TASK_COLUMNS = [
   { id: 'done', title: '완료', color: 'bg-green-50' },
 ]
 
-export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskCreated, onTaskUpdate }: TaskBoardProps) {
+export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate }: TaskBoardProps) {
   const { toast } = useToast()
   const { user } = useAuthStore()
   const [subtasks, setSubtasks] = useState<SubTask[]>([])
@@ -54,6 +58,11 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskCreated
   const [createDialogStatus, setCreateDialogStatus] = useState<string>('todo')
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskDescription, setNewTaskDescription] = useState('')
+  const [subtaskComments, setSubtaskComments] = useState<Record<string, SubTaskComment[]>>({})
+  const [expandedComments, setExpandedComments] = useState<Record<string, boolean>>({})
+  const [newComment, setNewComment] = useState<Record<string, string>>({})
+  const [editingComment, setEditingComment] = useState<string | null>(null)
+  const [editingCommentContent, setEditingCommentContent] = useState('')
 
   useEffect(() => {
     if (selectedWorkTask) {
@@ -73,25 +82,146 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskCreated
     // Join work task room for real-time updates
     socket.emit('join:work-task', selectedWorkTask.id)
 
-    const handleReloadSubTasks = () => {
-      loadSubTasks()
-      // Also notify parent component about the update
+    console.log(`[TaskBoard] Joining work-task room: ${selectedWorkTask.id}`)
+
+    // Handle subtask created
+    const handleSubtaskCreated = (data: { subtask: SubTask }) => {
+      console.log(`[TaskBoard] Subtask created:`, data)
+      setSubtasks(prev => [...prev, data.subtask])
+
+      // Notify parent component about the update
       if (onTaskUpdate) {
         onTaskUpdate()
       }
     }
 
-    socket.on('subtask:created', handleReloadSubTasks)
-    socket.on('subtask:updated', handleReloadSubTasks)
-    socket.on('subtask:deleted', handleReloadSubTasks)
+    // Handle subtask updated
+    const handleSubtaskUpdated = (data: { subtask: SubTask }) => {
+      console.log(`[TaskBoard] Subtask updated:`, data)
+      setSubtasks(prev => prev.map(task =>
+        task.id === data.subtask.id ? data.subtask : task
+      ))
+
+      // Notify parent component about the update
+      if (onTaskUpdate) {
+        onTaskUpdate()
+      }
+    }
+
+    // Handle subtask status changed (more specific event)
+    const handleSubtaskStatusChanged = (data: {
+      subtask: SubTask
+      previousStatus: string
+      newStatus: string
+    }) => {
+      console.log(`[TaskBoard] Subtask status changed: ${data.previousStatus} -> ${data.newStatus}`, data)
+      setSubtasks(prev => prev.map(task =>
+        task.id === data.subtask.id ? data.subtask : task
+      ))
+
+      // Show toast notification for status changes
+      toast({
+        title: '세부 업무 상태 변경',
+        description: `"${data.subtask.title}"이(가) ${
+          data.newStatus === 'todo' ? '할 일' :
+          data.newStatus === 'in_progress' ? '진행중' :
+          data.newStatus === 'review' ? '검토' : '완료'
+        }로 이동했습니다.`,
+      })
+
+      // Notify parent component about the update
+      if (onTaskUpdate) {
+        onTaskUpdate()
+      }
+    }
+
+    // Handle subtask deleted
+    const handleSubtaskDeleted = (data: { subtaskId: string }) => {
+      console.log(`[TaskBoard] Subtask deleted:`, data)
+      setSubtasks(prev => prev.filter(task => task.id !== data.subtaskId))
+
+      // Remove comments for deleted subtask
+      setSubtaskComments(prev => {
+        const updated = { ...prev }
+        delete updated[data.subtaskId]
+        return updated
+      })
+
+      // Notify parent component about the update
+      if (onTaskUpdate) {
+        onTaskUpdate()
+      }
+    }
+
+    // Handle subtask comment created
+    const handleSubtaskCommentCreated = (data: { comment: SubTaskComment, subtaskId: string }) => {
+      console.log(`[TaskBoard] Subtask comment created:`, data)
+      setSubtaskComments(prev => ({
+        ...prev,
+        [data.subtaskId]: [data.comment, ...(prev[data.subtaskId] || [])]
+      }))
+    }
+
+    // Handle subtask comment updated
+    const handleSubtaskCommentUpdated = (data: { comment: SubTaskComment, subtaskId: string }) => {
+      console.log(`[TaskBoard] Subtask comment updated:`, data)
+      setSubtaskComments(prev => ({
+        ...prev,
+        [data.subtaskId]: (prev[data.subtaskId] || []).map(comment =>
+          comment.id === data.comment.id ? data.comment : comment
+        )
+      }))
+    }
+
+    // Handle subtask comment deleted
+    const handleSubtaskCommentDeleted = (data: { commentId: string, subtaskId: string }) => {
+      console.log(`[TaskBoard] Subtask comment deleted:`, data)
+      setSubtaskComments(prev => ({
+        ...prev,
+        [data.subtaskId]: (prev[data.subtaskId] || []).filter(comment => comment.id !== data.commentId)
+      }))
+    }
+
+    // Handle socket connection events
+    const handleSocketConnected = () => {
+      console.log(`[TaskBoard] Socket connected`)
+    }
+
+    const handleSocketDisconnected = () => {
+      console.log(`[TaskBoard] Socket disconnected`)
+    }
+
+    const handleJoinedWorkTask = (data: { workTaskId: string, roomId: string }) => {
+      console.log(`[TaskBoard] Successfully joined work-task room:`, data)
+    }
+
+    // Register event listeners
+    socket.on('connect', handleSocketConnected)
+    socket.on('disconnect', handleSocketDisconnected)
+    socket.on('joined:work-task', handleJoinedWorkTask)
+    socket.on('subtask:created', handleSubtaskCreated)
+    socket.on('subtask:updated', handleSubtaskUpdated)
+    socket.on('subtask:status-changed', handleSubtaskStatusChanged)
+    socket.on('subtask:deleted', handleSubtaskDeleted)
+    socket.on('subtask-comment:created', handleSubtaskCommentCreated)
+    socket.on('subtask-comment:updated', handleSubtaskCommentUpdated)
+    socket.on('subtask-comment:deleted', handleSubtaskCommentDeleted)
 
     return () => {
-      socket.off('subtask:created', handleReloadSubTasks)
-      socket.off('subtask:updated', handleReloadSubTasks)
-      socket.off('subtask:deleted', handleReloadSubTasks)
+      console.log(`[TaskBoard] Leaving work-task room: ${selectedWorkTask.id}`)
+      socket.off('connect', handleSocketConnected)
+      socket.off('disconnect', handleSocketDisconnected)
+      socket.off('joined:work-task', handleJoinedWorkTask)
+      socket.off('subtask:created', handleSubtaskCreated)
+      socket.off('subtask:updated', handleSubtaskUpdated)
+      socket.off('subtask:status-changed', handleSubtaskStatusChanged)
+      socket.off('subtask:deleted', handleSubtaskDeleted)
+      socket.off('subtask-comment:created', handleSubtaskCommentCreated)
+      socket.off('subtask-comment:updated', handleSubtaskCommentUpdated)
+      socket.off('subtask-comment:deleted', handleSubtaskCommentDeleted)
       socket.emit('leave:work-task', selectedWorkTask.id)
     }
-  }, [selectedWorkTask, onTaskUpdate]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedWorkTask, onTaskUpdate, toast]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadSubTasks = async () => {
     if (!selectedWorkTask) return
@@ -100,6 +230,21 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskCreated
       setLoading(true)
       const data = await workTasksAPI.getSubTasks(selectedWorkTask.id)
       setSubtasks(data)
+
+      // Load comments for each subtask
+      const commentsData: Record<string, SubTaskComment[]> = {}
+      await Promise.all(
+        data.map(async (subtask) => {
+          try {
+            const comments = await workTasksAPI.getSubTaskComments(selectedWorkTask.id, subtask.id)
+            commentsData[subtask.id] = comments
+          } catch (error) {
+            console.error(`Failed to load comments for subtask ${subtask.id}:`, error)
+            commentsData[subtask.id] = []
+          }
+        })
+      )
+      setSubtaskComments(commentsData)
     } catch (error) {
       console.error('Failed to load subtasks:', error)
       toast({
@@ -109,6 +254,101 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskCreated
       })
     } finally {
       setLoading(false)
+    }
+  }
+
+
+  const handleAddComment = async (subtaskId: string) => {
+    if (!selectedWorkTask || !newComment[subtaskId]?.trim()) return
+
+    try {
+      const comment = await workTasksAPI.addSubTaskComment(
+        selectedWorkTask.id,
+        subtaskId,
+        newComment[subtaskId].trim()
+      )
+
+      setSubtaskComments(prev => ({
+        ...prev,
+        [subtaskId]: [comment, ...(prev[subtaskId] || [])]
+      }))
+
+      setNewComment(prev => ({
+        ...prev,
+        [subtaskId]: ''
+      }))
+
+      toast({
+        title: '댓글 추가 완료',
+        description: '새로운 댓글이 추가되었습니다.',
+      })
+    } catch (error) {
+      console.error('Failed to add comment:', error)
+      toast({
+        title: '댓글 추가 실패',
+        description: '댓글을 추가할 수 없습니다.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleUpdateComment = async (subtaskId: string, commentId: string) => {
+    if (!selectedWorkTask || !editingCommentContent.trim()) return
+
+    try {
+      const updatedComment = await workTasksAPI.updateSubTaskComment(
+        selectedWorkTask.id,
+        subtaskId,
+        commentId,
+        editingCommentContent.trim()
+      )
+
+      setSubtaskComments(prev => ({
+        ...prev,
+        [subtaskId]: (prev[subtaskId] || []).map(comment =>
+          comment.id === commentId ? updatedComment : comment
+        )
+      }))
+
+      setEditingComment(null)
+      setEditingCommentContent('')
+
+      toast({
+        title: '댓글 수정 완료',
+        description: '댓글이 수정되었습니다.',
+      })
+    } catch (error) {
+      console.error('Failed to update comment:', error)
+      toast({
+        title: '댓글 수정 실패',
+        description: '댓글을 수정할 수 없습니다.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleDeleteComment = async (subtaskId: string, commentId: string) => {
+    if (!selectedWorkTask) return
+
+    try {
+      await workTasksAPI.deleteSubTaskComment(selectedWorkTask.id, subtaskId, commentId)
+
+      setSubtaskComments(prev => ({
+        ...prev,
+        [subtaskId]: (prev[subtaskId] || []).filter(comment => comment.id !== commentId)
+      }))
+
+      toast({
+        title: '댓글 삭제 완료',
+        description: '댓글이 삭제되었습니다.',
+      })
+    } catch (error) {
+      console.error('Failed to delete comment:', error)
+      toast({
+        title: '댓글 삭제 실패',
+        description: '댓글을 삭제할 수 없습니다.',
+        variant: 'destructive'
+      })
     }
   }
 
@@ -125,6 +365,13 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskCreated
       })
 
       setSubtasks([...subtasks, newSubTask])
+
+      // Initialize empty comments for new subtask
+      setSubtaskComments(prev => ({
+        ...prev,
+        [newSubTask.id]: []
+      }))
+
       setCreateDialogOpen(false)
       setNewTaskTitle('')
       setNewTaskDescription('')
@@ -463,6 +710,145 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskCreated
                             완료
                           </Button>
                         )}
+
+                        {/* Comments Section */}
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <Collapsible
+                            open={expandedComments[task.id]}
+                            onOpenChange={(open) => setExpandedComments(prev => ({ ...prev, [task.id]: open }))}
+                          >
+                            <CollapsibleTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="w-full justify-start p-0 h-auto text-xs text-gray-600 hover:text-gray-800"
+                              >
+                                <MessageCircle className="h-3 w-3 mr-1" />
+                                댓글 {(subtaskComments[task.id] || []).length}개
+                                {expandedComments[task.id] ? ' 숨기기' : ' 보기'}
+                              </Button>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="space-y-2 mt-2">
+                              {/* Comment List */}
+                              <div className="space-y-2">
+                                {(subtaskComments[task.id] || []).map((comment) => (
+                                  <div key={comment.id} className="bg-gray-50 rounded-md p-2">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <div className="flex items-center gap-1">
+                                        <Avatar className="h-4 w-4">
+                                          <AvatarImage src={comment.user.profileImageUrl} />
+                                          <AvatarFallback className="text-[8px]">
+                                            {comment.user.nickname[0]}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <span className="text-xs font-medium text-gray-700">
+                                          {comment.user.nickname}
+                                        </span>
+                                        <span className="text-xs text-gray-500">
+                                          {new Date(comment.createdAt).toLocaleString()}
+                                        </span>
+                                        {comment.isEdited && (
+                                          <span className="text-xs text-gray-400">(편집됨)</span>
+                                        )}
+                                      </div>
+                                      {/* Comment Actions */}
+                                      {comment.userId === user?.id && (
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-4 w-4">
+                                              <MoreVertical className="h-2 w-2" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            <DropdownMenuItem
+                                              onClick={() => {
+                                                setEditingComment(comment.id)
+                                                setEditingCommentContent(comment.content)
+                                              }}
+                                            >
+                                              편집
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                              onClick={() => handleDeleteComment(task.id, comment.id)}
+                                              className="text-red-600"
+                                            >
+                                              삭제
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      )}
+                                    </div>
+                                    {editingComment === comment.id ? (
+                                      <div className="flex gap-1">
+                                        <Input
+                                          value={editingCommentContent}
+                                          onChange={(e) => setEditingCommentContent(e.target.value)}
+                                          className="text-xs"
+                                          placeholder="댓글 수정..."
+                                          onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                              handleUpdateComment(task.id, comment.id)
+                                            }
+                                            if (e.key === 'Escape') {
+                                              setEditingComment(null)
+                                              setEditingCommentContent('')
+                                            }
+                                          }}
+                                        />
+                                        <Button
+                                          size="icon"
+                                          className="h-6 w-6"
+                                          onClick={() => handleUpdateComment(task.id, comment.id)}
+                                        >
+                                          <Send className="h-3 w-3" />
+                                        </Button>
+                                        <Button
+                                          size="icon"
+                                          variant="outline"
+                                          className="h-6 w-6"
+                                          onClick={() => {
+                                            setEditingComment(null)
+                                            setEditingCommentContent('')
+                                          }}
+                                        >
+                                          ✕
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <p className="text-xs text-gray-800">{comment.content}</p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Add Comment */}
+                              <div className="flex gap-1">
+                                <Input
+                                  value={newComment[task.id] || ''}
+                                  onChange={(e) => setNewComment(prev => ({
+                                    ...prev,
+                                    [task.id]: e.target.value
+                                  }))}
+                                  placeholder="댓글 추가..."
+                                  className="text-xs"
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') {
+                                      handleAddComment(task.id)
+                                    }
+                                  }}
+                                />
+                                <Button
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={() => handleAddComment(task.id)}
+                                  disabled={!newComment[task.id]?.trim()}
+                                >
+                                  <Send className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        </div>
                       </CardFooter>
                     </Card>
                   ))}

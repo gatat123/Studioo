@@ -295,12 +295,12 @@ export default function WorkPage() {
                   <TaskBoard
                     searchQuery={searchQuery}
                     selectedWorkTask={selectedWorkTask}
-                    onTaskCreated={loadWorkTasks}
                     onTaskUpdate={loadWorkTasks}
                   />
                 </div>
 
-                {/* Personal Todo Sidebar */}
+                {/* Personal Todo Sidebar - Hidden as per user request */}
+                {/*
                 <div className="w-80 border-l pl-4">
                   <h3 className="text-lg font-semibold mb-4">업무 댓글</h3>
                   <TodoList
@@ -308,6 +308,7 @@ export default function WorkPage() {
                     onCommentCreated={loadWorkTasks}
                   />
                 </div>
+                */}
               </div>
             </TabsContent>
 
