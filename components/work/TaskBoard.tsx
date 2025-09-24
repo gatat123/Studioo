@@ -395,11 +395,16 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     if (!selectedWorkTask || !newTaskTitle) return
 
     try {
+      // Get current user ID
+      const user = useAuthStore.getState().user
+      const userId = user?.id
+
       const newSubTask = await workTasksAPI.createSubTask(selectedWorkTask.id, {
         title: newTaskTitle,
         description: newTaskDescription,
         status: createDialogStatus as 'todo' | 'in_progress' | 'review' | 'done',
-        priority: 'medium'
+        priority: 'medium',
+        assigneeId: userId // Set the creator as the assignee
       })
 
       setSubtasks([...subtasks, newSubTask])
