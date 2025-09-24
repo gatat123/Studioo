@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, MoreVertical, Calendar, ChevronRight, Users, MessageCircle, Send } from 'lucide-react'
+import { Plus, MoreVertical, Calendar, ChevronRight, Users, MessageCircle, Send, Check, X, Edit, Paperclip, Download, Trash2, Upload, File } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
-import { workTasksAPI, WorkTask, SubTask, SubTaskComment } from '@/lib/api/work-tasks'
+import { workTasksAPI, WorkTask, SubTask, SubTaskComment, SubTaskAttachment } from '@/lib/api/work-tasks'
 import { socketClient } from '@/lib/socket/client'
 import {
   Dialog,
@@ -63,6 +63,15 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
   const [newComment, setNewComment] = useState<Record<string, string>>({})
   const [editingComment, setEditingComment] = useState<string | null>(null)
   const [editingCommentContent, setEditingCommentContent] = useState('')
+  // 세부작업 편집 상태 관리
+  const [editingTask, setEditingTask] = useState<string | null>(null)
+  const [editingTaskTitle, setEditingTaskTitle] = useState('')
+  const [editingTaskDescription, setEditingTaskDescription] = useState('')
+  // 파일 첨부 관리
+  const [subtaskAttachments, setSubtaskAttachments] = useState<Record<string, SubTaskAttachment[]>>({})
+  const [expandedAttachments, setExpandedAttachments] = useState<Record<string, boolean>>({})
+  const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({})
+  const [fileInputRefs, setFileInputRefs] = useState<Record<string, HTMLInputElement | null>>({})
 
   useEffect(() => {
     if (selectedWorkTask) {
@@ -96,11 +105,21 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     }
 
     // Handle subtask updated
-    const handleSubtaskUpdated = (data: { subtask: SubTask }) => {
+    const handleSubtaskUpdated = (data: { subtask?: SubTask, subtaskId?: string, updates?: any }) => {
       console.log(`[TaskBoard] Subtask updated:`, data)
-      setSubtasks(prev => prev.map(task =>
-        task.id === data.subtask.id ? data.subtask : task
-      ))
+
+      // Handle both data formats from backend
+      if (data.subtask) {
+        // Full subtask data provided
+        setSubtasks(prev => prev.map(task =>
+          task.id === data.subtask!.id ? data.subtask! : task
+        ))
+      } else if (data.subtaskId && data.updates) {
+        // Partial update data provided
+        setSubtasks(prev => prev.map(task =>
+          task.id === data.subtaskId ? { ...task, ...data.updates } : task
+        ))
+      }
 
       // Notify parent component about the update
       if (onTaskUpdate) {
@@ -140,8 +159,13 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       console.log(`[TaskBoard] Subtask deleted:`, data)
       setSubtasks(prev => prev.filter(task => task.id !== data.subtaskId))
 
-      // Remove comments for deleted subtask
+      // Remove comments and attachments for deleted subtask
       setSubtaskComments(prev => {
+        const updated = { ...prev }
+        delete updated[data.subtaskId]
+        return updated
+      })
+      setSubtaskAttachments(prev => {
         const updated = { ...prev }
         delete updated[data.subtaskId]
         return updated
@@ -193,6 +217,10 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
     const handleJoinedWorkTask = (data: { workTaskId: string, roomId: string }) => {
       console.log(`[TaskBoard] Successfully joined work-task room:`, data)
+      // Refresh subtasks after joining room to ensure we have latest data
+      setTimeout(() => {
+        loadSubTasks()
+      }, 500)
     }
 
     // Register event listeners
@@ -231,8 +259,9 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       const data = await workTasksAPI.getSubTasks(selectedWorkTask.id)
       setSubtasks(data)
 
-      // Load comments for each subtask
+      // Load comments and attachments for each subtask
       const commentsData: Record<string, SubTaskComment[]> = {}
+      const attachmentsData: Record<string, SubTaskAttachment[]> = {}
       await Promise.all(
         data.map(async (subtask) => {
           try {
@@ -242,9 +271,18 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
             console.error(`Failed to load comments for subtask ${subtask.id}:`, error)
             commentsData[subtask.id] = []
           }
+
+          try {
+            const attachments = await workTasksAPI.getSubTaskAttachments(selectedWorkTask.id, subtask.id)
+            attachmentsData[subtask.id] = attachments
+          } catch (error) {
+            console.error(`Failed to load attachments for subtask ${subtask.id}:`, error)
+            attachmentsData[subtask.id] = []
+          }
         })
       )
       setSubtaskComments(commentsData)
+      setSubtaskAttachments(attachmentsData)
     } catch (error) {
       console.error('Failed to load subtasks:', error)
       toast({
@@ -366,8 +404,12 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
       setSubtasks([...subtasks, newSubTask])
 
-      // Initialize empty comments for new subtask
+      // Initialize empty comments and attachments for new subtask
       setSubtaskComments(prev => ({
+        ...prev,
+        [newSubTask.id]: []
+      }))
+      setSubtaskAttachments(prev => ({
         ...prev,
         [newSubTask.id]: []
       }))
@@ -435,6 +477,170 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     }
   }
 
+  const handleEditTask = (task: SubTask) => {
+    setEditingTask(task.id)
+    setEditingTaskTitle(task.title)
+    setEditingTaskDescription(task.description || '')
+  }
+
+  const handleSaveTaskEdit = async () => {
+    if (!selectedWorkTask || !editingTask || !editingTaskTitle.trim()) return
+
+    try {
+      const updatedTask = await workTasksAPI.updateSubTask(selectedWorkTask.id, editingTask, {
+        title: editingTaskTitle.trim(),
+        description: editingTaskDescription.trim() || null
+      })
+
+      setSubtasks(subtasks.map(task =>
+        task.id === editingTask ? updatedTask : task
+      ))
+
+      setEditingTask(null)
+      setEditingTaskTitle('')
+      setEditingTaskDescription('')
+
+      toast({
+        title: '세부 업무 수정 완료',
+        description: '세부 업무가 성공적으로 수정되었습니다.',
+      })
+    } catch (error) {
+      console.error('Failed to update subtask:', error)
+      toast({
+        title: '세부 업무 수정 실패',
+        description: '세부 업무를 수정할 수 없습니다.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleCancelTaskEdit = () => {
+    setEditingTask(null)
+    setEditingTaskTitle('')
+    setEditingTaskDescription('')
+  }
+
+  // 파일 첨부 관련 함수들
+  const handleFileUpload = async (subtaskId: string, files: FileList) => {
+    if (!selectedWorkTask || files.length === 0) return
+
+    setUploadingFiles(prev => ({ ...prev, [subtaskId]: true }))
+
+    try {
+      const uploadPromises = Array.from(files).map(file =>
+        workTasksAPI.uploadSubTaskAttachment(selectedWorkTask.id, subtaskId, file)
+      )
+
+      const uploadedAttachments = await Promise.all(uploadPromises)
+
+      setSubtaskAttachments(prev => ({
+        ...prev,
+        [subtaskId]: [
+          ...uploadedAttachments,
+          ...(prev[subtaskId] || [])
+        ]
+      }))
+
+      toast({
+        title: '파일 업로드 완료',
+        description: `${files.length}개의 파일이 업로드되었습니다.`,
+      })
+    } catch (error) {
+      console.error('Failed to upload files:', error)
+      toast({
+        title: '파일 업로드 실패',
+        description: '파일을 업로드할 수 없습니다.',
+        variant: 'destructive'
+      })
+    } finally {
+      setUploadingFiles(prev => ({ ...prev, [subtaskId]: false }))
+    }
+  }
+
+  const handleFileDownload = async (subtaskId: string, attachment: SubTaskAttachment) => {
+    if (!selectedWorkTask) return
+
+    try {
+      const blob = await workTasksAPI.downloadSubTaskAttachment(
+        selectedWorkTask.id,
+        subtaskId,
+        attachment.id
+      )
+
+      // Create download URL and trigger download
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.style.display = 'none'
+      a.href = url
+      a.download = attachment.originalName
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+
+      toast({
+        title: '파일 다운로드 완료',
+        description: `"${attachment.originalName}" 파일이 다운로드되었습니다.`,
+      })
+    } catch (error) {
+      console.error('Failed to download file:', error)
+      toast({
+        title: '파일 다운로드 실패',
+        description: '파일을 다운로드할 수 없습니다.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleDeleteAttachment = async (subtaskId: string, attachmentId: string) => {
+    if (!selectedWorkTask) return
+
+    try {
+      await workTasksAPI.deleteSubTaskAttachment(selectedWorkTask.id, subtaskId, attachmentId)
+
+      setSubtaskAttachments(prev => ({
+        ...prev,
+        [subtaskId]: (prev[subtaskId] || []).filter(attachment => attachment.id !== attachmentId)
+      }))
+
+      toast({
+        title: '첨부파일 삭제 완료',
+        description: '첨부파일이 삭제되었습니다.',
+      })
+    } catch (error) {
+      console.error('Failed to delete attachment:', error)
+      toast({
+        title: '첨부파일 삭제 실패',
+        description: '첨부파일을 삭제할 수 없습니다.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const getFileIcon = (mimeType: string) => {
+    if (mimeType.startsWith('image/')) {
+      return '🖼️'
+    } else if (mimeType === 'application/pdf') {
+      return '📄'
+    } else if (mimeType.includes('word') || mimeType.includes('document')) {
+      return '📝'
+    } else if (mimeType.includes('excel') || mimeType.includes('spreadsheet')) {
+      return '📊'
+    } else if (mimeType.includes('powerpoint') || mimeType.includes('presentation')) {
+      return '📈'
+    } else {
+      return '📎'
+    }
+  }
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+  }
+
 
   const handleDragStart = (e: React.DragEvent, task: SubTask) => {
     setDraggedTask(task)
@@ -475,8 +681,15 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
   const filteredSubTasks = subtasks.filter(task => {
     // Filter by selected assignee
     if (selectedAssignee) {
-      if (task.assigneeId !== selectedAssignee) return false
+      if (selectedAssignee === 'unassigned') {
+        // Show only unassigned tasks
+        if (task.assigneeId !== null) return false
+      } else {
+        // Show only tasks assigned to the selected user
+        if (task.assigneeId !== selectedAssignee) return false
+      }
     }
+    // When selectedAssignee is null (전체), show all tasks including unassigned ones
 
     // Filter by search query
     if (!searchQuery) return true
@@ -530,10 +743,12 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
             variant={!selectedAssignee ? 'default' : 'outline'}
             onClick={() => setSelectedAssignee(null)}
           >
-            전체
+            전체 ({subtasks.length})
           </Button>
+          {/* Show assigned users */}
           {Array.from(new Set(subtasks.filter(t => t.assigneeId).map(t => t.assigneeId!))).map((assigneeId) => {
             const assignee = subtasks.find(t => t.assigneeId === assigneeId)?.assignee
+            const count = subtasks.filter(t => t.assigneeId === assigneeId).length
             if (!assignee) return null
             return (
               <Button
@@ -542,10 +757,20 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                 variant={selectedAssignee === assigneeId ? 'default' : 'outline'}
                 onClick={() => setSelectedAssignee(assigneeId)}
               >
-                {assignee.nickname}
+                {assignee.nickname} ({count})
               </Button>
             )
           })}
+          {/* Show unassigned tasks if any exist */}
+          {subtasks.some(t => !t.assigneeId) && (
+            <Button
+              size="sm"
+              variant={selectedAssignee === 'unassigned' ? 'default' : 'outline'}
+              onClick={() => setSelectedAssignee('unassigned')}
+            >
+              담당자 없음 ({subtasks.filter(t => !t.assigneeId).length})
+            </Button>
+          )}
         </div>
       </div>
 
@@ -593,27 +818,84 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                     >
                       <CardHeader className="p-4">
                         <div className="flex items-start justify-between">
-                          <CardTitle className="text-sm font-medium line-clamp-2">
-                            {task.title}
-                          </CardTitle>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-6 w-6">
-                                <MoreVertical className="h-3 w-3" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>편집</DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteSubTask(task.id)}
-                                className="text-red-600"
-                              >
-                                삭제
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {editingTask === task.id ? (
+                            <div className="flex-1 mr-2">
+                              <Input
+                                value={editingTaskTitle}
+                                onChange={(e) => setEditingTaskTitle(e.target.value)}
+                                className="text-sm font-medium mb-2"
+                                placeholder="제목을 입력하세요"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleSaveTaskEdit()
+                                  }
+                                  if (e.key === 'Escape') {
+                                    handleCancelTaskEdit()
+                                  }
+                                }}
+                              />
+                              <Textarea
+                                value={editingTaskDescription}
+                                onChange={(e) => setEditingTaskDescription(e.target.value)}
+                                className="text-xs"
+                                placeholder="설명을 입력하세요"
+                                rows={2}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' && e.ctrlKey) {
+                                    handleSaveTaskEdit()
+                                  }
+                                  if (e.key === 'Escape') {
+                                    handleCancelTaskEdit()
+                                  }
+                                }}
+                              />
+                              <div className="flex gap-1 mt-2">
+                                <Button
+                                  size="icon"
+                                  className="h-6 w-6"
+                                  onClick={handleSaveTaskEdit}
+                                  disabled={!editingTaskTitle.trim()}
+                                >
+                                  <Check className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="outline"
+                                  className="h-6 w-6"
+                                  onClick={handleCancelTaskEdit}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </div>
+                          ) : (
+                            <>
+                              <CardTitle className="text-sm font-medium line-clamp-2">
+                                {task.title}
+                              </CardTitle>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6">
+                                    <MoreVertical className="h-3 w-3" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleEditTask(task)}>
+                                    <Edit className="h-3 w-3 mr-1" />
+                                    편집
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteSubTask(task.id)}
+                                    className="text-red-600"
+                                  >
+                                    삭제
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </>
+                          )}
                         </div>
-                        {task.description && (
+                        {editingTask !== task.id && task.description && (
                           <CardDescription className="text-xs mt-2 line-clamp-2">
                             {task.description}
                           </CardDescription>
@@ -845,6 +1127,103 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                 >
                                   <Send className="h-3 w-3" />
                                 </Button>
+                              </div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        </div>
+
+                        {/* File Attachments Section */}
+                        <div className="mt-3 pt-3 border-t border-gray-200">
+                          <Collapsible
+                            open={expandedAttachments[task.id]}
+                            onOpenChange={(open) => setExpandedAttachments(prev => ({ ...prev, [task.id]: open }))}
+                          >
+                            <div className="flex items-center justify-between">
+                              <CollapsibleTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="w-full justify-start p-0 h-auto text-xs text-gray-600 hover:text-gray-800"
+                                >
+                                  <Paperclip className="h-3 w-3 mr-1" />
+                                  첨부파일 {(subtaskAttachments[task.id] || []).length}개
+                                  {expandedAttachments[task.id] ? ' 숨기기' : ' 보기'}
+                                </Button>
+                              </CollapsibleTrigger>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-5 w-5"
+                                onClick={() => {
+                                  const input = document.createElement('input')
+                                  input.type = 'file'
+                                  input.multiple = true
+                                  input.accept = '.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.webp,.txt'
+                                  input.onchange = (e) => {
+                                    const files = (e.target as HTMLInputElement).files
+                                    if (files) handleFileUpload(task.id, files)
+                                  }
+                                  input.click()
+                                }}
+                                disabled={uploadingFiles[task.id]}
+                              >
+                                {uploadingFiles[task.id] ? (
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                                ) : (
+                                  <Upload className="h-3 w-3" />
+                                )}
+                              </Button>
+                            </div>
+
+                            <CollapsibleContent className="space-y-2 mt-2">
+                              {/* Attachment List */}
+                              <div className="space-y-1">
+                                {(subtaskAttachments[task.id] || []).map((attachment) => (
+                                  <div key={attachment.id} className="bg-gray-50 rounded-md p-2">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <span className="text-sm">{getFileIcon(attachment.mimeType)}</span>
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-xs font-medium text-gray-800 truncate">
+                                            {attachment.originalName}
+                                          </p>
+                                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                                            <span>{formatFileSize(attachment.fileSize)}</span>
+                                            <span>•</span>
+                                            <span>{attachment.uploadedBy.nickname}</span>
+                                            <span>•</span>
+                                            <span>{new Date(attachment.createdAt).toLocaleString()}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-1 ml-2">
+                                        <Button
+                                          variant="ghost"
+                                          size="icon"
+                                          className="h-5 w-5"
+                                          onClick={() => handleFileDownload(task.id, attachment)}
+                                        >
+                                          <Download className="h-3 w-3" />
+                                        </Button>
+                                        {(attachment.uploadedById === user?.id) && (
+                                          <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-5 w-5 text-red-600 hover:text-red-700"
+                                            onClick={() => handleDeleteAttachment(task.id, attachment.id)}
+                                          >
+                                            <Trash2 className="h-3 w-3" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                                {(subtaskAttachments[task.id] || []).length === 0 && (
+                                  <div className="text-xs text-gray-500 text-center py-2">
+                                    첨부파일이 없습니다
+                                  </div>
+                                )}
                               </div>
                             </CollapsibleContent>
                           </Collapsible>

@@ -110,6 +110,24 @@ export interface SubTaskComment {
   }
 }
 
+export interface SubTaskAttachment {
+  id: string
+  subTaskId: string
+  fileName: string
+  originalName: string
+  fileSize: number
+  mimeType: string
+  fileUrl: string
+  uploadedById: string
+  createdAt: string
+
+  uploadedBy: {
+    id: string
+    nickname: string
+    profileImageUrl?: string
+  }
+}
+
 export interface CreateWorkTaskData {
   title: string
   description?: string
@@ -360,5 +378,87 @@ export const workTasksAPI = {
    */
   async deleteSubTaskComment(workTaskId: string, subtaskId: string, commentId: string): Promise<void> {
     return api.delete(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/comments/${commentId}`)
+  },
+
+  // ===== SubTask Attachment Methods =====
+
+  /**
+   * Get all attachments for a subtask
+   */
+  async getSubTaskAttachments(workTaskId: string, subtaskId: string): Promise<SubTaskAttachment[]> {
+    try {
+      const response = await api.get(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/attachments`)
+
+      if (Array.isArray(response)) {
+        return response
+      }
+
+      if (response && typeof response === 'object') {
+        if (Array.isArray(response.data)) {
+          return response.data
+        }
+        if (Array.isArray(response.attachments)) {
+          return response.attachments
+        }
+      }
+
+      console.warn('[workTasksAPI] Unexpected subtask attachments response structure:', response)
+      return []
+    } catch (error) {
+      console.error('[workTasksAPI] Error fetching subtask attachments:', error)
+      return []
+    }
+  },
+
+  /**
+   * Upload a file to subtask
+   */
+  async uploadSubTaskAttachment(workTaskId: string, subtaskId: string, file: File): Promise<SubTaskAttachment> {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    // Use fetch directly for file upload instead of the api client
+    const token = localStorage.getItem('token')
+    const response = await fetch(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/attachments`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || '파일 업로드에 실패했습니다.')
+    }
+
+    return response.json()
+  },
+
+  /**
+   * Download a subtask attachment
+   */
+  async downloadSubTaskAttachment(workTaskId: string, subtaskId: string, attachmentId: string): Promise<Blob> {
+    const token = localStorage.getItem('token')
+    const response = await fetch(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/attachments/${attachmentId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || '파일 다운로드에 실패했습니다.')
+    }
+
+    return response.blob()
+  },
+
+  /**
+   * Delete a subtask attachment
+   */
+  async deleteSubTaskAttachment(workTaskId: string, subtaskId: string, attachmentId: string): Promise<void> {
+    return api.delete(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/attachments/${attachmentId}`)
   }
 }
