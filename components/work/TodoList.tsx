@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, Check, X, Trash2, Clock } from 'lucide-react'
+import { Plus, Check, X, Trash2, Clock, MessageSquare } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -11,69 +11,46 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
-
-interface Todo {
-  id: string
-  content: string
-  isCompleted: boolean
-  createdAt: string
-  completedAt?: string
-  user?: {
-    id: string
-    nickname: string
-    profile_image_url?: string
-  }
-  taskId?: string
-  task?: {
-    id: string
-    title: string
-  }
-}
+import { workTasksAPI, WorkTask, WorkTaskComment } from '@/lib/api/work-tasks'
 
 interface TodoListProps {
-  projectId: string
-  userId?: string
   searchQuery?: string
 }
 
-export default function TodoList({ projectId, userId: _userId, searchQuery }: TodoListProps) {
+export default function TodoList({ searchQuery }: TodoListProps) {
   const { toast } = useToast()
   const { user: currentUser } = useAuthStore()
-  const [todos, setTodos] = useState<Todo[]>([])
+  const [tasks, setTasks] = useState<WorkTask[]>([])
   const [loading, setLoading] = useState(true)
-  const [newTodo, setNewTodo] = useState('')
+  const [newComment, setNewComment] = useState('')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editContent, setEditContent] = useState('')
+  const [selectedTask, setSelectedTask] = useState<WorkTask | null>(null)
   const [activeTab, setActiveTab] = useState('my')
 
   useEffect(() => {
-    loadTodos()
-  }, [projectId, activeTab]) // eslint-disable-line react-hooks/exhaustive-deps
+    loadTasks()
+  }, [activeTab]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadTodos = async () => {
+  const loadTasks = async () => {
     try {
       setLoading(true)
-      const endpoint = activeTab === 'my'
-        ? `/api/todos/project/${projectId}/user/${currentUser?.id}`
-        : `/api/todos/project/${projectId}`
+      const data = await workTasksAPI.getWorkTasks()
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
+      // Filter tasks based on activeTab
+      const filteredTasks = activeTab === 'my'
+        ? data.filter(task =>
+            task.createdById === currentUser?.id ||
+            task.participants?.some(p => p.userId === currentUser?.id)
+          )
+        : data
 
-      if (response.ok) {
-        const data = await response.json()
-        setTodos(data)
-      } else {
-        throw new Error('Failed to load todos')
-      }
+      setTasks(filteredTasks)
     } catch (error) {
-      console.error('Failed to load todos:', error)
+      console.error('Failed to load work tasks:', error)
       toast({
-        title: 'Todo 불러오기 실패',
-        description: 'Todo 목록을 불러올 수 없습니다.',
+        title: '업무 불러오기 실패',
+        description: '업무 목록을 불러올 수 없습니다.',
         variant: 'destructive'
       })
     } finally {
@@ -81,163 +58,125 @@ export default function TodoList({ projectId, userId: _userId, searchQuery }: To
     }
   }
 
-  const handleCreateTodo = async () => {
-    if (!newTodo.trim()) {
+  const handleCreateComment = async (taskId: string) => {
+    if (!newComment.trim()) {
       toast({
         title: '입력 오류',
-        description: 'Todo 내용을 입력해주세요.',
+        description: '댓글 내용을 입력해주세요.',
         variant: 'destructive'
       })
       return
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/todos`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          projectId,
-          content: newTodo,
-        }),
-      })
+      const newCommentObj = await workTasksAPI.addComment(taskId, newComment)
 
-      if (response.ok) {
-        const createdTodo = await response.json()
-        setTodos([createdTodo, ...todos])
-        setNewTodo('')
-        toast({
-          title: 'Todo 추가 완료',
-          description: '새 Todo가 추가되었습니다.',
-        })
-      } else {
-        throw new Error('Failed to create todo')
-      }
-    } catch (error) {
-      console.error('Failed to create todo:', error)
+      // Update the task with the new comment
+      setTasks(tasks.map(task =>
+        task.id === taskId
+          ? { ...task, comments: [...(task.comments || []), newCommentObj] }
+          : task
+      ))
+
+      setNewComment('')
       toast({
-        title: 'Todo 추가 실패',
-        description: 'Todo를 추가할 수 없습니다.',
+        title: '댓글 추가 완료',
+        description: '새 댓글이 추가되었습니다.',
+      })
+    } catch (error) {
+      console.error('Failed to create comment:', error)
+      toast({
+        title: '댓글 추가 실패',
+        description: '댓글을 추가할 수 없습니다.',
         variant: 'destructive'
       })
     }
   }
 
-  const handleToggleTodo = async (todoId: string, isCompleted: boolean) => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/todos/${todoId}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ isCompleted: !isCompleted }),
-      })
-
-      if (response.ok) {
-        const updatedTodo = await response.json()
-        setTodos(todos.map(todo =>
-          todo.id === todoId ? updatedTodo : todo
-        ))
-        toast({
-          title: isCompleted ? 'Todo 미완료 처리' : 'Todo 완료',
-          description: isCompleted ? 'Todo가 미완료로 변경되었습니다.' : 'Todo를 완료했습니다.',
-        })
-      } else {
-        throw new Error('Failed to toggle todo')
-      }
-    } catch (error) {
-      console.error('Failed to toggle todo:', error)
-      toast({
-        title: '상태 변경 실패',
-        description: 'Todo 상태를 변경할 수 없습니다.',
-        variant: 'destructive'
-      })
-    }
-  }
-
-  const handleUpdateTodo = async (todoId: string) => {
+  const handleUpdateComment = async (taskId: string, commentId: string) => {
     if (!editContent.trim()) {
       toast({
         title: '입력 오류',
-        description: 'Todo 내용을 입력해주세요.',
+        description: '댓글 내용을 입력해주세요.',
         variant: 'destructive'
       })
       return
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/todos/${todoId}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ content: editContent }),
-      })
+      const updatedComment = await workTasksAPI.updateComment(taskId, commentId, editContent)
 
-      if (response.ok) {
-        const updatedTodo = await response.json()
-        setTodos(todos.map(todo =>
-          todo.id === todoId ? updatedTodo : todo
-        ))
-        setEditingId(null)
-        setEditContent('')
-        toast({
-          title: 'Todo 수정 완료',
-          description: 'Todo가 수정되었습니다.',
-        })
-      } else {
-        throw new Error('Failed to update todo')
-      }
-    } catch (error) {
-      console.error('Failed to update todo:', error)
+      // Update the task with the updated comment
+      setTasks(tasks.map(task =>
+        task.id === taskId
+          ? {
+              ...task,
+              comments: task.comments?.map(comment =>
+                comment.id === commentId ? updatedComment : comment
+              ) || []
+            }
+          : task
+      ))
+
+      setEditingId(null)
+      setEditContent('')
       toast({
-        title: 'Todo 수정 실패',
-        description: 'Todo를 수정할 수 없습니다.',
+        title: '댓글 수정 완료',
+        description: '댓글이 수정되었습니다.',
+      })
+    } catch (error) {
+      console.error('Failed to update comment:', error)
+      toast({
+        title: '댓글 수정 실패',
+        description: '댓글을 수정할 수 없습니다.',
         variant: 'destructive'
       })
     }
   }
 
-  const handleDeleteTodo = async (todoId: string) => {
+  const handleDeleteComment = async (taskId: string, commentId: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/todos/${todoId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
+      await workTasksAPI.deleteComment(taskId, commentId)
 
-      if (response.ok) {
-        setTodos(todos.filter(todo => todo.id !== todoId))
-        toast({
-          title: 'Todo 삭제 완료',
-          description: 'Todo가 삭제되었습니다.',
-        })
-      } else {
-        throw new Error('Failed to delete todo')
-      }
-    } catch (error) {
-      console.error('Failed to delete todo:', error)
+      // Update the task by removing the comment
+      setTasks(tasks.map(task =>
+        task.id === taskId
+          ? {
+              ...task,
+              comments: task.comments?.filter(comment => comment.id !== commentId) || []
+            }
+          : task
+      ))
+
       toast({
-        title: 'Todo 삭제 실패',
-        description: 'Todo를 삭제할 수 없습니다.',
+        title: '댓글 삭제 완료',
+        description: '댓글이 삭제되었습니다.',
+      })
+    } catch (error) {
+      console.error('Failed to delete comment:', error)
+      toast({
+        title: '댓글 삭제 실패',
+        description: '댓글을 삭제할 수 없습니다.',
         variant: 'destructive'
       })
     }
   }
 
-  const filteredTodos = todos.filter(todo => {
+  const filteredTasks = tasks.filter(task => {
     if (!searchQuery) return true
-    return todo.content.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           todo.task?.title.toLowerCase().includes(searchQuery.toLowerCase())
+    return task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           task.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           task.comments?.some(comment =>
+             comment.content.toLowerCase().includes(searchQuery.toLowerCase())
+           )
   })
 
-  const activeTodos = filteredTodos.filter(todo => !todo.isCompleted)
-  const completedTodos = filteredTodos.filter(todo => todo.isCompleted)
+  const activeTasks = filteredTasks.filter(task =>
+    task.status === 'pending' || task.status === 'in_progress'
+  )
+  const completedTasks = filteredTasks.filter(task =>
+    task.status === 'completed'
+  )
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -272,200 +211,222 @@ export default function TodoList({ projectId, userId: _userId, searchQuery }: To
     <div className="h-full flex flex-col">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
         <TabsList className="mb-4">
-          <TabsTrigger value="my">내 Todo</TabsTrigger>
-          <TabsTrigger value="team">팀 Todo</TabsTrigger>
+          <TabsTrigger value="my">내 업무</TabsTrigger>
+          <TabsTrigger value="team">팀 업무</TabsTrigger>
         </TabsList>
 
         <div className="flex-1 overflow-hidden">
           <Card className="h-full">
             <CardHeader>
               <CardTitle>
-                {activeTab === 'my' ? '내 Todo 목록' : '팀 Todo 목록'}
+                {activeTab === 'my' ? '내 업무 댓글' : '팀 업무 댓글'}
               </CardTitle>
               <CardDescription>
                 {activeTab === 'my'
-                  ? '개인 업무를 관리하세요.'
-                  : '팀원들의 업무 진행 상황을 확인하세요.'}
+                  ? '참여중인 업무의 댓글을 관리하세요.'
+                  : '팀 업무의 댓글과 진행 상황을 확인하세요.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="h-[calc(100%-5rem)]">
-              {activeTab === 'my' && (
-                <div className="flex gap-2 mb-4">
-                  <Input
-                    placeholder="새 Todo 추가..."
-                    value={newTodo}
-                    onChange={(e) => setNewTodo(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleCreateTodo()
-                      }
-                    }}
-                  />
-                  <Button onClick={handleCreateTodo}>
-                    <Plus className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-
-              <ScrollArea className="h-[calc(100%-3rem)]">
-                <div className="space-y-4">
-                  {activeTodos.length > 0 && (
+              <ScrollArea className="h-full">
+                <div className="space-y-6">
+                  {activeTasks.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-700 mb-2">진행중 ({activeTodos.length})</h4>
-                      <div className="space-y-2">
-                        {activeTodos.map((todo) => (
-                          <div
-                            key={todo.id}
-                            className="flex items-start gap-3 p-3 rounded-lg bg-white border hover:shadow-sm transition-shadow"
-                          >
-                            <Checkbox
-                              checked={todo.isCompleted}
-                              onCheckedChange={() => handleToggleTodo(todo.id, todo.isCompleted)}
-                              className="mt-0.5"
-                            />
-                            {editingId === todo.id ? (
-                              <div className="flex-1 flex gap-2">
-                                <Input
-                                  value={editContent}
-                                  onChange={(e) => setEditContent(e.target.value)}
-                                  className="flex-1"
-                                  autoFocus
-                                />
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={() => handleUpdateTodo(todo.id)}
-                                >
-                                  <Check className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  size="icon"
-                                  variant="ghost"
-                                  onClick={() => {
-                                    setEditingId(null)
-                                    setEditContent('')
-                                  }}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ) : (
-                              <div className="flex-1">
-                                <p
-                                  className="text-sm cursor-pointer"
-                                  onClick={() => {
-                                    if (activeTab === 'my' || todo.user?.id === currentUser?.id) {
-                                      setEditingId(todo.id)
-                                      setEditContent(todo.content)
-                                    }
-                                  }}
-                                >
-                                  {todo.content}
-                                </p>
-                                <div className="flex items-center gap-4 mt-1">
-                                  {activeTab === 'team' && todo.user && (
-                                    <div className="flex items-center gap-1">
-                                      <Avatar className="h-5 w-5">
-                                        <AvatarImage src={todo.user.profile_image_url} />
-                                        <AvatarFallback>
-                                          {todo.user.nickname.slice(0, 2).toUpperCase()}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      <span className="text-xs text-gray-500">{todo.user.nickname}</span>
-                                    </div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">
+                        진행중인 업무 ({activeTasks.length})
+                      </h4>
+                      <div className="space-y-4">
+                        {activeTasks.map((task) => (
+                          <Card key={task.id} className="bg-white border">
+                            <CardHeader className="pb-3">
+                              <div className="flex items-start justify-between">
+                                <div className="flex-1">
+                                  <CardTitle className="text-sm font-medium">
+                                    {task.title}
+                                  </CardTitle>
+                                  {task.description && (
+                                    <CardDescription className="text-xs mt-1">
+                                      {task.description}
+                                    </CardDescription>
                                   )}
-                                  {todo.task && (
-                                    <span className="text-xs text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
-                                      {todo.task.title}
+                                  <div className="flex items-center gap-2 mt-2">
+                                    <span className={`text-xs px-2 py-0.5 rounded-full
+                                      ${task.status === 'pending' ? 'bg-gray-100 text-gray-700' :
+                                        task.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                                        task.status === 'review' ? 'bg-yellow-100 text-yellow-700' :
+                                        'bg-green-100 text-green-700'}`}>
+                                      {task.status === 'pending' ? '대기' :
+                                       task.status === 'in_progress' ? '진행중' :
+                                       task.status === 'review' ? '검토' : '완료'}
                                     </span>
-                                  )}
-                                  <span className="text-xs text-gray-500 flex items-center gap-1">
-                                    <Clock className="h-3 w-3" />
-                                    {formatDate(todo.createdAt)}
-                                  </span>
+                                    <span className={`text-xs px-2 py-0.5 rounded-full
+                                      ${task.priority === 'urgent' ? 'bg-red-100 text-red-700' :
+                                        task.priority === 'high' ? 'bg-orange-100 text-orange-700' :
+                                        task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                        'bg-green-100 text-green-700'}`}>
+                                      {task.priority === 'urgent' ? '긴급' :
+                                       task.priority === 'high' ? '높음' :
+                                       task.priority === 'medium' ? '보통' : '낮음'}
+                                    </span>
+                                    {task.comments && (
+                                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                                        <MessageSquare className="h-3 w-3" />
+                                        {task.comments.length}
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                            )}
-                            {(activeTab === 'my' || todo.user?.id === currentUser?.id) && editingId !== todo.id && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => handleDeleteTodo(todo.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
+                            </CardHeader>
+
+                            <CardContent className="pt-0">
+                              {/* Comments Section */}
+                              {task.comments && task.comments.length > 0 && (
+                                <div className="space-y-2 mb-3">
+                                  {task.comments.map((comment) => (
+                                    <div key={comment.id} className="flex items-start gap-2 p-2 bg-gray-50 rounded">
+                                      <Avatar className="h-6 w-6">
+                                        <AvatarImage src={comment.user.profileImageUrl} />
+                                        <AvatarFallback>
+                                          {comment.user.nickname.slice(0, 2).toUpperCase()}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      {editingId === comment.id ? (
+                                        <div className="flex-1 flex gap-2">
+                                          <Input
+                                            value={editContent}
+                                            onChange={(e) => setEditContent(e.target.value)}
+                                            className="flex-1 h-7 text-xs"
+                                            autoFocus
+                                          />
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-7 w-7"
+                                            onClick={() => handleUpdateComment(task.id, comment.id)}
+                                          >
+                                            <Check className="h-3 w-3" />
+                                          </Button>
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-7 w-7"
+                                            onClick={() => {
+                                              setEditingId(null)
+                                              setEditContent('')
+                                            }}
+                                          >
+                                            <X className="h-3 w-3" />
+                                          </Button>
+                                        </div>
+                                      ) : (
+                                        <div className="flex-1">
+                                          <p
+                                            className="text-xs cursor-pointer"
+                                            onClick={() => {
+                                              if (comment.userId === currentUser?.id) {
+                                                setEditingId(comment.id)
+                                                setEditContent(comment.content)
+                                              }
+                                            }}
+                                          >
+                                            {comment.content}
+                                          </p>
+                                          <div className="flex items-center justify-between mt-1">
+                                            <div className="flex items-center gap-2">
+                                              <span className="text-xs text-gray-500">{comment.user.nickname}</span>
+                                              <span className="text-xs text-gray-500 flex items-center gap-1">
+                                                <Clock className="h-3 w-3" />
+                                                {formatDate(comment.createdAt)}
+                                              </span>
+                                            </div>
+                                            {comment.userId === currentUser?.id && (
+                                              <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                className="h-5 w-5 text-red-600 hover:text-red-700"
+                                                onClick={() => handleDeleteComment(task.id, comment.id)}
+                                              >
+                                                <Trash2 className="h-3 w-3" />
+                                              </Button>
+                                            )}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Add Comment Input */}
+                              <div className="flex gap-2">
+                                <Input
+                                  placeholder="댓글 추가..."
+                                  value={newComment}
+                                  onChange={(e) => setNewComment(e.target.value)}
+                                  onKeyPress={(e) => {
+                                    if (e.key === 'Enter') {
+                                      handleCreateComment(task.id)
+                                    }
+                                  }}
+                                  className="flex-1 h-8 text-xs"
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={() => handleCreateComment(task.id)}
+                                  className="h-8"
+                                >
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {completedTodos.length > 0 && (
+                  {completedTasks.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-2">완료됨 ({completedTodos.length})</h4>
-                      <div className="space-y-2 opacity-60">
-                        {completedTodos.map((todo) => (
-                          <div
-                            key={todo.id}
-                            className="flex items-start gap-3 p-3 rounded-lg bg-gray-50 border"
-                          >
-                            <Checkbox
-                              checked={todo.isCompleted}
-                              onCheckedChange={() => handleToggleTodo(todo.id, todo.isCompleted)}
-                              className="mt-0.5"
-                            />
-                            <div className="flex-1">
-                              <p className="text-sm line-through text-gray-600">
-                                {todo.content}
-                              </p>
-                              <div className="flex items-center gap-4 mt-1">
-                                {activeTab === 'team' && todo.user && (
-                                  <div className="flex items-center gap-1">
-                                    <Avatar className="h-5 w-5">
-                                      <AvatarImage src={todo.user.profile_image_url} />
-                                      <AvatarFallback>
-                                        {todo.user.nickname.slice(0, 2).toUpperCase()}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-xs text-gray-500">{todo.user.nickname}</span>
-                                  </div>
-                                )}
-                                {todo.task && (
-                                  <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
-                                    {todo.task.title}
-                                  </span>
-                                )}
-                                {todo.completedAt && (
-                                  <span className="text-xs text-gray-500">
-                                    완료: {formatDate(todo.completedAt)}
+                      <h4 className="text-sm font-medium text-gray-500 mb-3">
+                        완료된 업무 ({completedTasks.length})
+                      </h4>
+                      <div className="space-y-4 opacity-75">
+                        {completedTasks.map((task) => (
+                          <Card key={task.id} className="bg-gray-50 border-gray-200">
+                            <CardHeader className="pb-3">
+                              <CardTitle className="text-sm font-medium text-gray-600">
+                                {task.title}
+                              </CardTitle>
+                              {task.description && (
+                                <CardDescription className="text-xs">
+                                  {task.description}
+                                </CardDescription>
+                              )}
+                              <div className="flex items-center gap-2 mt-2">
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                                  완료
+                                </span>
+                                {task.comments && (
+                                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                                    <MessageSquare className="h-3 w-3" />
+                                    {task.comments.length}
                                   </span>
                                 )}
                               </div>
-                            </div>
-                            {(activeTab === 'my' || todo.user?.id === currentUser?.id) && (
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                onClick={() => handleDeleteTodo(todo.id)}
-                                className="text-red-600 hover:text-red-700"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
+                            </CardHeader>
+                          </Card>
                         ))}
                       </div>
                     </div>
                   )}
 
-                  {filteredTodos.length === 0 && (
+                  {filteredTasks.length === 0 && (
                     <div className="text-center py-12">
                       <p className="text-gray-500">
                         {activeTab === 'my'
-                          ? 'Todo가 없습니다. 새로운 Todo를 추가해보세요.'
-                          : '팀 Todo가 없습니다.'}
+                          ? '참여중인 업무가 없습니다.'
+                          : '팀 업무가 없습니다.'}
                       </p>
                     </div>
                   )}

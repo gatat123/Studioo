@@ -19,50 +19,27 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
-
-interface Task {
-  id: string
-  title: string
-  description?: string
-  status: string
-  priority: string
-  dueDate?: string
-  assignedUsers?: Array<{
-    id: string
-    nickname: string
-    profile_image_url?: string
-  }>
-  todoCount?: number
-  completedTodoCount?: number
-}
+import { workTasksAPI, WorkTask } from '@/lib/api/work-tasks'
 
 interface TaskBoardProps {
-  projectId: string
   searchQuery?: string
 }
 
 const TASK_COLUMNS = [
-  { id: 'todo', title: '할 일', color: 'bg-gray-100' },
+  { id: 'pending', title: '할 일', color: 'bg-gray-100' },
   { id: 'in_progress', title: '진행중', color: 'bg-blue-50' },
   { id: 'review', title: '검토', color: 'bg-yellow-50' },
-  { id: 'done', title: '완료', color: 'bg-green-50' },
+  { id: 'completed', title: '완료', color: 'bg-green-50' },
 ]
 
-export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
+export default function TaskBoard({ searchQuery }: TaskBoardProps) {
   const { toast } = useToast()
   const { user: _user } = useAuthStore()
-  const [tasks, setTasks] = useState<Task[]>([])
+  const [tasks, setTasks] = useState<WorkTask[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [selectedColumn, setSelectedColumn] = useState('')
-  const [draggedTask, setDraggedTask] = useState<Task | null>(null)
-  const [participants, setParticipants] = useState<Array<{
-    user_id: string
-    user?: {
-      nickname?: string
-      username?: string
-    }
-  }>>([])
+  const [draggedTask, setDraggedTask] = useState<WorkTask | null>(null)
   const [selectedParticipant, setSelectedParticipant] = useState<string | null>(null)
 
   // Form state
@@ -73,43 +50,15 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
 
   useEffect(() => {
     loadTasks()
-    loadParticipants()
-  }, [projectId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  const loadParticipants = async () => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/projects/${projectId}/participants`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setParticipants(data)
-      }
-    } catch (error) {
-      console.error('Failed to load participants:', error)
-    }
-  }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadTasks = async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/project/${projectId}`, {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        setTasks(data)
-      } else {
-        throw new Error('Failed to load tasks')
-      }
+      const data = await workTasksAPI.getWorkTasks()
+      setTasks(data)
     } catch (error) {
-      console.error('Failed to load tasks:', error)
+      console.error('Failed to load work tasks:', error)
       toast({
         title: '업무 불러오기 실패',
         description: '업무 목록을 불러올 수 없습니다.',
@@ -131,36 +80,31 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          projectId,
-          title: newTaskTitle,
-          description: newTaskDescription,
-          priority: newTaskPriority,
-          status: selectedColumn || 'todo',
-          dueDate: newTaskDueDate || undefined,
-        }),
+      const newTask = await workTasksAPI.createWorkTask({
+        title: newTaskTitle,
+        description: newTaskDescription || undefined,
+        priority: newTaskPriority as 'low' | 'medium' | 'high' | 'urgent',
+        dueDate: newTaskDueDate || undefined,
       })
 
-      if (response.ok) {
-        const newTask = await response.json()
-        setTasks([...tasks, newTask])
-        setShowCreateDialog(false)
-        resetForm()
-        toast({
-          title: '업무 생성 완료',
-          description: '새 업무가 추가되었습니다.',
+      // Update the task status if a specific column was selected
+      if (selectedColumn && selectedColumn !== 'pending') {
+        const updatedTask = await workTasksAPI.updateWorkTask(newTask.id, {
+          status: selectedColumn as 'pending' | 'in_progress' | 'review' | 'completed' | 'cancelled'
         })
+        setTasks([...tasks, updatedTask])
       } else {
-        throw new Error('Failed to create task')
+        setTasks([...tasks, newTask])
       }
+
+      setShowCreateDialog(false)
+      resetForm()
+      toast({
+        title: '업무 생성 완료',
+        description: '새 업무가 추가되었습니다.',
+      })
     } catch (error) {
-      console.error('Failed to create task:', error)
+      console.error('Failed to create work task:', error)
       toast({
         title: '업무 생성 실패',
         description: '업무를 생성할 수 없습니다.',
@@ -171,28 +115,19 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
 
   const handleUpdateTaskStatus = async (taskId: string, newStatus: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`, {
-        method: 'PATCH',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ status: newStatus }),
+      const updatedTask = await workTasksAPI.updateWorkTask(taskId, {
+        status: newStatus as 'pending' | 'in_progress' | 'review' | 'completed' | 'cancelled'
       })
 
-      if (response.ok) {
-        setTasks(tasks.map(task =>
-          task.id === taskId ? { ...task, status: newStatus } : task
-        ))
-        toast({
-          title: '업무 상태 변경',
-          description: '업무 상태가 업데이트되었습니다.',
-        })
-      } else {
-        throw new Error('Failed to update task')
-      }
+      setTasks(tasks.map(task =>
+        task.id === taskId ? updatedTask : task
+      ))
+      toast({
+        title: '업무 상태 변경',
+        description: '업무 상태가 업데이트되었습니다.',
+      })
     } catch (error) {
-      console.error('Failed to update task:', error)
+      console.error('Failed to update task status:', error)
       toast({
         title: '상태 변경 실패',
         description: '업무 상태를 변경할 수 없습니다.',
@@ -203,24 +138,14 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
 
   const handleDeleteTask = async (taskId: string) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/tasks/${taskId}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
+      await workTasksAPI.deleteWorkTask(taskId)
+      setTasks(tasks.filter(task => task.id !== taskId))
+      toast({
+        title: '업무 삭제 완료',
+        description: '업무가 삭제되었습니다.',
       })
-
-      if (response.ok) {
-        setTasks(tasks.filter(task => task.id !== taskId))
-        toast({
-          title: '업무 삭제 완료',
-          description: '업무가 삭제되었습니다.',
-        })
-      } else {
-        throw new Error('Failed to delete task')
-      }
     } catch (error) {
-      console.error('Failed to delete task:', error)
+      console.error('Failed to delete work task:', error)
       toast({
         title: '업무 삭제 실패',
         description: '업무를 삭제할 수 없습니다.',
@@ -236,7 +161,7 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
     setNewTaskDueDate('')
   }
 
-  const handleDragStart = (e: React.DragEvent, task: Task) => {
+  const handleDragStart = (e: React.DragEvent, task: WorkTask) => {
     setDraggedTask(task)
     e.dataTransfer.effectAllowed = 'move'
   }
@@ -256,22 +181,24 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
+      case 'urgent':
+        return 'text-red-700 bg-red-100 border-red-300'
       case 'high':
-        return 'text-red-600 bg-red-50'
+        return 'text-red-600 bg-red-50 border-red-200'
       case 'medium':
-        return 'text-yellow-600 bg-yellow-50'
+        return 'text-yellow-600 bg-yellow-50 border-yellow-200'
       case 'low':
-        return 'text-green-600 bg-green-50'
+        return 'text-green-600 bg-green-50 border-green-200'
       default:
-        return 'text-gray-600 bg-gray-50'
+        return 'text-gray-600 bg-gray-50 border-gray-200'
     }
   }
 
   const filteredTasks = tasks.filter(task => {
     // Filter by selected participant
     if (selectedParticipant) {
-      const hasAssignee = task.assignedUsers?.some(u => u.id === selectedParticipant)
-      if (!hasAssignee) return false
+      const hasParticipant = task.participants?.some(p => p.userId === selectedParticipant)
+      if (!hasParticipant) return false
     }
 
     // Filter by search query
@@ -302,14 +229,14 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
           >
             전체
           </Button>
-          {participants.map((participant) => (
+          {Array.from(new Set(tasks.flatMap(task => task.participants || []))).map((participant) => (
             <Button
-              key={participant.user_id}
+              key={participant.userId}
               size="sm"
-              variant={selectedParticipant === participant.user_id ? 'default' : 'outline'}
-              onClick={() => setSelectedParticipant(participant.user_id)}
+              variant={selectedParticipant === participant.userId ? 'default' : 'outline'}
+              onClick={() => setSelectedParticipant(participant.userId)}
             >
-              {participant.user?.nickname || participant.user?.username}
+              {participant.user.nickname || participant.user.username}
             </Button>
           ))}
         </div>
@@ -378,18 +305,19 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
                             variant="outline"
                             className={`text-xs ${getPriorityColor(task.priority)}`}
                           >
-                            {task.priority === 'high' ? '높음' :
+                            {task.priority === 'urgent' ? '긴급' :
+                             task.priority === 'high' ? '높음' :
                              task.priority === 'medium' ? '보통' : '낮음'}
                           </Badge>
-                          {task.todoCount !== undefined && (
+                          {task.comments && (
                             <span className="text-xs text-gray-500">
-                              {task.completedTodoCount || 0}/{task.todoCount}
+                              댓글 {task.comments.length}개
                             </span>
                           )}
                         </div>
 
                         {/* Status Move Button */}
-                        {column.id === 'todo' && (
+                        {column.id === 'pending' && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -414,7 +342,7 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
                             size="sm"
                             variant="outline"
                             className="w-full h-7 text-xs"
-                            onClick={() => handleUpdateTaskStatus(task.id, 'done')}
+                            onClick={() => handleUpdateTaskStatus(task.id, 'completed')}
                           >
                             완료로 <ChevronRight className="ml-1 h-3 w-3" />
                           </Button>
@@ -427,19 +355,19 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
                           </div>
                         )}
 
-                        {task.assignedUsers && task.assignedUsers.length > 0 && (
+                        {task.participants && task.participants.length > 0 && (
                           <div className="flex -space-x-2">
-                            {task.assignedUsers.slice(0, 3).map((user) => (
-                              <Avatar key={user.id} className="h-6 w-6 border-2 border-white">
-                                <AvatarImage src={user.profile_image_url} />
+                            {task.participants.slice(0, 3).map((participant) => (
+                              <Avatar key={participant.userId} className="h-6 w-6 border-2 border-white">
+                                <AvatarImage src={participant.user.profileImageUrl} />
                                 <AvatarFallback className="text-xs">
-                                  {user.nickname.slice(0, 2).toUpperCase()}
+                                  {participant.user.nickname.slice(0, 2).toUpperCase()}
                                 </AvatarFallback>
                               </Avatar>
                             ))}
-                            {task.assignedUsers.length > 3 && (
+                            {task.participants.length > 3 && (
                               <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs">
-                                +{task.assignedUsers.length - 3}
+                                +{task.participants.length - 3}
                               </div>
                             )}
                           </div>
@@ -500,6 +428,7 @@ export default function TaskBoard({ projectId, searchQuery }: TaskBoardProps) {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="urgent">긴급</SelectItem>
                     <SelectItem value="high">높음</SelectItem>
                     <SelectItem value="medium">보통</SelectItem>
                     <SelectItem value="low">낮음</SelectItem>

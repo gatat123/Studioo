@@ -57,8 +57,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import ScenePlayModal from '@/components/projects/ScenePlayModal'
-import TaskBoard from '@/components/work/TaskBoard'
-import TodoList from '@/components/work/TodoList'
+// TaskBoard and TodoList imports removed - Work projects are managed in the Work section
 
 // Removed AnnotationLayer - using AnnotationModal instead
 
@@ -665,14 +664,18 @@ export default function ProjectDetailPage() {
 
       {/* Main Content - Different layout based on project type */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Work Project Layout */}
+        {/* Work Project Layout - Redirect to Work section */}
         {project.project_type === 'work' ? (
-          <div className="flex-1 flex gap-6 p-6">
-            <div className="flex-1">
-              <TaskBoard projectId={projectId} />
-            </div>
-            <div className="w-96">
-              <TodoList projectId={projectId} />
+          <div className="flex-1 flex items-center justify-center p-6">
+            <div className="text-center space-y-4">
+              <h2 className="text-xl font-semibold">업무 프로젝트</h2>
+              <p className="text-gray-600">이 프로젝트는 업무 섹션에서 관리됩니다.</p>
+              <Button
+                onClick={() => window.location.href = '/studio/work'}
+                className="mt-4"
+              >
+                업무 섹션으로 이동
+              </Button>
             </div>
           </div>
         ) : (

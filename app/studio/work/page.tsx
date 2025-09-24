@@ -205,17 +205,14 @@ export default function WorkPage() {
                 {/* Main Task Board */}
                 <div className="flex-1">
                   <TaskBoard
-                    projectId={selectedWorkTask.id}
                     searchQuery={searchQuery}
                   />
                 </div>
 
                 {/* Personal Todo Sidebar */}
                 <div className="w-80 border-l pl-4">
-                  <h3 className="text-lg font-semibold mb-4">개인 Todo</h3>
+                  <h3 className="text-lg font-semibold mb-4">업무 댓글</h3>
                   <TodoList
-                    projectId={selectedWorkTask.id}
-                    userId={user?.id}
                     searchQuery={searchQuery}
                   />
                 </div>
@@ -224,7 +221,6 @@ export default function WorkPage() {
 
             <TabsContent value="team" className="flex-1 overflow-hidden px-4">
               <TeamOverview
-                projectId={selectedWorkTask.id}
                 searchQuery={searchQuery}
               />
             </TabsContent>
