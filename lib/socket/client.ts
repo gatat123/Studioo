@@ -9,11 +9,15 @@ class SocketClient {
 
   connect(): Socket {
     if (this.socket?.connected) {
+      console.log('[SocketClient] Already connected, returning existing socket:', this.socket.id);
       return this.socket;
     }
 
     const token = authAPI.getToken();
     const socketUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+    console.log('[SocketClient] 🔌 Connecting to:', socketUrl);
+    console.log('[SocketClient] Auth token present:', !!token);
 
     this.socket = io(socketUrl, {
       auth: {
@@ -27,6 +31,7 @@ class SocketClient {
     });
 
     this.setupEventListeners();
+    console.log('[SocketClient] Socket instance created, connecting...');
     return this.socket;
   }
 
@@ -34,24 +39,26 @@ class SocketClient {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
+      console.log('[SocketClient] ✅ Connected to server, socket ID:', this.socket?.id);
       this.reconnectAttempts = 0;
     });
 
-    this.socket.on('disconnect', (_reason) => {
+    this.socket.on('disconnect', (reason) => {
+      console.log('[SocketClient] ❌ Disconnected from server, reason:', reason);
     });
 
-    this.socket.on('connect_error', (_error) => {
-      // Socket.io connection error
+    this.socket.on('connect_error', (error) => {
+      console.error('[SocketClient] ❌ Connection error:', error);
       this.reconnectAttempts++;
-      
+
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        // Max reconnection attempts reached
+        console.error('[SocketClient] Max reconnection attempts reached, giving up');
         this.disconnect();
       }
     });
 
-    this.socket.on('error', (_error) => {
-      // Socket.io error
+    this.socket.on('error', (error) => {
+      console.error('[SocketClient] ❌ Socket error:', error);
     });
   }
 

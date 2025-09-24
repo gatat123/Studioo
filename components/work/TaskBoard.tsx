@@ -91,16 +91,29 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
     const socket = socketClient.connect()
 
-    // Join work task room for real-time updates
-    socket.emit('join:work-task', selectedWorkTask.id)
+    // Check initial socket connection state
+    console.log(`[TaskBoard] Socket connection state:`, socket.connected)
+    console.log(`[TaskBoard] Socket ID:`, socket.id)
 
-    console.log(`[TaskBoard] Joining work-task room: ${selectedWorkTask.id}`)
+    // Join work task room for real-time updates
+    console.log(`[TaskBoard] Attempting to join work-task room: ${selectedWorkTask.id}`)
+    socket.emit('join:work-task', selectedWorkTask.id)
 
     // Handle subtask created
     const handleSubtaskCreated = (data: { subtask: SubTask }) => {
-      console.log(`[TaskBoard] Subtask created:`, data)
-      // Add with animation effect
-      setSubtasks(prev => [...prev, { ...data.subtask, _isNew: true }])
+      console.log(`[TaskBoard] ✅ Subtask created event received:`, data)
+
+      // Check if subtask already exists to prevent duplicates
+      setSubtasks(prev => {
+        const exists = prev.some(task => task.id === data.subtask.id)
+        if (exists) {
+          console.log(`[TaskBoard] Subtask ${data.subtask.id} already exists, skipping duplicate add`)
+          return prev
+        }
+
+        console.log(`[TaskBoard] Adding new subtask to ${prev.length} existing subtasks`)
+        return [...prev, { ...data.subtask, _isNew: true }]
+      })
 
       // Remove animation flag after animation completes
       setTimeout(() => {
@@ -112,19 +125,36 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
     // Handle subtask updated
     const handleSubtaskUpdated = (data: { subtask?: SubTask, subtaskId?: string, updates?: any }) => {
-      console.log(`[TaskBoard] Subtask updated:`, data)
+      console.log(`[TaskBoard] ✅ Subtask updated event received:`, {
+        hasSubtask: !!data.subtask,
+        subtaskId: data.subtask?.id || data.subtaskId,
+        workTaskId: (data as any).workTaskId,
+        timestamp: (data as any).timestamp
+      })
 
       // Handle both data formats from backend
       if (data.subtask) {
-        // Full subtask data provided
-        setSubtasks(prev => prev.map(task =>
-          task.id === data.subtask!.id ? data.subtask! : task
-        ))
+        // Full subtask data provided - create new array to force re-render
+        setSubtasks(prev => {
+          const newSubtasks = [...prev]
+          const index = newSubtasks.findIndex(task => task.id === data.subtask!.id)
+          if (index !== -1) {
+            newSubtasks[index] = { ...data.subtask! }
+            console.log(`[TaskBoard] Updated subtask at index ${index}:`, data.subtask!.id)
+          }
+          return newSubtasks
+        })
       } else if (data.subtaskId && data.updates) {
         // Partial update data provided
-        setSubtasks(prev => prev.map(task =>
-          task.id === data.subtaskId ? { ...task, ...data.updates } : task
-        ))
+        setSubtasks(prev => {
+          const newSubtasks = [...prev]
+          const index = newSubtasks.findIndex(task => task.id === data.subtaskId)
+          if (index !== -1) {
+            newSubtasks[index] = { ...newSubtasks[index], ...data.updates }
+            console.log(`[TaskBoard] Partially updated subtask at index ${index}:`, data.subtaskId)
+          }
+          return newSubtasks
+        })
       }
 
       // Don't notify parent to avoid full refresh
@@ -136,10 +166,25 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       previousStatus: string
       newStatus: string
     }) => {
-      console.log(`[TaskBoard] Subtask status changed: ${data.previousStatus} -> ${data.newStatus}`, data)
-      setSubtasks(prev => prev.map(task =>
-        task.id === data.subtask.id ? data.subtask : task
-      ))
+      console.log(`[TaskBoard] ✅ Subtask status changed event received:`, {
+        subtaskId: data.subtask.id,
+        previousStatus: data.previousStatus,
+        newStatus: data.newStatus,
+        title: data.subtask.title
+      })
+
+      // Create a new array to force re-render
+      setSubtasks(prev => {
+        const newSubtasks = [...prev]
+        const index = newSubtasks.findIndex(task => task.id === data.subtask.id)
+        if (index !== -1) {
+          // Replace the entire object to ensure React detects the change
+          newSubtasks[index] = { ...data.subtask }
+          console.log(`[TaskBoard] Status updated for subtask at index ${index}: ${data.previousStatus} -> ${data.newStatus}`)
+        }
+        console.log(`[TaskBoard] Updated subtasks list:`, newSubtasks)
+        return newSubtasks
+      })
 
       // Show toast notification for status changes
       toast({
@@ -156,8 +201,16 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
     // Handle subtask deleted
     const handleSubtaskDeleted = (data: { subtaskId: string }) => {
-      console.log(`[TaskBoard] Subtask deleted:`, data)
-      setSubtasks(prev => prev.filter(task => task.id !== data.subtaskId))
+      console.log(`[TaskBoard] ✅ Subtask deleted event received:`, {
+        subtaskId: data.subtaskId,
+        workTaskId: (data as any).workTaskId
+      })
+
+      setSubtasks(prev => {
+        const filtered = prev.filter(task => task.id !== data.subtaskId)
+        console.log(`[TaskBoard] Removed subtask ${data.subtaskId}, ${filtered.length} tasks remaining`)
+        return filtered
+      })
 
       // Remove comments and attachments for deleted subtask
       setSubtaskComments(prev => {
@@ -205,23 +258,33 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
     // Handle socket connection events
     const handleSocketConnected = () => {
-      console.log(`[TaskBoard] Socket connected`)
+      console.log(`[TaskBoard] ✅ Socket connected, ID:`, socket.id)
       setIsSocketConnected(true)
     }
 
-    const handleSocketDisconnected = () => {
-      console.log(`[TaskBoard] Socket disconnected`)
+    const handleSocketDisconnected = (reason: string) => {
+      console.log(`[TaskBoard] ❌ Socket disconnected, reason:`, reason)
       setIsSocketConnected(false)
     }
 
-    const handleJoinedWorkTask = (data: { workTaskId: string, roomId: string }) => {
-      console.log(`[TaskBoard] Successfully joined work-task room:`, data)
+    const handleJoinedWorkTask = (data: { workTaskId: string, roomId: string, clientCount?: number }) => {
+      console.log(`[TaskBoard] ✅ Successfully joined work-task room:`, {
+        workTaskId: data.workTaskId,
+        roomId: data.roomId,
+        clientCount: data.clientCount,
+        socketId: socket.id
+      })
       // Don't refresh - rely on socket events for updates
+    }
+
+    const handleSocketError = (error: any) => {
+      console.error(`[TaskBoard] ❌ Socket error:`, error)
     }
 
     // Register event listeners
     socket.on('connect', handleSocketConnected)
     socket.on('disconnect', handleSocketDisconnected)
+    socket.on('error', handleSocketError)
     socket.on('joined:work-task', handleJoinedWorkTask)
     socket.on('subtask:created', handleSubtaskCreated)
     socket.on('subtask:updated', handleSubtaskUpdated)
@@ -231,10 +294,15 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     socket.on('subtask-comment:updated', handleSubtaskCommentUpdated)
     socket.on('subtask-comment:deleted', handleSubtaskCommentDeleted)
 
+    console.log(`[TaskBoard] 📡 All event listeners registered for work-task: ${selectedWorkTask.id}`)
+
     return () => {
-      console.log(`[TaskBoard] Leaving work-task room: ${selectedWorkTask.id}`)
+      console.log(`[TaskBoard] 🚪 Cleaning up and leaving work-task room: ${selectedWorkTask.id}`)
+
+      // Remove all event listeners
       socket.off('connect', handleSocketConnected)
       socket.off('disconnect', handleSocketDisconnected)
+      socket.off('error', handleSocketError)
       socket.off('joined:work-task', handleJoinedWorkTask)
       socket.off('subtask:created', handleSubtaskCreated)
       socket.off('subtask:updated', handleSubtaskUpdated)
@@ -243,7 +311,10 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       socket.off('subtask-comment:created', handleSubtaskCommentCreated)
       socket.off('subtask-comment:updated', handleSubtaskCommentUpdated)
       socket.off('subtask-comment:deleted', handleSubtaskCommentDeleted)
+
+      // Leave the room
       socket.emit('leave:work-task', selectedWorkTask.id)
+      console.log(`[TaskBoard] 📡 Event listeners removed and room left for work-task: ${selectedWorkTask.id}`)
     }
   }, [selectedWorkTask, onTaskUpdate, toast]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -391,11 +462,13 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     if (!selectedWorkTask || !newTaskTitle) return
 
     try {
+      console.log(`[TaskBoard] Creating subtask: ${newTaskTitle}`)
+
       // Get current user ID
       const user = useAuthStore.getState().user
       const userId = user?.id
 
-      // Just call the API - the socket event will update the state
+      // Call the API - the socket event will update the state
       const newSubTask = await workTasksAPI.createSubTask(selectedWorkTask.id, {
         title: newTaskTitle,
         description: newTaskDescription,
@@ -404,8 +477,10 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
         assigneeId: userId // Set the creator as the assignee
       })
 
-      // Socket event handler (handleSubtaskCreated) will update the state
-      // Just initialize empty comments and attachments for new subtask
+      console.log(`[TaskBoard] Subtask created via API:`, newSubTask.id)
+
+      // Initialize empty comments and attachments for new subtask
+      // (Socket event handler will add the subtask to the list)
       setSubtaskComments(prev => ({
         ...prev,
         [newSubTask.id]: []
@@ -418,6 +493,9 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       setCreateDialogOpen(false)
       setNewTaskTitle('')
       setNewTaskDescription('')
+
+      console.log(`[TaskBoard] Waiting for socket event to update UI...`)
+
       toast({
         title: '세부 업무 생성 완료',
         description: '새로운 세부 업무가 추가되었습니다.',
@@ -436,11 +514,15 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     if (!selectedWorkTask) return
 
     try {
-      // Just call the API - the socket event will update the state
+      console.log(`[TaskBoard] Updating subtask status: ${subtaskId} -> ${newStatus} at position ${newPosition}`)
+
+      // Call the API - the socket event will update the state
       await workTasksAPI.updateSubTask(selectedWorkTask.id, subtaskId, {
         status: newStatus as 'todo' | 'in_progress' | 'review' | 'done',
         position: newPosition
       })
+
+      console.log(`[TaskBoard] Status update API call completed, waiting for socket event...`)
       // Toast will be shown by the socket event handler (handleSubtaskStatusChanged)
     } catch (error) {
       console.error('Failed to update subtask status:', error)
@@ -456,9 +538,14 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     if (!selectedWorkTask) return
 
     try {
-      // Just call the API - the socket event will update the state
+      console.log(`[TaskBoard] Deleting subtask: ${subtaskId}`)
+
+      // Call the API - the socket event will update the state
       await workTasksAPI.deleteSubTask(selectedWorkTask.id, subtaskId)
+
+      console.log(`[TaskBoard] Delete API call completed, waiting for socket event...`)
       // Socket event handler (handleSubtaskDeleted) will update the state and clean up comments/attachments
+
       toast({
         title: '세부 업무 삭제 완료',
         description: '세부 업무가 삭제되었습니다.',
@@ -483,13 +570,17 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     if (!selectedWorkTask || !editingTask || !editingTaskTitle.trim()) return
 
     try {
-      // Just call the API - the socket event will update the state
+      console.log(`[TaskBoard] Updating subtask: ${editingTask} - ${editingTaskTitle.trim()}`)
+
+      // Call the API - the socket event will update the state
       await workTasksAPI.updateSubTask(selectedWorkTask.id, editingTask, {
         title: editingTaskTitle.trim(),
         description: editingTaskDescription.trim() || null
       })
 
+      console.log(`[TaskBoard] Edit update API call completed, waiting for socket event...`)
       // Socket event handler (handleSubtaskUpdated) will update the state
+
       setEditingTask(null)
       setEditingTaskTitle('')
       setEditingTaskDescription('')
