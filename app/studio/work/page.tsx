@@ -294,6 +294,7 @@ export default function WorkPage() {
                 <div className="flex-1">
                   <TaskBoard
                     searchQuery={searchQuery}
+                    selectedWorkTask={selectedWorkTask}
                     onTaskCreated={loadWorkTasks}
                     onTaskUpdate={loadWorkTasks}
                   />

@@ -15,71 +15,96 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
-import { workTasksAPI, WorkTask } from '@/lib/api/work-tasks'
+import { workTasksAPI, WorkTask, SubTask } from '@/lib/api/work-tasks'
 import { socketClient } from '@/lib/socket/client'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
 
 interface TaskBoardProps {
   searchQuery?: string
+  selectedWorkTask: WorkTask | null
   onTaskCreated?: () => void
   onTaskUpdate?: () => void
 }
 
 const TASK_COLUMNS = [
-  { id: 'pending', title: '할 일', color: 'bg-gray-100' },
+  { id: 'todo', title: '할 일', color: 'bg-gray-100' },
   { id: 'in_progress', title: '진행중', color: 'bg-blue-50' },
   { id: 'review', title: '검토', color: 'bg-yellow-50' },
-  { id: 'completed', title: '완료', color: 'bg-green-50' },
+  { id: 'done', title: '완료', color: 'bg-green-50' },
 ]
 
-export default function TaskBoard({ searchQuery, onTaskCreated, onTaskUpdate }: TaskBoardProps) {
+export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskCreated, onTaskUpdate }: TaskBoardProps) {
   const { toast } = useToast()
-  const { user: _user } = useAuthStore()
-  const [tasks, setTasks] = useState<WorkTask[]>([])
+  const { user } = useAuthStore()
+  const [subtasks, setSubtasks] = useState<SubTask[]>([])
   const [loading, setLoading] = useState(true)
-  const [draggedTask, setDraggedTask] = useState<WorkTask | null>(null)
-  const [selectedParticipant, setSelectedParticipant] = useState<string | null>(null)
+  const [draggedTask, setDraggedTask] = useState<SubTask | null>(null)
+  const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null)
+  const [createDialogOpen, setCreateDialogOpen] = useState(false)
+  const [createDialogStatus, setCreateDialogStatus] = useState<string>('todo')
+  const [newTaskTitle, setNewTaskTitle] = useState('')
+  const [newTaskDescription, setNewTaskDescription] = useState('')
 
   useEffect(() => {
-    loadTasks()
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    if (selectedWorkTask) {
+      loadSubTasks()
+    } else {
+      setSubtasks([])
+      setLoading(false)
+    }
+  }, [selectedWorkTask]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Socket.io listeners for real-time updates
   useEffect(() => {
+    if (!selectedWorkTask) return
+
     const socket = socketClient.connect()
 
-    const handleReloadTasks = () => {
-      loadTasks()
+    // Join work task room for real-time updates
+    socket.emit('join:work-task', selectedWorkTask.id)
+
+    const handleReloadSubTasks = () => {
+      loadSubTasks()
       // Also notify parent component about the update
       if (onTaskUpdate) {
         onTaskUpdate()
       }
     }
 
-    socket.on('task:created', handleReloadTasks)
-    socket.on('task:updated', handleReloadTasks)
-    socket.on('task:deleted', handleReloadTasks)
-    socket.on('work-task:updated', handleReloadTasks)
-    socket.on('work-task:deleted', handleReloadTasks)
+    socket.on('subtask:created', handleReloadSubTasks)
+    socket.on('subtask:updated', handleReloadSubTasks)
+    socket.on('subtask:deleted', handleReloadSubTasks)
 
     return () => {
-      socket.off('task:created', handleReloadTasks)
-      socket.off('task:updated', handleReloadTasks)
-      socket.off('task:deleted', handleReloadTasks)
-      socket.off('work-task:updated', handleReloadTasks)
-      socket.off('work-task:deleted', handleReloadTasks)
+      socket.off('subtask:created', handleReloadSubTasks)
+      socket.off('subtask:updated', handleReloadSubTasks)
+      socket.off('subtask:deleted', handleReloadSubTasks)
+      socket.emit('leave:work-task', selectedWorkTask.id)
     }
-  }, [onTaskUpdate]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedWorkTask, onTaskUpdate]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const loadTasks = async () => {
+  const loadSubTasks = async () => {
+    if (!selectedWorkTask) return
+
     try {
       setLoading(true)
-      const data = await workTasksAPI.getWorkTasks()
-      setTasks(data)
+      const data = await workTasksAPI.getSubTasks(selectedWorkTask.id)
+      setSubtasks(data)
     } catch (error) {
-      console.error('Failed to load work tasks:', error)
+      console.error('Failed to load subtasks:', error)
       toast({
-        title: '업무 불러오기 실패',
-        description: '업무 목록을 불러올 수 없습니다.',
+        title: '세부 업무 불러오기 실패',
+        description: '세부 업무 목록을 불러올 수 없습니다.',
         variant: 'destructive'
       })
     } finally {
@@ -88,59 +113,83 @@ export default function TaskBoard({ searchQuery, onTaskCreated, onTaskUpdate }: 
   }
 
 
-  const handleUpdateTaskStatus = async (taskId: string, newStatus: string) => {
+  const handleCreateSubTask = async () => {
+    if (!selectedWorkTask || !newTaskTitle) return
+
     try {
-      const updatedTask = await workTasksAPI.updateWorkTask(taskId, {
-        status: newStatus as 'pending' | 'in_progress' | 'review' | 'completed' | 'cancelled'
+      const newSubTask = await workTasksAPI.createSubTask(selectedWorkTask.id, {
+        title: newTaskTitle,
+        description: newTaskDescription,
+        status: createDialogStatus as 'todo' | 'in_progress' | 'review' | 'done',
+        priority: 'medium'
       })
 
-      setTasks(tasks.map(task =>
-        task.id === taskId ? updatedTask : task
+      setSubtasks([...subtasks, newSubTask])
+      setCreateDialogOpen(false)
+      setNewTaskTitle('')
+      setNewTaskDescription('')
+      toast({
+        title: '세부 업무 생성 완료',
+        description: '새로운 세부 업무가 추가되었습니다.',
+      })
+    } catch (error) {
+      console.error('Failed to create subtask:', error)
+      toast({
+        title: '세부 업무 생성 실패',
+        description: '세부 업무를 생성할 수 없습니다.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleUpdateSubTaskStatus = async (subtaskId: string, newStatus: string, newPosition: number) => {
+    if (!selectedWorkTask) return
+
+    try {
+      const updatedSubTask = await workTasksAPI.updateSubTask(selectedWorkTask.id, subtaskId, {
+        status: newStatus as 'todo' | 'in_progress' | 'review' | 'done',
+        position: newPosition
+      })
+
+      setSubtasks(subtasks.map(task =>
+        task.id === subtaskId ? updatedSubTask : task
       ))
       toast({
-        title: '업무 상태 변경',
-        description: '업무 상태가 업데이트되었습니다.',
+        title: '세부 업무 상태 변경',
+        description: '세부 업무 상태가 업데이트되었습니다.',
       })
-
-      // Call the onTaskUpdate callback to refresh parent component
-      if (onTaskUpdate) {
-        onTaskUpdate()
-      }
     } catch (error) {
-      console.error('Failed to update task status:', error)
+      console.error('Failed to update subtask status:', error)
       toast({
         title: '상태 변경 실패',
-        description: '업무 상태를 변경할 수 없습니다.',
+        description: '세부 업무 상태를 변경할 수 없습니다.',
         variant: 'destructive'
       })
     }
   }
 
-  const handleDeleteTask = async (taskId: string) => {
+  const handleDeleteSubTask = async (subtaskId: string) => {
+    if (!selectedWorkTask) return
+
     try {
-      await workTasksAPI.deleteWorkTask(taskId)
-      setTasks(tasks.filter(task => task.id !== taskId))
+      await workTasksAPI.deleteSubTask(selectedWorkTask.id, subtaskId)
+      setSubtasks(subtasks.filter(task => task.id !== subtaskId))
       toast({
-        title: '업무 삭제 완료',
-        description: '업무가 삭제되었습니다.',
+        title: '세부 업무 삭제 완료',
+        description: '세부 업무가 삭제되었습니다.',
       })
-
-      // Call the onTaskUpdate callback to refresh parent component
-      if (onTaskUpdate) {
-        onTaskUpdate()
-      }
     } catch (error) {
-      console.error('Failed to delete work task:', error)
+      console.error('Failed to delete subtask:', error)
       toast({
-        title: '업무 삭제 실패',
-        description: '업무를 삭제할 수 없습니다.',
+        title: '세부 업무 삭제 실패',
+        description: '세부 업무를 삭제할 수 없습니다.',
         variant: 'destructive'
       })
     }
   }
 
 
-  const handleDragStart = (e: React.DragEvent, task: WorkTask) => {
+  const handleDragStart = (e: React.DragEvent, task: SubTask) => {
     setDraggedTask(task)
     e.dataTransfer.effectAllowed = 'move'
   }
@@ -153,7 +202,10 @@ export default function TaskBoard({ searchQuery, onTaskCreated, onTaskUpdate }: 
   const handleDrop = (e: React.DragEvent, status: string) => {
     e.preventDefault()
     if (draggedTask && draggedTask.status !== status) {
-      handleUpdateTaskStatus(draggedTask.id, status)
+      // Calculate new position (add to end of column)
+      const tasksInColumn = subtasks.filter(t => t.status === status)
+      const newPosition = tasksInColumn.length
+      handleUpdateSubTaskStatus(draggedTask.id, status, newPosition)
     }
     setDraggedTask(null)
   }
@@ -173,11 +225,10 @@ export default function TaskBoard({ searchQuery, onTaskCreated, onTaskUpdate }: 
     }
   }
 
-  const filteredTasks = tasks.filter(task => {
-    // Filter by selected participant
-    if (selectedParticipant) {
-      const hasParticipant = task.participants?.some(p => p.userId === selectedParticipant)
-      if (!hasParticipant) return false
+  const filteredSubTasks = subtasks.filter(task => {
+    // Filter by selected assignee
+    if (selectedAssignee) {
+      if (task.assigneeId !== selectedAssignee) return false
     }
 
     // Filter by search query
@@ -194,30 +245,60 @@ export default function TaskBoard({ searchQuery, onTaskCreated, onTaskUpdate }: 
     )
   }
 
+  if (!selectedWorkTask) {
+    return (
+      <div className="flex items-center justify-center h-64 text-gray-500">
+        <div className="text-center">
+          <p className="text-lg">왼쪽 목록에서 업무를 선택해주세요</p>
+          <p className="text-sm mt-2">선택한 업무의 세부 작업이 여기에 표시됩니다</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="h-full flex flex-col">
-      {/* Participant Filter */}
+      {/* Selected Work Task Info */}
+      <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-lg">{selectedWorkTask.title}</h3>
+            {selectedWorkTask.description && (
+              <p className="text-sm text-gray-600 mt-1">{selectedWorkTask.description}</p>
+            )}
+          </div>
+          <Badge variant="outline">
+            세부 작업 {subtasks.length}개
+          </Badge>
+        </div>
+      </div>
+
+      {/* Assignee Filter */}
       <div className="mb-4 flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
         <Users className="h-4 w-4 text-gray-600" />
-        <span className="text-sm font-medium text-gray-700">참여자별 보기:</span>
+        <span className="text-sm font-medium text-gray-700">담당자별 보기:</span>
         <div className="flex gap-2">
           <Button
             size="sm"
-            variant={!selectedParticipant ? 'default' : 'outline'}
-            onClick={() => setSelectedParticipant(null)}
+            variant={!selectedAssignee ? 'default' : 'outline'}
+            onClick={() => setSelectedAssignee(null)}
           >
             전체
           </Button>
-          {Array.from(new Set(tasks.flatMap(task => task.participants || []))).map((participant) => (
-            <Button
-              key={participant.userId}
-              size="sm"
-              variant={selectedParticipant === participant.userId ? 'default' : 'outline'}
-              onClick={() => setSelectedParticipant(participant.userId)}
-            >
-              {participant.user.nickname || participant.user.username}
-            </Button>
-          ))}
+          {Array.from(new Set(subtasks.filter(t => t.assigneeId).map(t => t.assigneeId!))).map((assigneeId) => {
+            const assignee = subtasks.find(t => t.assigneeId === assigneeId)?.assignee
+            if (!assignee) return null
+            return (
+              <Button
+                key={assigneeId}
+                size="sm"
+                variant={selectedAssignee === assigneeId ? 'default' : 'outline'}
+                onClick={() => setSelectedAssignee(assigneeId)}
+              >
+                {assignee.nickname}
+              </Button>
+            )
+          })}
         </div>
       </div>
 
@@ -233,15 +314,29 @@ export default function TaskBoard({ searchQuery, onTaskCreated, onTaskUpdate }: 
               <h3 className="font-semibold text-sm uppercase tracking-wider text-gray-700">
                 {column.title}
               </h3>
-              <Badge variant="secondary">
-                {filteredTasks.filter(task => task.status === column.id).length}
-              </Badge>
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary">
+                  {filteredSubTasks.filter(task => task.status === column.id).length}
+                </Badge>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-6 w-6"
+                  onClick={() => {
+                    setCreateDialogStatus(column.id)
+                    setCreateDialogOpen(true)
+                  }}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             <ScrollArea className="flex-1">
               <div className="space-y-3">
-                {filteredTasks
+                {filteredSubTasks
                   .filter(task => task.status === column.id)
+                  .sort((a, b) => a.position - b.position)
                   .map((task) => (
                     <Card
                       key={task.id}
@@ -263,7 +358,7 @@ export default function TaskBoard({ searchQuery, onTaskCreated, onTaskUpdate }: 
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem>편집</DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => handleDeleteTask(task.id)}
+                                onClick={() => handleDeleteSubTask(task.id)}
                                 className="text-red-600"
                               >
                                 삭제
@@ -288,67 +383,21 @@ export default function TaskBoard({ searchQuery, onTaskCreated, onTaskUpdate }: 
                              task.priority === 'high' ? '높음' :
                              task.priority === 'medium' ? '보통' : '낮음'}
                           </Badge>
-                          {task.comments && (
-                            <span className="text-xs text-gray-500">
-                              댓글 {task.comments.length}개
-                            </span>
+                          {task.assignee && (
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={task.assignee.profileImageUrl} />
+                              <AvatarFallback className="text-xs">
+                                {task.assignee.nickname[0]}
+                              </AvatarFallback>
+                            </Avatar>
                           )}
                         </div>
 
-                        {/* Status Move Button */}
-                        {column.id === 'pending' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full h-7 text-xs"
-                            onClick={() => handleUpdateTaskStatus(task.id, 'in_progress')}
-                          >
-                            진행중으로 <ChevronRight className="ml-1 h-3 w-3" />
-                          </Button>
-                        )}
-                        {column.id === 'in_progress' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full h-7 text-xs"
-                            onClick={() => handleUpdateTaskStatus(task.id, 'review')}
-                          >
-                            검토로 <ChevronRight className="ml-1 h-3 w-3" />
-                          </Button>
-                        )}
-                        {column.id === 'review' && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full h-7 text-xs"
-                            onClick={() => handleUpdateTaskStatus(task.id, 'completed')}
-                          >
-                            완료로 <ChevronRight className="ml-1 h-3 w-3" />
-                          </Button>
-                        )}
-
+                        {/* Due Date */}
                         {task.dueDate && (
                           <div className="flex items-center text-xs text-gray-500">
                             <Calendar className="h-3 w-3 mr-1" />
                             {new Date(task.dueDate).toLocaleDateString()}
-                          </div>
-                        )}
-
-                        {task.participants && task.participants.length > 0 && (
-                          <div className="flex -space-x-2">
-                            {task.participants.slice(0, 3).map((participant) => (
-                              <Avatar key={participant.userId} className="h-6 w-6 border-2 border-white">
-                                <AvatarImage src={participant.user.profileImageUrl} />
-                                <AvatarFallback className="text-xs">
-                                  {participant.user.nickname.slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                            ))}
-                            {task.participants.length > 3 && (
-                              <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs">
-                                +{task.participants.length - 3}
-                              </div>
-                            )}
                           </div>
                         )}
                       </CardFooter>
@@ -360,6 +409,53 @@ export default function TaskBoard({ searchQuery, onTaskCreated, onTaskUpdate }: 
           </div>
         ))}
       </div>
+
+      {/* Create SubTask Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>새 세부 작업 추가</DialogTitle>
+            <DialogDescription>
+              {TASK_COLUMNS.find(col => col.id === createDialogStatus)?.title} 칼럼에 새로운 세부 작업을 추가합니다.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="title" className="text-right">
+                제목
+              </Label>
+              <Input
+                id="title"
+                value={newTaskTitle}
+                onChange={(e) => setNewTaskTitle(e.target.value)}
+                className="col-span-3"
+                placeholder="세부 작업 제목을 입력하세요"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="description" className="text-right">
+                설명
+              </Label>
+              <Textarea
+                id="description"
+                value={newTaskDescription}
+                onChange={(e) => setNewTaskDescription(e.target.value)}
+                className="col-span-3"
+                placeholder="세부 작업 설명을 입력하세요"
+                rows={3}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+              취소
+            </Button>
+            <Button onClick={handleCreateSubTask} disabled={!newTaskTitle}>
+              추가
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

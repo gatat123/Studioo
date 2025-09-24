@@ -62,6 +62,54 @@ export interface WorkTaskComment {
   }
 }
 
+export interface SubTask {
+  id: string
+  workTaskId: string
+  title: string
+  description?: string
+  status: 'todo' | 'in_progress' | 'review' | 'done'
+  priority: 'low' | 'medium' | 'high' | 'urgent'
+  dueDate?: string
+  startDate?: string
+  completedAt?: string
+  assigneeId?: string
+  createdById: string
+  position: number
+  tags?: string[]
+  createdAt: string
+  updatedAt: string
+
+  // Relations
+  createdBy?: {
+    id: string
+    nickname: string
+    profileImageUrl?: string
+  }
+  assignee?: {
+    id: string
+    nickname: string
+    profileImageUrl?: string
+  }
+  comments?: SubTaskComment[]
+}
+
+export interface SubTaskComment {
+  id: string
+  subTaskId: string
+  userId: string
+  content: string
+  createdAt: string
+  updatedAt: string
+  isEdited: boolean
+  isDeleted: boolean
+
+  user: {
+    id: string
+    nickname: string
+    profileImageUrl?: string
+  }
+}
+
 export interface CreateWorkTaskData {
   title: string
   description?: string
@@ -77,6 +125,26 @@ export interface UpdateWorkTaskData {
   priority?: 'low' | 'medium' | 'high' | 'urgent'
   dueDate?: string
   assigneeId?: string
+}
+
+export interface CreateSubTaskData {
+  title: string
+  description?: string
+  status?: 'todo' | 'in_progress' | 'review' | 'done'
+  priority?: 'low' | 'medium' | 'high' | 'urgent'
+  dueDate?: string
+  assigneeId?: string
+  position?: number
+}
+
+export interface UpdateSubTaskData {
+  title?: string
+  description?: string
+  status?: 'todo' | 'in_progress' | 'review' | 'done'
+  priority?: 'low' | 'medium' | 'high' | 'urgent'
+  dueDate?: string
+  assigneeId?: string
+  position?: number
 }
 
 export const workTasksAPI = {
@@ -187,5 +255,82 @@ export const workTasksAPI = {
    */
   async deleteComment(taskId: string, commentId: string): Promise<void> {
     return api.delete(`/api/work-tasks/${taskId}/comments/${commentId}`)
+  },
+
+  // ===== SubTask Methods =====
+
+  /**
+   * Get all subtasks for a work task
+   */
+  async getSubTasks(workTaskId: string): Promise<SubTask[]> {
+    try {
+      const response = await api.get(`/api/work-tasks/${workTaskId}/subtasks`)
+
+      if (Array.isArray(response)) {
+        return response
+      }
+
+      if (response && typeof response === 'object') {
+        if (Array.isArray(response.data)) {
+          return response.data
+        }
+        if (Array.isArray(response.subtasks)) {
+          return response.subtasks
+        }
+      }
+
+      console.warn('[workTasksAPI] Unexpected subtask response structure:', response)
+      return []
+    } catch (error) {
+      console.error('[workTasksAPI] Error fetching subtasks:', error)
+      return []
+    }
+  },
+
+  /**
+   * Create a new subtask
+   */
+  async createSubTask(workTaskId: string, data: CreateSubTaskData): Promise<SubTask> {
+    return api.post(`/api/work-tasks/${workTaskId}/subtasks`, data)
+  },
+
+  /**
+   * Update an existing subtask
+   */
+  async updateSubTask(workTaskId: string, subtaskId: string, data: UpdateSubTaskData): Promise<SubTask> {
+    return api.patch(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}`, data)
+  },
+
+  /**
+   * Delete a subtask
+   */
+  async deleteSubTask(workTaskId: string, subtaskId: string): Promise<void> {
+    return api.delete(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}`)
+  },
+
+  /**
+   * Add a comment to subtask
+   */
+  async addSubTaskComment(workTaskId: string, subtaskId: string, content: string): Promise<SubTaskComment> {
+    return api.post(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/comments`, { content })
+  },
+
+  /**
+   * Update a subtask comment
+   */
+  async updateSubTaskComment(
+    workTaskId: string,
+    subtaskId: string,
+    commentId: string,
+    content: string
+  ): Promise<SubTaskComment> {
+    return api.patch(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/comments/${commentId}`, { content })
+  },
+
+  /**
+   * Delete a subtask comment
+   */
+  async deleteSubTaskComment(workTaskId: string, subtaskId: string, commentId: string): Promise<void> {
+    return api.delete(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/comments/${commentId}`)
   }
 }
