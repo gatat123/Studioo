@@ -44,6 +44,15 @@ model User {
   studios                                            studios?
   user_presence                                      user_presence[]
 
+  createdWorkTasks                                   WorkTask[]             @relation("WorkTaskCreator")
+  assignedWorkTasks                                  WorkTask[]             @relation("WorkTaskAssignee")
+  workTaskParticipants                               WorkTaskParticipant[]
+  workTaskComments                                   WorkTaskComment[]
+  createdSubTasks                                    SubTask[]              @relation("SubTaskCreator")
+  assignedSubTasks                                   SubTask[]              @relation("SubTaskAssignee")
+  subTaskComments                                    SubTaskComment[]
+  subTaskAttachments                                 SubTaskAttachment[]
+
   @@index([email])
   @@index([nickname])
   @@index([username])
@@ -407,4 +416,130 @@ model user_presence {
   @@unique([user_id, project_id])
   @@index([project_id])
   @@index([status])
+}
+
+model WorkTask {
+  id             String                 @id @default(uuid())
+  title          String                 @db.VarChar(255)
+  description    String?
+  status         String                 @default("pending") @db.VarChar(50)
+  priority       String                 @default("medium") @db.VarChar(20)
+  dueDate        DateTime?
+  startDate      DateTime?
+  completedAt    DateTime?
+  assigneeId     String?
+  createdById    String
+  position       Int                    @default(0)
+  tags           String[]
+  inviteCode     String?                @unique @db.VarChar(20)
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+
+  createdBy      User                   @relation("WorkTaskCreator", fields: [createdById], references: [id])
+  assignee       User?                  @relation("WorkTaskAssignee", fields: [assigneeId], references: [id])
+  participants   WorkTaskParticipant[]
+  subtasks       SubTask[]
+  comments       WorkTaskComment[]
+
+  @@index([createdById])
+  @@index([assigneeId])
+  @@index([status])
+  @@index([inviteCode])
+}
+
+model WorkTaskParticipant {
+  id           String    @id @default(uuid())
+  workTaskId   String
+  userId       String
+  role         String    @default("member") @db.VarChar(20)
+  joinedAt     DateTime  @default(now())
+  lastViewedAt DateTime?
+
+  workTask     WorkTask  @relation(fields: [workTaskId], references: [id], onDelete: Cascade)
+  user         User      @relation(fields: [userId], references: [id])
+
+  @@unique([workTaskId, userId])
+  @@index([workTaskId])
+  @@index([userId])
+}
+
+model SubTask {
+  id             String               @id @default(uuid())
+  workTaskId     String
+  title          String               @db.VarChar(255)
+  description    String?
+  status         String               @default("todo") @db.VarChar(50)
+  priority       String               @default("medium") @db.VarChar(20)
+  dueDate        DateTime?
+  startDate      DateTime?
+  completedAt    DateTime?
+  assigneeId     String?
+  createdById    String
+  position       Int                  @default(0)
+  tags           String[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  workTask       WorkTask             @relation(fields: [workTaskId], references: [id], onDelete: Cascade)
+  createdBy      User                 @relation("SubTaskCreator", fields: [createdById], references: [id])
+  assignee       User?                @relation("SubTaskAssignee", fields: [assigneeId], references: [id])
+  comments       SubTaskComment[]
+  attachments    SubTaskAttachment[]
+
+  @@index([workTaskId])
+  @@index([createdById])
+  @@index([assigneeId])
+  @@index([status])
+}
+
+model WorkTaskComment {
+  id          String    @id @default(uuid())
+  workTaskId  String
+  userId      String
+  content     String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  isEdited    Boolean   @default(false)
+  isDeleted   Boolean   @default(false)
+
+  workTask    WorkTask  @relation(fields: [workTaskId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id])
+
+  @@index([workTaskId])
+  @@index([userId])
+}
+
+model SubTaskComment {
+  id         String    @id @default(uuid())
+  subTaskId  String
+  userId     String
+  content    String
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  isEdited   Boolean   @default(false)
+  isDeleted  Boolean   @default(false)
+
+  subTask    SubTask   @relation(fields: [subTaskId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id])
+
+  @@index([subTaskId])
+  @@index([userId])
+}
+
+model SubTaskAttachment {
+  id           String    @id @default(uuid())
+  subTaskId    String
+  fileName     String    @db.VarChar(255)
+  originalName String    @db.VarChar(255)
+  fileSize     Int
+  mimeType     String    @db.VarChar(100)
+  fileUrl      String
+  uploadedById String
+  createdAt    DateTime  @default(now())
+
+  subTask      SubTask   @relation(fields: [subTaskId], references: [id], onDelete: Cascade)
+  uploadedBy   User      @relation(fields: [uploadedById], references: [id])
+
+  @@index([subTaskId])
+  @@index([uploadedById])
 }

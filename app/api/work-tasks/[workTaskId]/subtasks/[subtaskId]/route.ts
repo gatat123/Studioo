@@ -17,7 +17,7 @@ const updateSubtaskSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { workTaskId: string; subtaskId: string } }
+  { params }: { params: Promise<{ workTaskId: string; subtaskId: string }> }
 ) {
   try {
     const userId = await verifyAuth(request)
@@ -26,7 +26,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { workTaskId, subtaskId } = params
+    const { workTaskId, subtaskId } = await params
 
     // Get subtask with relations
     const subtask = await prisma.subTask.findUnique({
@@ -68,7 +68,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { workTaskId: string; subtaskId: string } }
+  { params }: { params: Promise<{ workTaskId: string; subtaskId: string }> }
 ) {
   try {
     const userId = await verifyAuth(request)
@@ -77,7 +77,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { workTaskId, subtaskId } = params
+    const { workTaskId, subtaskId } = await params
     const body = await request.json()
 
     // Validate input
@@ -209,7 +209,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { workTaskId: string; subtaskId: string } }
+  { params }: { params: Promise<{ workTaskId: string; subtaskId: string }> }
 ) {
   try {
     const userId = await verifyAuth(request)
@@ -218,7 +218,7 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { workTaskId, subtaskId } = params
+    const { workTaskId, subtaskId } = await params
 
     // Check if work task exists and user has access
     const workTask = await prisma.workTask.findFirst({
