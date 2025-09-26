@@ -2,7 +2,6 @@
 
 import { useState, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { archiveProject } from '@/lib/api/archive';
 import {
   Download,
   Upload,
@@ -69,9 +68,7 @@ export default function AdvancedSettingsPage({ params }: { params: Promise<{ id:
   const [importFile, setImportFile] = useState<File | null>(null);
 
   // Danger zone
-  const [deleteConfirmation, setDeleteConfirmation] = useState('');
   const [transferEmail, setTransferEmail] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isTransferring, setIsTransferring] = useState(false);
 
   // Mock backup history
@@ -198,36 +195,6 @@ export default function AdvancedSettingsPage({ params }: { params: Promise<{ id:
     }
   };
 
-  const handleDeleteProject = async () => {
-    if (deleteConfirmation !== `ARCHIVE ${projectId}`) {
-      toast({
-        title: '확인 텍스트 불일치',
-        description: '올바른 확인 텍스트를 입력해주세요.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    setIsDeleting(true);
-    try {
-      await archiveProject(projectId);
-
-      toast({
-        title: '프로젝트 아카이브됨',
-        description: '프로젝트가 아카이브되었습니다. 30일 후 자동으로 삭제됩니다.',
-      });
-      router.push('/studio/archive');
-    } catch {
-      // Archive operation failed - error handled
-      toast({
-        title: '아카이브 실패',
-        description: '프로젝트 아카이브 중 오류가 발생했습니다.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsDeleting(false);
-    }
-  };
 
   const handleTransferOwnership = async () => {
     if (!transferEmail) {
@@ -569,47 +536,6 @@ export default function AdvancedSettingsPage({ params }: { params: Promise<{ id:
             </CardContent>
           </Card>
 
-          <Card className="border-red-200 dark:border-red-900">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
-                <Archive className="w-5 h-5" />
-                프로젝트 아카이브
-              </CardTitle>
-              <CardDescription>
-                프로젝트를 아카이브합니다. 30일 후 자동으로 영구 삭제됩니다.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  프로젝트를 아카이브하면 더 이상 편집할 수 없습니다.
-                  아카이브된 프로젝트는 30일 동안 복원 가능하며, 그 후 영구적으로 삭제됩니다.
-                </AlertDescription>
-              </Alert>
-
-              <div className="space-y-3">
-                <Label htmlFor="delete-confirm">
-                  확인을 위해 <span className="font-mono font-bold">ARCHIVE {projectId}</span>를 입력하세요
-                </Label>
-                <Input
-                  id="delete-confirm"
-                  placeholder="ARCHIVE project-id"
-                  value={deleteConfirmation}
-                  onChange={(e) => setDeleteConfirmation(e.target.value)}
-                />
-              </div>
-
-              <Button
-                variant="destructive"
-                className="w-full"
-                onClick={handleDeleteProject}
-                disabled={deleteConfirmation !== `ARCHIVE ${projectId}` || isDeleting}
-              >
-                {isDeleting ? '아카이브 중...' : '프로젝트 아카이브'}
-              </Button>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>

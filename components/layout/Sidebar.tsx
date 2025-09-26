@@ -5,7 +5,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import {
   Home,
   FolderOpen,
-  Clock,
   Users,
   Settings,
   ChevronLeft,
@@ -15,7 +14,6 @@ import {
   FileText,
   Palette,
   Briefcase,
-  Archive,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -199,12 +197,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       ],
     },
     {
-      id: 'recent',
-      label: 'Recent',
-      href: '/studio/recent',
-      icon: <Clock className="h-4 w-4" />,
-    },
-    {
       id: 'work',
       label: 'Work',
       href: '/studio/work',
@@ -215,13 +207,6 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: 'Team',
       href: '/studio/team',
       icon: <Users className="h-4 w-4" />,
-    },
-    {
-      id: 'archive',
-      label: 'Archive',
-      href: '/studio/archive',
-      icon: <Archive className="h-4 w-4" />,
-      badge: archivedCount > 0 ? archivedCount : undefined,
     },
   ];
 

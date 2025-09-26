@@ -1243,7 +1243,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                         {/* Comments Section */}
                         <div className="mt-3 pt-3 border-t border-gray-200">
                           <Collapsible
-                            open={expandedComments[task.id]}
+                            open={expandedComments[task.id] || false}
                             onOpenChange={(open) => setExpandedComments(prev => ({ ...prev, [task.id]: open }))}
                           >
                             <CollapsibleTrigger asChild>
@@ -1265,13 +1265,13 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                     <div className="flex items-center justify-between mb-1">
                                       <div className="flex items-center gap-1">
                                         <Avatar className="h-4 w-4">
-                                          <AvatarImage src={comment.user.profileImageUrl} />
+                                          <AvatarImage src={comment.user?.profileImageUrl} />
                                           <AvatarFallback className="text-[8px]">
-                                            {comment.user.nickname[0]}
+                                            {comment.user?.nickname?.[0] || 'U'}
                                           </AvatarFallback>
                                         </Avatar>
                                         <span className="text-xs font-medium text-gray-700">
-                                          {comment.user.nickname}
+                                          {comment.user?.nickname || '알 수 없는 사용자'}
                                         </span>
                                         <span className="text-xs text-gray-500">
                                           {safeToLocaleString(comment.createdAt)}
@@ -1382,7 +1382,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                         {/* File Attachments Section */}
                         <div className="mt-3 pt-3 border-t border-gray-200">
                           <Collapsible
-                            open={expandedAttachments[task.id]}
+                            open={expandedAttachments[task.id] || false}
                             onOpenChange={(open) => setExpandedAttachments(prev => ({ ...prev, [task.id]: open }))}
                           >
                             <div className="flex items-center justify-between">
@@ -1431,7 +1431,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                       <div className="flex items-center gap-2 flex-1 min-w-0">
                                         <span className="text-sm">{getFileIcon(attachment.mimeType)}</span>
                                         <div className="flex-1 min-w-0">
-                                          <p className="text-xs font-medium text-gray-800 truncate">
+                                          <p className="text-xs font-medium text-gray-800 truncate" title={attachment.originalName}>
                                             {attachment.originalName}
                                           </p>
                                           <div className="flex items-center gap-2 text-xs text-gray-500">
@@ -1483,6 +1483,39 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
             </ScrollArea>
           </div>
         ))}
+      </div>
+
+      {/* Announcement Section - 공지사항 섹션 */}
+      <div className="mt-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-semibold text-blue-800 flex items-center gap-2">
+            📢 공지사항
+          </h3>
+          {user?.isAdmin && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs"
+              onClick={() => {
+                const newAnnouncement = prompt('공지사항을 입력하세요:')
+                if (newAnnouncement?.trim()) {
+                  // TODO: API 호출로 공지사항 저장
+                  toast({
+                    title: '공지사항 업데이트',
+                    description: '공지사항이 업데이트되었습니다.',
+                  })
+                }
+              }}
+            >
+              편집
+            </Button>
+          )}
+        </div>
+        <div className="text-sm text-blue-700">
+          {/* TODO: 실제 공지사항 데이터로 교체 */}
+          <p>업무 진행 시 실시간 소통을 위해 댓글과 첨부파일을 적극 활용해주세요.</p>
+          <p className="mt-1 text-xs text-blue-600">마지막 업데이트: {new Date().toLocaleDateString('ko-KR')}</p>
+        </div>
       </div>
 
       {/* Create SubTask Dialog */}
