@@ -323,9 +323,14 @@ export const workTasksAPI = {
    */
   async getSubTasks(workTaskId: string): Promise<SubTask[]> {
     try {
-      const response = await api.get(`/api/work-tasks/${workTaskId}/subtasks`) as SubTask[]
+      const response = await api.get(`/api/work-tasks/${workTaskId}/subtasks`) as any
 
-      // Backend returns array directly
+      // Handle standard backend response format
+      if (response?.success && response.data) {
+        return Array.isArray(response.data) ? response.data : []
+      }
+
+      // Backend returns array directly (legacy support)
       if (Array.isArray(response)) {
         return response
       }
