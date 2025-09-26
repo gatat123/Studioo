@@ -8,8 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { X, Download, ZoomIn, ZoomOut, Move } from 'lucide-react';
-import Image from 'next/image';
+import { Download, ZoomIn, ZoomOut, Move } from 'lucide-react';
 
 interface AnnotationViewModalProps {
   open: boolean;
@@ -131,13 +130,6 @@ export function AnnotationViewModal({ open, onOpenChange, annotation }: Annotati
               >
                 <Download className="h-4 w-4" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => onOpenChange(false)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </DialogHeader>
@@ -174,6 +166,7 @@ export function AnnotationViewModal({ open, onOpenChange, annotation }: Annotati
                   transition: isDragging ? 'none' : 'transform 0.2s ease-in-out'
                 }}
               >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={annotation.image}
                   alt="Annotation"

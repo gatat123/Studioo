@@ -9,24 +9,24 @@ export interface User {
   email: string;
   nickname: string;
   bio?: string | null;
-  profileImage?: string | null;
-  profileImageUrl?: string | null;
-  isAdmin: boolean;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  lastLoginAt?: string | null;
+  profile_image?: string | null;
+  profile_image_url?: string | null;
+  is_admin: boolean;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  last_login_at?: string | null;
   studio?: Studio;
 }
 
 // Studio types
 export interface Studio {
   id: string;
-  userId: string;
+  user_id: string;
   name: string;
   description?: string | null;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
   user?: User;
   projects?: Project[];
 }
@@ -34,17 +34,21 @@ export interface Studio {
 // Project types
 export interface Project {
   id: string;
-  studioId: string;
-  creatorId: string;
+  studio_id: string;
+  creator_id: string;
   name: string;
   description?: string | null;
   deadline?: string | Date | null;
   tag?: 'illustration' | 'storyboard' | null;
-  inviteCode?: string | null;
+  invite_code?: string | null;
   status: 'active' | 'completed' | 'archived';
-  hasUpdates: boolean;
-  createdAt: string | Date;
-  updatedAt: string | Date;
+  project_type: 'studio' | 'work';
+  has_updates: boolean;
+  created_at: string | Date;
+  updated_at: string | Date;
+  character_list?: any;
+  overall_story?: string | null;
+  set_list?: any;
   studio?: Studio;
   creator?: User;
   participants?: ProjectParticipant[];
@@ -62,11 +66,11 @@ export interface Project {
 // Project Participant types
 export interface ProjectParticipant {
   id: string;
-  projectId: string;
-  userId: string;
+  project_id: string;
+  user_id: string;
   role: 'owner' | 'editor' | 'viewer' | 'member';
-  joinedAt: string | Date;
-  lastViewedAt?: string | Date | null;
+  joined_at: string | Date;
+  last_viewed_at?: string | Date | null;
   project?: Project;
   user?: User;  // Optional as it may not always be included
 }
@@ -74,15 +78,15 @@ export interface ProjectParticipant {
 // Scene types
 export interface Scene {
   id: string;
-  projectId: string;
-  sceneNumber?: number;
+  project_id: string;
+  scene_number?: number;
   index?: number;
   title?: string;
   description?: string | null;
   notes?: string | null;
-  createdBy?: string;
-  createdAt: string | Date;
-  updatedAt: string | Date;
+  created_by?: string;
+  created_at: string | Date;
+  updated_at: string | Date;
   project?: Project;
   creator?: User;
   images?: Image[];
@@ -98,17 +102,17 @@ export interface Scene {
 // Image types
 export interface Image {
   id: string;
-  sceneId: string;
+  scene_id: string;
   type: 'lineart' | 'art';
-  fileUrl: string;
-  fileSize?: bigint | string | number | null;
+  file_url: string;
+  file_size?: bigint | string | number | null;
   width?: number | null;
   height?: number | null;
   format?: string | null;
-  isCurrent: boolean;
-  uploadedBy: string;
-  uploadedAt: string | Date;
-  metadata?: any;
+  is_current: boolean;
+  uploaded_by: string;
+  uploaded_at: string | Date;
+  metadata?: unknown;
   scene?: Scene;
   uploader?: User;
   history?: ImageHistory[];
@@ -118,13 +122,13 @@ export interface Image {
 // Image History types
 export interface ImageHistory {
   id: string;
-  imageId: string;
-  sceneId: string;
-  versionNumber: number;
-  fileUrl: string;
-  uploadedBy: string;
-  uploadedAt: string;
-  changeDescription?: string | null;
+  image_id: string;
+  scene_id: string;
+  version_number: number;
+  file_url: string;
+  uploaded_by: string;
+  uploaded_at: string;
+  change_description?: string | null;
   image?: Image;
   scene?: Scene;
   uploader?: User;
@@ -133,15 +137,15 @@ export interface ImageHistory {
 // Comment types
 export interface Comment {
   id: string;
-  projectId?: string | null;
-  sceneId?: string | null;
-  parentCommentId?: string | null;
-  userId: string;
+  project_id?: string | null;
+  scene_id?: string | null;
+  parent_comment_id?: string | null;
+  user_id: string;
   content: string;
-  createdAt: string;
-  updatedAt: string;
-  isEdited?: boolean;
-  isDeleted?: boolean;
+  created_at: string;
+  updated_at: string;
+  is_edited?: boolean;
+  is_deleted?: boolean;
   project?: Project;
   scene?: Scene;
   parentComment?: Comment;
@@ -149,27 +153,27 @@ export interface Comment {
   author?: User;  // Some APIs return author instead of user
   replies?: Comment[];
   metadata?: {
-    annotationImage?: string;
-    originalImageId?: string;
-    imageType?: string;
+    annotation_image?: string;
+    original_image_id?: string;
+    image_type?: string;
   };
 }
 
 // Annotation types
 export interface Annotation {
   id: string;
-  imageId: string;
-  userId: string;
+  image_id: string;
+  user_id: string;
   type: 'drawing' | 'text' | 'arrow' | 'rectangle';
-  positionX: number;
-  positionY: number;
+  position_x: number;
+  position_y: number;
   width?: number | null;
   height?: number | null;
   content?: string | null;
-  drawingData?: any;
+  drawing_data?: Record<string, unknown>;
   color?: string | null;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
   image?: Image;
   user?: User;
 }
@@ -177,15 +181,15 @@ export interface Annotation {
 // User Presence types
 export interface UserPresence {
   id: string;
-  userId: string;
-  projectId?: string | null;
-  sceneId?: string | null;
+  user_id: string;
+  project_id?: string | null;
+  scene_id?: string | null;
   status?: 'online' | 'away' | 'offline' | null;
-  cursorX?: number | null;
-  cursorY?: number | null;
-  isTyping: boolean;
-  lastActivity: string;
-  socketId?: string | null;
+  cursor_x?: number | null;
+  cursor_y?: number | null;
+  is_typing: boolean;
+  last_activity: string;
+  socket_id?: string | null;
   user?: User;
   project?: Project;
   scene?: Scene;
@@ -194,14 +198,14 @@ export interface UserPresence {
 // Notification types
 export interface Notification {
   id: string;
-  userId: string;
-  projectId?: string | null;
+  user_id: string;
+  project_id?: string | null;
   type: string;
   title: string;
   content?: string | null;
-  isRead: boolean;
-  createdAt: string;
-  readAt?: string | null;
+  is_read: boolean;
+  created_at: string;
+  read_at?: string | null;
   user?: User;
   project?: Project;
 }
@@ -209,20 +213,20 @@ export interface Notification {
 // Collaboration Log types
 export interface CollaborationLog {
   id: string;
-  projectId: string;
-  userId: string;
-  actionType: string;
-  targetType?: string | null;
-  targetId?: string | null;
+  project_id: string;
+  user_id: string;
+  action_type: string;
+  target_type?: string | null;
+  target_id?: string | null;
   description?: string | null;
-  metadata?: any;
-  createdAt: string;
+  metadata?: unknown;
+  created_at: string;
   project?: Project;
   user?: User;
 }
 
 // API Response types
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;

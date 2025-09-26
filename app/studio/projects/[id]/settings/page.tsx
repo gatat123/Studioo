@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
-import { CalendarIcon, Copy, Trash2, UserPlus, Users, Settings, Bell, Archive } from 'lucide-react'
+import { CalendarIcon, Copy, Trash2, Users, Settings, Bell, Archive } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -56,6 +56,7 @@ import { useToast } from '@/hooks/use-toast'
 import { projectsAPI } from '@/lib/api/projects'
 import ParticipantsList from '@/components/projects/ParticipantsList'
 import NotificationSettings from '@/components/projects/NotificationSettings'
+import { useAuthStore } from '@/store/useAuthStore'
 
 const projectFormSchema = z.object({
   name: z.string().min(1, '프로젝트 이름은 필수입니다'),
@@ -67,17 +68,30 @@ const projectFormSchema = z.object({
 
 type ProjectFormValues = z.infer<typeof projectFormSchema>
 
+interface Project {
+  id: string
+  name: string
+  description?: string
+  tag?: 'illustration' | 'storyboard'
+  deadline?: string | Date
+  status?: 'active' | 'completed' | 'archived'
+  invite_code?: string
+}
+
 export default function ProjectSettingsPage() {
   const params = useParams()
   const router = useRouter()
   const { toast } = useToast()
+  const { user: currentUser } = useAuthStore()
   const projectId = params.id as string
-  
-  const [project, setProject] = useState<any>(null)
+
+  const [project, setProject] = useState<Project | null>(null)
   const [loading, setLoading] = useState(true)
   const [inviteCode, setInviteCode] = useState('')
   const [isDeleting, setIsDeleting] = useState(false)
   const [activeTab, setActiveTab] = useState('general')
+  const [isOwner, setIsOwner] = useState(false)
+  const [canEdit, setCanEdit] = useState(false)
 
   const form = useForm<ProjectFormValues>({
     resolver: zodResolver(projectFormSchema),
@@ -94,8 +108,20 @@ export default function ProjectSettingsPage() {
     const fetchProject = async () => {
       try {
         const data = await projectsAPI.getProject(projectId)
-        setProject(data)
-        setInviteCode(data.inviteCode || '')
+        setProject({
+          ...data,
+          deadline: data.deadline ? String(data.deadline) : undefined
+        })
+        setInviteCode(data.invite_code || '')
+
+        // Check user permissions
+        const userIsOwner = data.creator_id === currentUser?.id
+        const participant = data.participants?.find(p => p.user_id === currentUser?.id)
+        const userCanEdit = userIsOwner || participant?.role === 'owner' || participant?.role === 'editor'
+
+        setIsOwner(userIsOwner)
+        setCanEdit(userCanEdit)
+
         form.reset({
           name: data.name,
           description: data.description || '',
@@ -103,8 +129,8 @@ export default function ProjectSettingsPage() {
           deadline: data.deadline ? new Date(data.deadline) : undefined,
           status: data.status || 'active',
         })
-      } catch (error) {
-        console.error('프로젝트 로드 실패:', error)
+      } catch {
+        // 프로젝트 로드 실패
         toast({
           title: '오류',
           description: '프로젝트를 불러올 수 없습니다.',
@@ -115,12 +141,19 @@ export default function ProjectSettingsPage() {
         setLoading(false)
       }
     }
-    
-    fetchProject()
-  }, [projectId, router, form])
+
+    void fetchProject()
+  }, [projectId, router, form, toast, currentUser])
 
   const onSubmit = async (data: ProjectFormValues) => {
-    if (!project) return
+    if (!project || !canEdit) {
+      toast({
+        title: '권한 없음',
+        description: '프로젝트를 수정할 권한이 없습니다.',
+        variant: 'destructive',
+      })
+      return
+    }
 
     try {
       const updateData = {
@@ -130,25 +163,39 @@ export default function ProjectSettingsPage() {
         deadline: data.deadline?.toISOString(),
         status: data.status,
       }
-      
+
       const updatedProject = await projectsAPI.updateProject(projectId, updateData)
       setProject(updatedProject)
-      
+
       toast({
         title: '설정 업데이트',
         description: '프로젝트 설정이 저장되었습니다.',
       })
     } catch (error) {
-      console.error('프로젝트 업데이트 실패:', error)
-      toast({
-        title: '오류',
-        description: '프로젝트 업데이트에 실패했습니다.',
-        variant: 'destructive',
-      })
+      // 프로젝트 업데이트 실패
+
+      const errorStatus = error instanceof Error && 'status' in error
+        ? (error as { status?: number }).status
+        : undefined
+
+      // Check if it's a permission error
+      if (errorStatus === 403) {
+        toast({
+          title: '권한 없음',
+          description: '프로젝트를 수정할 권한이 없습니다.',
+          variant: 'destructive',
+        })
+      } else {
+        toast({
+          title: '오류',
+          description: error instanceof Error ? error.message : '프로젝트 업데이트에 실패했습니다.',
+          variant: 'destructive',
+        })
+      }
     }
   }
 
-  const handleGenerateInviteCode = async () => {
+  const _handleGenerateInviteCode = async () => {
     try {
       const result = await projectsAPI.generateInviteCode(projectId)
       setInviteCode(result.inviteCode)
@@ -156,8 +203,8 @@ export default function ProjectSettingsPage() {
         title: '초대 코드 생성',
         description: '새로운 초대 코드가 생성되었습니다.',
       })
-    } catch (error) {
-      console.error('초대 코드 생성 실패:', error)
+    } catch {
+      // 초대 코드 생성 실패
       toast({
         title: '오류',
         description: '초대 코드 생성에 실패했습니다.',
@@ -186,8 +233,8 @@ export default function ProjectSettingsPage() {
       })
       
       router.push('/studio')
-    } catch (error) {
-      console.error('프로젝트 삭제 실패:', error)
+    } catch {
+      // 프로젝트 삭제 실패
       toast({
         title: '오류',
         description: '프로젝트 삭제에 실패했습니다.',
@@ -204,8 +251,8 @@ export default function ProjectSettingsPage() {
         title: '프로젝트 보관',
         description: '프로젝트가 보관되었습니다.',
       })
-    } catch (error) {
-      console.error('프로젝트 보관 실패:', error)
+    } catch {
+      // 프로젝트 보관 실패
       toast({
         title: '오류',
         description: '프로젝트 보관에 실패했습니다.',
@@ -271,7 +318,11 @@ export default function ProjectSettingsPage() {
                       <FormItem>
                         <FormLabel>Project Name</FormLabel>
                         <FormControl>
-                          <Input placeholder="Enter project name" {...field} />
+                          <Input
+                            placeholder="Enter project name"
+                            {...field}
+                            disabled={!canEdit}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -289,6 +340,7 @@ export default function ProjectSettingsPage() {
                             placeholder="Enter project description"
                             rows={4}
                             {...field}
+                            disabled={!canEdit}
                           />
                         </FormControl>
                         <FormDescription>
@@ -305,9 +357,13 @@ export default function ProjectSettingsPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>프로젝트 유형</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          disabled={!canEdit}
+                        >
                           <FormControl>
-                            <SelectTrigger>
+                            <SelectTrigger disabled={!canEdit}>
                               <SelectValue placeholder="프로젝트 유형 선택" />
                             </SelectTrigger>
                           </FormControl>
@@ -354,7 +410,6 @@ export default function ProjectSettingsPage() {
                               disabled={(date) =>
                                 date < new Date()
                               }
-                              initialFocus
                             />
                           </PopoverContent>
                         </Popover>
@@ -366,7 +421,9 @@ export default function ProjectSettingsPage() {
                     )}
                   />
 
-                  <Button type="submit">Save Changes</Button>
+                  <Button type="submit" disabled={!canEdit}>
+                    {canEdit ? 'Save Changes' : 'View Only (No Edit Permission)'}
+                  </Button>
                 </form>
               </Form>
             </CardContent>
@@ -395,15 +452,6 @@ export default function ProjectSettingsPage() {
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleGenerateInviteCode}
-                className="w-full"
-              >
-                <UserPlus className="mr-2 h-4 w-4" />
-                Generate New Code
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -449,9 +497,11 @@ export default function ProjectSettingsPage() {
                 variant="outline"
                 onClick={handleArchiveProject}
                 className="w-full sm:w-auto"
+                disabled={!isOwner}
+                title={!isOwner ? 'Only project owner can archive' : ''}
               >
                 <Archive className="mr-2 h-4 w-4" />
-                Archive Project
+                {isOwner ? 'Archive Project' : 'Owner Only'}
               </Button>
             </CardContent>
           </Card>
@@ -468,11 +518,12 @@ export default function ProjectSettingsPage() {
                 <AlertDialogTrigger asChild>
                   <Button
                     variant="destructive"
-                    disabled={isDeleting}
+                    disabled={isDeleting || !isOwner}
                     className="w-full sm:w-auto"
+                    title={!isOwner ? 'Only project owner can delete' : ''}
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    {isDeleting ? 'Deleting...' : 'Delete Project'}
+                    {!isOwner ? 'Owner Only' : (isDeleting ? 'Deleting...' : 'Delete Project')}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>

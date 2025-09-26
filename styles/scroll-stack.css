@@ -7,7 +7,6 @@
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
-  -webkit-transform: translateZ(0);
   transform: translateZ(0);
   will-change: scroll-position;
 }
@@ -15,6 +14,10 @@
 .scroll-stack-inner {
   padding: 20vh 5rem 50rem;
   min-height: 100vh;
+}
+
+.scroll-stack-card-wrapper {
+  position: relative;
 }
 
 .scroll-stack-card {
@@ -25,14 +28,14 @@
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
   height: auto;
   width: 100%;
-  margin: 30px 0;
+  max-width: 1200px;
+  margin: 30px auto;
   padding: 0;
   border-radius: 20px;
   box-sizing: border-box;
-  -webkit-transform: translateZ(0);
+  /* Improve mobile performance */
   transform: translateZ(0);
   position: relative;
-  overflow: hidden;
 }
 
 .scroll-stack-end {

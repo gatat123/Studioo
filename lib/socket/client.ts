@@ -1,5 +1,6 @@
 import { io, Socket } from 'socket.io-client';
-import { authAPI } from '../api/auth';
+import { authAPI } from '@/lib/api/auth';
+import { SOCKET_EVENTS, type SocketEventMap } from '@/lib/socket/events';
 
 class SocketClient {
   private socket: Socket | null = null;
@@ -8,11 +9,15 @@ class SocketClient {
 
   connect(): Socket {
     if (this.socket?.connected) {
+      console.log('[SocketClient] Already connected, returning existing socket:', this.socket.id);
       return this.socket;
     }
 
     const token = authAPI.getToken();
-    const socketUrl = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+    const socketUrl = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001';
+
+    console.log('[SocketClient] 🔌 Connecting to:', socketUrl);
+    console.log('[SocketClient] Auth token present:', !!token);
 
     this.socket = io(socketUrl, {
       auth: {
@@ -26,6 +31,7 @@ class SocketClient {
     });
 
     this.setupEventListeners();
+    console.log('[SocketClient] Socket instance created, connecting...');
     return this.socket;
   }
 
@@ -33,26 +39,26 @@ class SocketClient {
     if (!this.socket) return;
 
     this.socket.on('connect', () => {
-      console.log('✅ Socket.io connected');
+      console.log('[SocketClient] ✅ Connected to server, socket ID:', this.socket?.id);
       this.reconnectAttempts = 0;
     });
 
     this.socket.on('disconnect', (reason) => {
-      console.log('❌ Socket.io disconnected:', reason);
+      console.log('[SocketClient] ❌ Disconnected from server, reason:', reason);
     });
 
     this.socket.on('connect_error', (error) => {
-      console.error('Socket.io connection error:', error.message);
+      console.error('[SocketClient] ❌ Connection error:', error);
       this.reconnectAttempts++;
-      
+
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-        console.error('Max reconnection attempts reached');
+        console.error('[SocketClient] Max reconnection attempts reached, giving up');
         this.disconnect();
       }
     });
 
     this.socket.on('error', (error) => {
-      console.error('Socket.io error:', error);
+      console.error('[SocketClient] ❌ Socket error:', error);
     });
   }
 
@@ -95,30 +101,74 @@ class SocketClient {
     this.socket?.emit('typing:stop', { projectId, location });
   }
 
-  // Comment real-time updates
-  sendComment(projectId: string, comment: any) {
-    this.socket?.emit('comment:create', { projectId, comment });
+  // Comment real-time updates with new event system
+  sendComment(projectId: string, comment: {
+    id: string;
+    content: string;
+    userId: string;
+    [key: string]: unknown;
+  }) {
+    this.emit(SOCKET_EVENTS.COMMENT_NEW, {
+      project_id: projectId,
+      comment: { ...comment, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as unknown as Parameters<SocketEventMap[typeof SOCKET_EVENTS.COMMENT_NEW]>[0]['comment'],
+      scene_id: undefined
+    });
   }
 
   updateComment(projectId: string, commentId: string, content: string) {
-    this.socket?.emit('comment:update', { projectId, commentId, content });
+    this.emit(SOCKET_EVENTS.COMMENT_UPDATE, {
+      project_id: projectId,
+      comment: { id: commentId, content, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() } as unknown as Parameters<SocketEventMap[typeof SOCKET_EVENTS.COMMENT_UPDATE]>[0]['comment'],
+      scene_id: undefined
+    });
   }
 
   deleteComment(projectId: string, commentId: string) {
-    this.socket?.emit('comment:delete', { projectId, commentId });
+    this.emit(SOCKET_EVENTS.COMMENT_DELETE, { project_id: projectId, comment_id: commentId });
+  }
+
+  // History update notification
+  sendHistoryUpdate(projectId: string, type: 'comment' | 'scene' | 'image' | 'annotation', action: 'create' | 'update' | 'delete', data: {
+    id: string;
+    content?: string;
+    user?: unknown;
+    metadata?: Record<string, unknown>;
+  }) {
+    this.emit(SOCKET_EVENTS.HISTORY_UPDATE, {
+      project_id: projectId,
+      type,
+      action,
+      data: {
+        id: data.id,
+        content: data.content,
+        user: data.user,
+        timestamp: new Date().toISOString(),
+        metadata: data.metadata
+      }
+    });
   }
 
   // Image upload notification
-  notifyImageUpload(projectId: string, sceneId: string, image: any) {
+  notifyImageUpload(projectId: string, sceneId: string, image: {
+    id: string;
+    fileName: string;
+    fileSize: number;
+    [key: string]: unknown;
+  }) {
     this.socket?.emit('image:upload', { projectId, sceneId, image });
   }
 
   // Annotation real-time updates
-  createAnnotation(imageId: string, annotation: any) {
+  createAnnotation(imageId: string, annotation: {
+    id: string;
+    type: string;
+    data: unknown;
+    [key: string]: unknown;
+  }) {
     this.socket?.emit('annotation:create', { imageId, annotation });
   }
 
-  updateAnnotation(imageId: string, annotationId: string, updates: any) {
+  updateAnnotation(imageId: string, annotationId: string, updates: Record<string, unknown>) {
     this.socket?.emit('annotation:update', { imageId, annotationId, updates });
   }
 
@@ -126,21 +176,18 @@ class SocketClient {
     this.socket?.emit('annotation:delete', { imageId, annotationId });
   }
 
-  // Custom event emitter
-  emit(event: string, data?: any) {
-    console.log(`📤 Emitting Socket.io event: ${event}`, data);
-    this.socket?.emit(event, data);
+  // Custom event emitter with type safety
+  emit<K extends keyof SocketEventMap>(event: K | string, data?: K extends keyof SocketEventMap ? Parameters<SocketEventMap[K]>[0] : unknown) {
+    this.socket?.emit(event as string, data);
   }
 
-  // Custom event listener registration
-  on(event: string, callback: (...args: any[]) => void) {
-    console.log(`👂 Listening for Socket.io event: ${event}`);
-    this.socket?.on(event, callback);
+  // Custom event listener registration with type safety
+  on<K extends keyof SocketEventMap>(event: K | string, callback: K extends keyof SocketEventMap ? SocketEventMap[K] : (...args: unknown[]) => void) {
+    this.socket?.on(event as string, callback as (...args: unknown[]) => void);
   }
 
-  off(event: string, callback?: (...args: any[]) => void) {
-    console.log(`🔇 Removing Socket.io listener: ${event}`);
-    this.socket?.off(event, callback);
+  off<K extends keyof SocketEventMap>(event: K | string, callback?: K extends keyof SocketEventMap ? SocketEventMap[K] : (...args: unknown[]) => void) {
+    this.socket?.off(event as string, callback as (...args: unknown[]) => void);
   }
 
   // Get socket instance

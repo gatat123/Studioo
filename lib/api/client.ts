@@ -3,17 +3,28 @@
  * Production-ready API client with error handling, retry logic, and type safety
  */
 
-// Authentication will be handled via localStorage token
+import { getAuthToken } from '@/lib/utils/cookies';
+
+// Authentication will be handled via cookies primarily, localStorage as backup
 
 // API Base URL from environment
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const getAPIBaseURL = () => {
+  // Production 환경에서는 NEXT_PUBLIC_BACKEND_URL 우선 사용
+  if (process.env.NODE_ENV === 'production') {
+    return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://courageous-spirit-production.up.railway.app';
+  }
+  // Development 환경에서는 로컬 API URL 사용
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+};
+
+const API_BASE_URL = getAPIBaseURL();
 
 // Custom error class for API errors
 export class APIError extends Error {
   constructor(
     public status: number,
     message: string,
-    public data?: any
+    public data?: unknown
   ) {
     super(message);
     this.name = 'APIError';
@@ -28,7 +39,7 @@ interface RequestOptions extends RequestInit {
 }
 
 // Generic API response type
-export interface APIResponse<T = any> {
+export interface APIResponse<T = unknown> {
   success: boolean;
   data?: T;
   error?: string;
@@ -39,8 +50,8 @@ export interface APIResponse<T = any> {
  * Base API client with authentication and error handling
  */
 class APIClient {
-  private baseURL: string;
-  private defaultHeaders: HeadersInit;
+  private readonly baseURL: string;
+  private readonly defaultHeaders: HeadersInit;
 
   constructor(baseURL: string = API_BASE_URL) {
     this.baseURL = baseURL;
@@ -52,7 +63,7 @@ class APIClient {
   /**
    * Make an authenticated API request
    */
-  private async request<T = any>(
+  private async request<T = unknown>(
     endpoint: string,
     options: RequestOptions = {}
   ): Promise<T> {
@@ -67,26 +78,10 @@ class APIClient {
     // Prepare URL
     const url = `${this.baseURL}${endpoint}`;
 
-    // Get authentication token from localStorage or cookies
+    // Get authentication token using utility function
     let authToken = token;
     if (!authToken && typeof window !== 'undefined') {
-      // First try localStorage
-      authToken = localStorage.getItem('token') || undefined;
-      
-      // Fallback to cookie if no token in localStorage
-      if (!authToken) {
-        const cookieToken = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('token='))
-          ?.split('=')[1];
-        authToken = cookieToken || undefined;
-      }
-      
-      // Debug logging (only for auth endpoints)
-      if (url.includes('/auth')) {
-        console.log('🔑 API Client - Auth request:', url);
-        console.log('🔑 API Client - Token available:', !!authToken);
-      }
+      authToken = getAuthToken();
     }
 
     // Prepare headers
@@ -97,11 +92,6 @@ class APIClient {
 
     if (authToken) {
       requestHeaders['Authorization'] = `Bearer ${authToken}`;
-      if (url.includes('/auth')) {
-        console.log('✅ API Client - Authorization header set for auth request');
-      }
-    } else if (url.includes('/auth')) {
-      console.log('⚠️ API Client - No token available for auth request');
     }
 
     // Create abort controller for timeout
@@ -125,24 +115,39 @@ class APIClient {
 
           // Handle non-OK responses
           if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new APIError(
+            const errorData = await response.json().catch(() => ({
+              message: `HTTP ${response.status} Error`,
+              error: 'Network or server error occurred'
+            }));
+
+            // 상세한 에러 메시지 생성
+            const errorMessage = errorData.error || errorData.message || `HTTP ${response.status}`
+
+            lastError = new APIError(
               response.status,
-              errorData.message || `HTTP ${response.status}`,
+              errorMessage,
               errorData
             );
-          }
 
-          // Parse and return response
-          const data = await response.json();
-          return data;
+            console.error(`[API Client] ${(lastError as APIError).status} Error on ${url}:`, {
+              message: errorMessage,
+              data: errorData,
+              headers: Object.fromEntries(response.headers.entries())
+            })
+
+            // Don't retry on client errors (4xx)
+            if (lastError instanceof APIError && lastError.status >= 400 && lastError.status < 500) {
+              return Promise.reject(lastError);
+            }
+
+            // Continue to retry logic for 5xx errors
+          } else {
+            // Parse and return response
+            return await response.json();
+          }
         } catch (error) {
           lastError = error as Error;
-          
-          // Don't retry on client errors (4xx)
-          if (error instanceof APIError && error.status >= 400 && error.status < 500) {
-            throw error;
-          }
+
           
           // Wait before retry (exponential backoff)
           if (attempt < retry - 1) {
@@ -158,11 +163,11 @@ class APIClient {
   }
 
   // HTTP methods
-  async get<T = any>(endpoint: string, options?: RequestOptions): Promise<T> {
+  async get<T = unknown>(endpoint: string, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: 'GET' });
   }
 
-  async post<T = any>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+  async post<T = unknown>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'POST',
@@ -170,7 +175,7 @@ class APIClient {
     });
   }
 
-  async put<T = any>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+  async put<T = unknown>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PUT',
@@ -178,7 +183,7 @@ class APIClient {
     });
   }
 
-  async patch<T = any>(endpoint: string, body?: any, options?: RequestOptions): Promise<T> {
+  async patch<T = unknown>(endpoint: string, body?: unknown, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, {
       ...options,
       method: 'PATCH',
@@ -186,30 +191,62 @@ class APIClient {
     });
   }
 
-  async delete<T = any>(endpoint: string, options?: RequestOptions): Promise<T> {
+  async delete<T = unknown>(endpoint: string, options?: RequestOptions): Promise<T> {
     return this.request<T>(endpoint, { ...options, method: 'DELETE' });
   }
 
   /**
    * Upload file with multipart/form-data
    */
-  async upload<T = any>(
+  async upload<T = unknown>(
     endpoint: string,
     formData: FormData,
     options?: RequestOptions
   ): Promise<T> {
-    const { headers = {}, ...restOptions } = options || {};
-    
-    // Remove Content-Type to let browser set it with boundary
-    const uploadHeaders = { ...headers };
-    delete uploadHeaders['Content-Type'];
+    const { headers = {}, token, ...restOptions } = options || {};
 
-    return this.request<T>(endpoint, {
-      ...restOptions,
-      method: 'POST',
-      headers: uploadHeaders,
-      body: formData,
-    });
+    // Remove Content-Type to let browser set it with boundary
+    const uploadHeaders: HeadersInit = { ...headers };
+    if (uploadHeaders && typeof uploadHeaders === 'object' && 'Content-Type' in uploadHeaders) {
+      delete (uploadHeaders as Record<string, string>)['Content-Type'];
+    }
+
+    // Get authentication token using utility function
+    let authToken = token;
+    if (!authToken && typeof window !== 'undefined') {
+      authToken = getAuthToken();
+    }
+
+    if (authToken) {
+      uploadHeaders['Authorization'] = `Bearer ${authToken}`;
+    }
+
+    const url = `${this.baseURL}${endpoint}`;
+
+    try {
+      const response = await fetch(url, {
+        ...restOptions,
+        method: 'POST',
+        headers: uploadHeaders,
+        body: formData,
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        // API Upload Error response
+        return Promise.reject(new APIError(
+          response.status,
+          errorData.message || errorData.error || `HTTP ${response.status}`,
+          errorData
+        ));
+      }
+
+      return await response.json();
+    } catch (error) {
+      // API Upload Request failed
+      throw error;
+    }
   }
 }
 

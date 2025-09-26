@@ -4,7 +4,17 @@
  */
 
 import api from './client';
-import { User } from '@/types';
+import { User, Project } from '@/types';
+
+interface Notification {
+  id: string;
+  userId: string;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  createdAt: string;
+}
 
 export interface UpdateUserDto {
   nickname?: string;
@@ -61,7 +71,7 @@ export const usersAPI = {
   /**
    * Get user's projects
    */
-  async getUserProjects(userId?: string): Promise<any[]> {
+  async getUserProjects(userId?: string): Promise<Project[]> {
     const endpoint = userId ? `/api/users/${userId}/projects` : '/api/users/projects';
     return api.get(endpoint);
   },
@@ -69,7 +79,7 @@ export const usersAPI = {
   /**
    * Get user's notifications
    */
-  async getNotifications(): Promise<any[]> {
+  async getNotifications(): Promise<Notification[]> {
     return api.get('/api/users/notifications');
   },
 

@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { safeFormatDistanceToNow } from '@/lib/utils/date-helpers'
 import { Clock, Image, Download, Eye } from 'lucide-react'
 
 interface HistoryItem {
@@ -15,7 +15,7 @@ interface HistoryItem {
   fileUrl?: string
   userId: string
   userName: string
-  createdAt: Date
+  createdAt: string | Date
   version: number
 }
 
@@ -25,7 +25,7 @@ interface SceneHistoryProps {
 
 export default function SceneHistory({ sceneId }: SceneHistoryProps) {
   const [history, setHistory] = useState<HistoryItem[]>([])
-  const [selectedVersion, setSelectedVersion] = useState<string | null>(null)
+  const [/*selectedVersion, setSelectedVersion*/] = useState<string | null>(null)
 
   useEffect(() => {
     // TODO: API 호출로 히스토리 로드
@@ -67,9 +67,8 @@ export default function SceneHistory({ sceneId }: SceneHistoryProps) {
     setHistory(mockHistory)
   }, [sceneId])
 
-  const handleRestore = async (item: HistoryItem) => {
+  const handleRestore = async (_item: HistoryItem) => {
     // TODO: API 호출로 버전 복원
-    console.log('Restoring version:', item)
   }
 
   const getActionLabel = (action: string) => {
@@ -94,7 +93,8 @@ export default function SceneHistory({ sceneId }: SceneHistoryProps) {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Image className="h-4 w-4 text-muted-foreground" />
+              {/* eslint-disable-next-line jsx-a11y/alt-text */}
+              <Image className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <Badge variant={getTypeColor(item.type)}>
                 {item.type === 'lineart' ? '선화' : '아트'} v{item.version}
               </Badge>
@@ -107,9 +107,9 @@ export default function SceneHistory({ sceneId }: SceneHistoryProps) {
           <div className="text-sm">
             <p className="font-medium truncate">{item.fileName}</p>
             <p className="text-muted-foreground">
-              {item.userName} • {formatDistanceToNow(item.createdAt, { 
+              {item.userName} • {safeFormatDistanceToNow(typeof item.createdAt === 'string' ? item.createdAt : item.createdAt.toISOString(), {
                 addSuffix: true,
-                locale: ko 
+                locale: ko
               })}
             </p>
           </div>

@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useCallback, useRef } from 'react';
-import { Upload, Image, X, FileImage, Check, AlertCircle } from 'lucide-react';
+import Image from 'next/image';
+import { Upload, X, FileImage, Check, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { imageDB, ImageData } from '@/lib/indexedDB';
 import { cn } from '@/lib/utils';
@@ -65,7 +66,7 @@ export function ImageUploader({
   const lineartInputRef = useRef<HTMLInputElement>(null);
   const artInputRef = useRef<HTMLInputElement>(null);
   // 파일 검증 함수
-  const validateFile = (file: File): string | null => {
+  const validateFile = useCallback((file: File): string | null => {
     if (!ALLOWED_FILE_TYPES.includes(file.type)) {
       return `파일 형식이 올바르지 않습니다. (JPEG, PNG, WebP만 가능)`;
     }
@@ -73,14 +74,14 @@ export function ImageUploader({
     if (file.size > MAX_FILE_SIZE) {
       return `파일 크기가 너무 큽니다. (최대 10MB)`;
     }
-    
+
     return null;
-  };
+  }, []);
 
   // 이미지 치수 확인 함수
-  const validateImageDimensions = (file: File): Promise<boolean> => {
+  const validateImageDimensions = useCallback((file: File): Promise<boolean> => {
     return new Promise((resolve) => {
-      const img = new (globalThis as any).Image();
+      const img = new window.Image();
       const url = URL.createObjectURL(file);
       
       img.onload = () => {
@@ -100,9 +101,9 @@ export function ImageUploader({
       
       img.src = url;
     });
-  };
+  }, []);
   // 이미지 업로드 처리 함수
-  const handleUpload = async (file: File, type: 'lineart' | 'art') => {
+  const handleUpload = useCallback(async (file: File, type: 'lineart' | 'art') => {
     // 파일 검증
     const error = validateFile(file);
     if (error) {
@@ -120,7 +121,7 @@ export function ImageUploader({
 
     try {
       // 이미지 치수 가져오기
-      const img = new (globalThis as any).Image();
+      const img = new window.Image();
       const url = URL.createObjectURL(file);
       
       await new Promise((resolve) => {
@@ -178,8 +179,8 @@ export function ImageUploader({
         setUploadState({ isUploading: false, progress: 0, error: null });
       }, 1000);
       
-    } catch (error) {
-      console.error('Upload error:', error);
+    } catch {
+      
       setUploadState({
         isUploading: false,
         progress: 0,
@@ -187,7 +188,7 @@ export function ImageUploader({
       });
       toast.error('업로드에 실패했습니다.');
     }
-  };
+  }, [sceneId, onUploadComplete, validateFile, validateImageDimensions]);
   // 드래그 앤 드롭 핸들러
   const handleDrag = useCallback((e: React.DragEvent, type: 'lineart' | 'art') => {
     e.preventDefault();
@@ -208,7 +209,7 @@ export function ImageUploader({
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       handleUpload(e.dataTransfer.files[0], type);
     }
-  }, [sceneId]);
+  }, [handleUpload]);
 
   // 파일 선택 핸들러
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'lineart' | 'art') => {
@@ -258,11 +259,15 @@ export function ImageUploader({
             onDrop={(e) => handleDrop(e, type)}
           >            {previewUrl ? (
               <div className="relative w-full h-full">
-                <img
-                  src={previewUrl}
-                  alt={`${type} preview`}
-                  className="w-full h-full object-contain max-h-[300px]"
-                />
+                <div className="relative w-full h-[300px]">
+                  <Image
+                    src={previewUrl}
+                    alt={`${type} preview`}
+                    fill
+                    className="object-contain"
+                    unoptimized
+                  />
+                </div>
                 <Button
                   variant="destructive"
                   size="icon"

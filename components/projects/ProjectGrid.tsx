@@ -1,11 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Search, Filter, Grid3X3, List, Plus, Calendar, Tag } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback, memo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import Image from 'next/image';
+import { Search, Filter, Grid3X3, List, Calendar, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import TiltedCard from '@/components/ui/tilted-card';
+import OptimizedCard from '@/components/ui/optimized-card';
+import { useInView } from 'react-intersection-observer';
+import { useDebounce } from '@/hooks/useDebounce';
+import { safeGetTime, safeParseDateString } from '@/lib/utils/date-helpers';
 import {
   Select,
   SelectContent,
@@ -16,7 +20,6 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
@@ -35,43 +38,202 @@ interface Project {
   deadline?: Date | string;
   tag?: 'illustration' | 'storyboard';
   status: 'active' | 'completed' | 'archived';
-  hasUpdates: boolean;
-  createdAt: Date | string;
-  updatedAt: Date | string;
+  has_updates: boolean;
+  created_at: Date | string;
+  updated_at: Date | string;
   thumbnail?: string;
 }
 
+// 레이지 로딩을 위한 이미지 컴포넌트
+const LazyImage = memo(function LazyImage({
+  src,
+  alt,
+  className
+}: {
+  src?: string;
+  alt: string;
+  className?: string;
+}) {
+  const { ref, inView } = useInView({
+    threshold: 0,
+    triggerOnce: true,
+    rootMargin: '100px'
+  });
+
+  return (
+    <div ref={ref} className="relative w-full h-full">
+      {inView && src ? (
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          className={className}
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          loading="lazy"
+        />
+      ) : (
+        <div className="w-full h-full flex items-center justify-center bg-gray-100 dark:bg-gray-800">
+          <Grid3X3 className="h-12 w-12 text-gray-300 animate-pulse" />
+        </div>
+      )}
+    </div>
+  );
+});
+
+// 프로젝트 카드 컴포넌트 메모이제이션
+const ProjectCard = memo(function ProjectCard({
+  project,
+  viewMode,
+  onClick,
+  deadline
+}: {
+  project: Project;
+  viewMode: 'grid' | 'list';
+  onClick: (id: string) => void;
+  deadline: { text: string; className: string } | null;
+}) {
+  const handleClick = useCallback(() => {
+    onClick(project.id);
+  }, [onClick, project.id]);
+
+  if (viewMode === 'grid') {
+    return (
+      <OptimizedCard
+        onClick={handleClick}
+        className="h-full"
+      >
+        <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-t-lg overflow-hidden">
+          <LazyImage
+            src={project.thumbnail}
+            alt={project.name}
+            className="object-cover transition-transform duration-200 hover:scale-105"
+          />
+        </div>
+
+        <div className="p-4">
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate mb-1">
+            {project.name}
+          </h3>
+          {project.description && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
+              {project.description}
+            </p>
+          )}
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {project.tag && (
+                <Badge variant="outline" className="text-xs">
+                  {project.tag === 'illustration' ? '일러스트' : '스토리보드'}
+                </Badge>
+              )}
+            </div>
+
+            {deadline && (
+              <Badge className={cn('text-xs', deadline.className)}>
+                <Calendar className="h-3 w-3 mr-1" />
+                {deadline.text}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </OptimizedCard>
+    );
+  }
+
+  // List View
+  return (
+    <OptimizedCard
+      onClick={handleClick}
+      className="p-4"
+    >
+      <div className="flex items-center gap-4">
+        <div className="w-24 h-16 bg-gray-100 dark:bg-gray-800 rounded overflow-hidden flex-shrink-0">
+          <LazyImage
+            src={project.thumbnail}
+            alt={project.name}
+            className="object-cover"
+          />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-gray-900 dark:text-gray-100 truncate mb-1">
+            {project.name}
+          </h3>
+          {project.description && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1 mb-2">
+              {project.description}
+            </p>
+          )}
+          <div className="flex items-center gap-3">
+            {project.tag && (
+              <Badge variant="outline" className="text-xs">
+                {project.tag === 'illustration' ? '일러스트' : '스토리보드'}
+              </Badge>
+            )}
+            <Badge
+              variant={project.status === 'active' ? 'default' : 'secondary'}
+              className="text-xs"
+            >
+              {project.status === 'active' ? '진행중' :
+               project.status === 'completed' ? '완료' : '보관'}
+            </Badge>
+            {deadline && (
+              <Badge className={cn('text-xs', deadline.className)}>
+                <Calendar className="h-3 w-3 mr-1" />
+                {deadline.text}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </div>
+    </OptimizedCard>
+  );
+});
+
 export function ProjectGrid() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { projects, isLoading, fetchProjects } = useProjectStore();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterTag, setFilterTag] = useState<'all' | 'illustration' | 'storyboard'>('all');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'completed' | 'archived'>('all');
   const [sortBy, setSortBy] = useState<'date' | 'name' | 'deadline'>('date');
-  const [filteredProjects, setFilteredProjects] = useState<Project[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAll, setShowAll] = useState(false);
   const itemsPerPage = 12;
 
-  // Handle project click
-  const handleProjectClick = (projectId: string) => {
+  // Debounce search query for performance
+  const debouncedSearchQuery = useDebounce(searchQuery, 300);
+
+  // Handle project click - useCallback으로 최적화
+  const handleProjectClick = useCallback((projectId: string) => {
     router.push(`/studio/projects/${projectId}`);
-  };
+  }, [router]);
 
-  // Load projects on mount
+  // Load projects on mount and handle URL filter
   useEffect(() => {
-    fetchProjects();
-  }, [fetchProjects]);
+    fetchProjects('studio'); // Only fetch studio projects
 
-  // Filter and sort projects
-  useEffect(() => {
+    // Get type filter from URL (updated to use 'type' instead of 'filter')
+    const urlType = searchParams.get('type');
+    if (urlType && (urlType === 'illustration' || urlType === 'storyboard')) {
+      setFilterTag(urlType);
+    } else {
+      setFilterTag('all');
+    }
+  }, [fetchProjects, searchParams]);
+
+  // Filter and sort projects - useMemo로 최적화
+  const filteredProjects = useMemo(() => {
     let filtered = [...projects];
 
-    // Apply search filter
-    if (searchQuery) {
+    // Apply search filter with debounced value
+    if (debouncedSearchQuery) {
       filtered = filtered.filter(project =>
-        project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        project.description?.toLowerCase().includes(searchQuery.toLowerCase())
+        project.name.toLowerCase().includes(debouncedSearchQuery.toLowerCase()) ||
+        project.description?.toLowerCase().includes(debouncedSearchQuery.toLowerCase())
       );
     }
 
@@ -91,33 +253,47 @@ export function ProjectGrid() {
         case 'name':
           return a.name.localeCompare(b.name);
         case 'deadline':
-          const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Infinity;
-          const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+          const aDeadline = a.deadline ? safeGetTime(a.deadline) : Infinity;
+          const bDeadline = b.deadline ? safeGetTime(b.deadline) : Infinity;
           return aDeadline - bDeadline;
         case 'date':
         default:
-          const aUpdated = new Date(a.updatedAt).getTime();
-          const bUpdated = new Date(b.updatedAt).getTime();
+          const aUpdated = safeGetTime(a.updated_at);
+          const bUpdated = safeGetTime(b.updated_at);
           return bUpdated - aUpdated;
       }
     });
 
-    setFilteredProjects(filtered);
-    setCurrentPage(1); // Reset to first page when filters change
-  }, [projects, searchQuery, filterTag, filterStatus, sortBy]);
+    return filtered;
+  }, [projects, debouncedSearchQuery, filterTag, filterStatus, sortBy]);
 
-  // Paginate projects
-  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
-  const paginatedProjects = filteredProjects.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+  // 필터 변경 시 페이지 리셋
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, filterTag, filterStatus, sortBy]);
 
-  // Format deadline
-  const formatDeadline = (deadline?: Date | string) => {
+  // Paginate projects - useMemo로 최적화
+  const { totalPages, displayedProjects } = useMemo(() => {
+    const total = Math.ceil(filteredProjects.length / itemsPerPage);
+    const displayed = showAll
+      ? filteredProjects
+      : filteredProjects.slice(
+          (currentPage - 1) * itemsPerPage,
+          currentPage * itemsPerPage
+        );
+    return { totalPages: total, displayedProjects: displayed };
+  }, [filteredProjects, showAll, currentPage, itemsPerPage]);
+
+  // Format deadline - 메모이제이션
+  const formatDeadline = useCallback((deadline?: Date | string) => {
     if (!deadline) return null;
     const now = new Date();
-    const deadlineDate = deadline instanceof Date ? deadline : new Date(deadline);
+    const deadlineDate = deadline instanceof Date ? deadline : safeParseDateString(deadline as string);
+
+    if (!deadlineDate) {
+      return { text: '날짜 없음', className: 'text-gray-400 bg-gray-50' };
+    }
+
     const diffTime = deadlineDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
@@ -126,7 +302,7 @@ export function ProjectGrid() {
     if (diffDays <= 3) return { text: `${diffDays}일 남음`, className: 'text-orange-600 bg-orange-50' };
     if (diffDays <= 7) return { text: `${diffDays}일 남음`, className: 'text-yellow-600 bg-yellow-50' };
     return { text: `${diffDays}일 남음`, className: 'text-gray-600 bg-gray-50' };
-  };
+  }, []);
 
   // Loading skeleton
   const ProjectSkeleton = () => (
@@ -145,17 +321,11 @@ export function ProjectGrid() {
         <Grid3X3 className="h-8 w-8 text-gray-400" />
       </div>
       <h3 className="text-lg font-semibold text-gray-900 mb-2">프로젝트가 없습니다</h3>
-      <p className="text-sm text-gray-500 mb-6">
+      <p className="text-sm text-gray-500">
         {searchQuery || filterTag !== 'all' || filterStatus !== 'all'
           ? '검색 조건에 맞는 프로젝트가 없습니다.'
           : '첫 프로젝트를 생성해보세요!'}
       </p>
-      {!searchQuery && filterTag === 'all' && filterStatus === 'all' && (
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          새 프로젝트
-        </Button>
-      )}
     </div>
   );
 
@@ -178,7 +348,7 @@ export function ProjectGrid() {
         {/* Filters and View Options */}
         <div className="flex gap-2">
           {/* Tag Filter */}
-          <Select value={filterTag} onValueChange={(value: any) => setFilterTag(value)}>
+          <Select value={filterTag} onValueChange={(value: 'all' | 'illustration' | 'storyboard') => setFilterTag(value)}>
             <SelectTrigger className="w-[140px]">
               <Tag className="h-4 w-4 mr-2" />
               <SelectValue placeholder="태그" />
@@ -229,7 +399,7 @@ export function ProjectGrid() {
           </DropdownMenu>
 
           {/* Sort */}
-          <Select value={sortBy} onValueChange={(value: any) => setSortBy(value)}>
+          <Select value={sortBy} onValueChange={(value: 'date' | 'name' | 'deadline') => setSortBy(value)}>
             <SelectTrigger className="w-[120px]">
               <SelectValue />
             </SelectTrigger>
@@ -281,144 +451,52 @@ export function ProjectGrid() {
             ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
             : 'space-y-4'
         )}>
-          {paginatedProjects.map((project) => {
+          {displayedProjects.map((project) => {
             const deadline = formatDeadline(project.deadline);
             
-            return viewMode === 'grid' ? (
-              // Grid View Card with Tilted Effect
-              <TiltedCard
+            return (
+              <ProjectCard
                 key={project.id}
-                containerHeight="320px"
-                containerWidth="100%"
-                imageHeight="100%"
-                imageWidth="100%"
-                onClick={() => handleProjectClick(project.id)}
-                className="relative"
-              >
-                <div className="group relative bg-white dark:bg-gray-900 rounded-lg border hover:shadow-lg transition-all h-full w-full">
-                  {project.hasUpdates && (
-                    <div className="absolute -top-2 -right-2 z-10">
-                      <div className="h-3 w-3 bg-red-500 rounded-full animate-pulse" />
-                    </div>
-                  )}
-                  
-                  <div className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-t-lg overflow-hidden">
-                    {project.thumbnail ? (
-                    <img
-                      src={project.thumbnail}
-                      alt={project.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Grid3X3 className="h-12 w-12 text-gray-300" />
-                    </div>
-                  )}
-                  </div>
-                
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 truncate mb-1">
-                    {project.name}
-                  </h3>
-                  {project.description && (
-                    <p className="text-sm text-gray-600 line-clamp-2 mb-3">
-                      {project.description}
-                    </p>
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      {project.tag && (
-                        <Badge variant="outline" className="text-xs">
-                          {project.tag === 'illustration' ? '일러스트' : '스토리보드'}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {deadline && (
-                      <Badge className={cn('text-xs', deadline.className)}>
-                        <Calendar className="h-3 w-3 mr-1" />
-                        {deadline.text}
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-                </div>
-              </TiltedCard>
-            ) : (
-              // List View Item
-              <div
-                key={project.id}
-                className="group relative bg-white rounded-lg border hover:shadow-md transition-all cursor-pointer p-4"
-                onClick={() => handleProjectClick(project.id)}
-              >
-                <div className="flex items-center gap-4">
-                  {/* Thumbnail */}
-                  <div className="w-24 h-16 bg-gray-100 rounded overflow-hidden flex-shrink-0">
-                    {project.thumbnail ? (
-                      <img
-                        src={project.thumbnail}
-                        alt={project.name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Grid3X3 className="h-6 w-6 text-gray-300" />
-                      </div>
-                    )}
-                  </div>
-                  
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between mb-1">
-                      <h3 className="font-semibold text-gray-900 truncate">
-                        {project.name}
-                      </h3>
-                      {project.hasUpdates && (
-                        <div className="h-2 w-2 bg-red-500 rounded-full animate-pulse ml-2" />
-                      )}
-                    </div>
-                    {project.description && (
-                      <p className="text-sm text-gray-600 line-clamp-1 mb-2">
-                        {project.description}
-                      </p>
-                    )}
-                    <div className="flex items-center gap-3">
-                      {project.tag && (
-                        <Badge variant="outline" className="text-xs">
-                          {project.tag === 'illustration' ? '일러스트' : '스토리보드'}
-                        </Badge>
-                      )}
-                      <Badge
-                        variant={project.status === 'active' ? 'default' : 'secondary'}
-                        className="text-xs"
-                      >
-                        {project.status === 'active' ? '진행중' :
-                         project.status === 'completed' ? '완료' : '보관'}
-                      </Badge>
-                      {deadline && (
-                        <Badge className={cn('text-xs', deadline.className)}>
-                          <Calendar className="h-3 w-3 mr-1" />
-                          {deadline.text}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+                project={project}
+                viewMode={viewMode}
+                onClick={handleProjectClick}
+                deadline={deadline}
+              />
             );
           })}
         </div>
       )}
 
-      {/* Pagination */}
+      {/* Show All Button or Pagination */}
       {!isLoading && filteredProjects.length > itemsPerPage && (
-        <Pagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          className="mt-8"
-        />
+        <div className="mt-8 flex justify-center">
+          {!showAll ? (
+            <div className="flex flex-col items-center gap-4">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+              />
+              <Button 
+                variant="outline" 
+                onClick={() => setShowAll(true)}
+                className="mt-2"
+              >
+                모든 프로젝트 보기 ({filteredProjects.length}개)
+              </Button>
+            </div>
+          ) : (
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowAll(false);
+                setCurrentPage(1);
+              }}
+            >
+              페이지별로 보기
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );

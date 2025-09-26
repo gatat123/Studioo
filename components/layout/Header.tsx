@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Bell, Menu, User, ChevronDown, LogOut, Settings, UserCircle } from 'lucide-react';
+import { Menu, User, ChevronDown, LogOut, Settings, UserCircle, Shield } from 'lucide-react';
+import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,34 +14,80 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import FriendsDropdown from '@/components/friends/FriendsDropdown';
+import { MessagesModal } from '@/components/messages/MessagesModal';
+import NotificationDropdown from '@/components/notifications/NotificationDropdown';
+import { type ChannelInvitation } from '@/lib/api/channels';
+import { useToast } from '@/hooks/use-toast';
+import { socketClient } from '@/lib/socket/client';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface HeaderProps {
   onMenuClick?: () => void;
   userName?: string;
   userEmail?: string;
+  userProfileImage?: string;
   notificationCount?: number;
+  friendRequestCount?: number;
 }
 
-const Header: React.FC<HeaderProps> = ({
+// Inner component that uses useSearchParams
+const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
   onMenuClick,
-  userName = 'Guest User',
-  userEmail = 'guest@example.com',
-  notificationCount = 0,
+  userName,
+  userEmail,
+  userProfileImage,
+  friendRequestCount,
+  pathname
 }) => {
-  const pathname = usePathname();
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const { user: currentUser } = useAuthStore();
+  const [isFriendsOpen, setIsFriendsOpen] = useState(false);
+  const { toast } = useToast();
 
-  const navLinks = [
-    { href: '/studio', label: 'Studio' },
-    { href: '/studio/projects', label: 'Projects' },
-    { href: '/studio/recent', label: 'Recent' },
-  ];
+  // Navigation links removed - Studio, Projects, Recent buttons are no longer needed
+  const navLinks: { href: string; label: string }[] = [];
 
-  const handleSignOut = () => {
-    // TODO: Implement sign out logic
-    console.log('Sign out');
+  // Listen for new invitations via Socket.io
+  useEffect(() => {
+    const handleInvitation = (invitation: ChannelInvitation) => {
+      toast({
+        title: '새 채널 초대',
+        description: `${invitation.inviter.nickname}님이 #${invitation.channel.name} 채널로 초대했습니다.`
+      });
+    };
+    
+    // @ts-expect-error - Custom event not in typed events
+    socketClient.socket?.on('channel:invitation', handleInvitation);
+
+    return () => {
+      // @ts-expect-error - Custom event not in typed events
+      socketClient.socket?.off('channel:invitation', handleInvitation);
+    };
+  }, [toast]);
+
+
+  const handleSignOut = async () => {
+    try {
+      // Call logout from auth store
+      const { logout } = useAuthStore.getState();
+      await logout();
+
+      // Disconnect socket
+      socketClient.disconnect();
+
+      // The logout function in useAuthStore already handles:
+      // - Clearing state
+      // - Removing cookies and localStorage
+      // - Navigation is handled in authAPI.logout()
+    } catch {
+      
+      toast({
+        title: '로그아웃 실패',
+        description: '로그아웃 중 문제가 발생했습니다.',
+        variant: 'destructive',
+      });
+    }
   };
 
   return (
@@ -59,11 +106,9 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* Logo */}
         <Link href="/studio" className="flex items-center space-x-2 mr-6">
-          <div className="h-8 w-8 rounded-lg bg-black flex items-center justify-center">
-            <span className="text-white font-bold text-sm">S</span>
-          </div>
+          <Image src="/dustdio-logo.svg" alt="DustDio Logo" className="h-8 w-8 rounded-lg object-cover bg-white p-0.5" width={32} height={32} />
           <span className="hidden font-semibold sm:inline-block">
-            Studio
+            봇치포트
           </span>
         </Link>
 
@@ -87,45 +132,44 @@ const Header: React.FC<HeaderProps> = ({
 
         {/* Right Section */}
         <div className="flex items-center space-x-4 ml-auto">
+          {/* Friends Dropdown with Steam-like interface */}
+          <FriendsDropdown 
+            isOpen={isFriendsOpen} 
+            onOpenChange={setIsFriendsOpen}
+            friendRequestCount={friendRequestCount}
+          />
+
+          {/* Messages Modal - KakaoTalk style */}
+          <MessagesModal />
+
+
           {/* Notifications */}
-          <DropdownMenu open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="relative">
-                <Bell className="h-5 w-5" />
-                {notificationCount > 0 && (
-                  <Badge
-                    className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                    variant="destructive"
-                  >
-                    {notificationCount > 9 ? '9+' : notificationCount}
-                  </Badge>
-                )}
-                <span className="sr-only">Notifications</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-80">
-              <DropdownMenuLabel>Notifications</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <div className="py-2 px-3 text-sm text-gray-500">
-                No new notifications
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <NotificationDropdown />
 
           {/* User Profile Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" className="flex items-center space-x-2">
-                <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                  <UserCircle className="h-5 w-5 text-gray-600" />
-                </div>
+                {userProfileImage ? (
+                  <Image 
+                    src={userProfileImage} 
+                    alt={userName || 'User'}
+                    className="h-8 w-8 rounded-full object-cover"
+                    width={32}
+                    height={32}
+                  />
+                ) : (
+                  <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
+                    <UserCircle className="h-5 w-5 text-gray-600" />
+                  </div>
+                )}
                 <div className="hidden md:block text-left">
                   <p className="text-sm font-medium">{userName}</p>
                 </div>
                 <ChevronDown className="h-4 w-4 hidden md:block" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 border-none">
               <DropdownMenuLabel>
                 <div>
                   <p className="text-sm font-medium">{userName}</p>
@@ -145,6 +189,17 @@ const Header: React.FC<HeaderProps> = ({
                   Settings
                 </Link>
               </DropdownMenuItem>
+              {currentUser?.is_admin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link href="/admin" className="flex items-center text-orange-600">
+                      <Shield className="mr-2 h-4 w-4" />
+                      관리자 대시보드
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
                 <LogOut className="mr-2 h-4 w-4" />
@@ -155,6 +210,23 @@ const Header: React.FC<HeaderProps> = ({
         </div>
       </div>
     </header>
+  );
+};
+
+// Wrapper component with Suspense
+const Header: React.FC<HeaderProps> = (props) => {
+  const pathname = usePathname();
+
+  return (
+    <Suspense fallback={
+      <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+        <div className="flex h-16 items-center px-4 md:px-6">
+          <div className="h-8 w-full animate-pulse bg-gray-200 rounded" />
+        </div>
+      </header>
+    }>
+      <HeaderContent {...props} pathname={pathname} />
+    </Suspense>
   );
 };
 

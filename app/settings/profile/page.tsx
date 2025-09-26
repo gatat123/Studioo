@@ -1,15 +1,14 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Separator } from '@/components/ui/separator'
-import { ArrowLeft, Camera, Save } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast'
+import { ArrowLeft, Camera, Save, Trash2 } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 import api from '@/lib/api/client'
 
 interface UserProfile {
@@ -17,25 +16,30 @@ interface UserProfile {
   username: string
   email: string
   nickname: string
-  profileImageUrl?: string
+  bio?: string
+  profile_image_url?: string
 }
 
 export default function ProfilePage() {
   const router = useRouter()
   const { toast } = useToast()
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [uploadingImage, setUploadingImage] = useState(false)
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [formData, setFormData] = useState({
     nickname: '',
     email: '',
+    bio: '',
     currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   })
 
   useEffect(() => {
-    fetchProfile()
+    void fetchProfile()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const fetchProfile = async () => {
@@ -46,9 +50,10 @@ export default function ProfilePage() {
       setFormData(prev => ({
         ...prev,
         nickname: userData.nickname || '',
-        email: userData.email || ''
+        email: userData.email || '',
+        bio: userData.bio || ''
       }))
-    } catch (error) {
+    } catch {
       toast({
         title: '오류',
         description: '프로필을 불러오는데 실패했습니다.',
@@ -62,25 +67,136 @@ export default function ProfilePage() {
   const handleUpdateProfile = async () => {
     setSaving(true)
     try {
-      await api.put('/api/auth/profile', {
+      const response = await api.put('/api/users/profile', {
         nickname: formData.nickname,
-        email: formData.email
+        email: formData.email,
+        bio: formData.bio
       })
-      
-      toast({
-        title: '성공',
-        description: '프로필이 업데이트되었습니다.'
-      })
-      
-      fetchProfile()
-    } catch (error) {
+
+      if (response && response.user) {
+        setProfile(response.user)
+        setFormData(prev => ({
+          ...prev,
+          nickname: response.user.nickname || '',
+          email: response.user.email || '',
+          bio: response.user.bio || ''
+        }))
+
+        toast({
+          title: '성공',
+          description: '프로필이 업데이트되었습니다.'
+        })
+
+        // Refresh profile data
+        await fetchProfile()
+      } else {
+        toast({
+          title: '오류',
+          description: response?.message || '프로필 업데이트에 실패했습니다.',
+          variant: 'destructive'
+        })
+      }
+    } catch (error: unknown) {
+      const errorObj = error as {response?: {data?: {error?: string}}; message?: string}
+      const errorMessage = errorObj?.response?.data?.error || errorObj?.message || '프로필 업데이트에 실패했습니다.'
       toast({
         title: '오류',
-        description: '프로필 업데이트에 실패했습니다.',
+        description: errorMessage,
         variant: 'destructive'
       })
     } finally {
       setSaving(false)
+    }
+  }
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) {
+      return
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: '오류',
+        description: '이미지 파일만 업로드할 수 있습니다.',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: '오류',
+        description: '파일 크기는 5MB를 초과할 수 없습니다.',
+        variant: 'destructive'
+      })
+      return
+    }
+
+    setUploadingImage(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const response = await api.upload('/api/users/profile/image', formData)
+
+      if (response && response.user) {
+        setProfile(response.user)
+        toast({
+          title: '성공',
+          description: '프로필 사진이 업데이트되었습니다.'
+        })
+
+        // Refresh profile data to get the updated image
+        await fetchProfile()
+
+        // Force page refresh to update all image instances
+        window.location.reload()
+      } else {
+        toast({
+          title: '오류',
+          description: response?.message || '프로필 사진 업로드에 실패했습니다.',
+          variant: 'destructive'
+        })
+      }
+    } catch (error: unknown) {
+      const errorObj = error as {response?: {data?: {error?: string}}; message?: string}
+      const errorMessage = errorObj?.response?.data?.error || errorObj?.message || '프로필 사진 업로드에 실패했습니다.'
+      toast({
+        title: '오류',
+        description: errorMessage,
+        variant: 'destructive'
+      })
+    } finally {
+      setUploadingImage(false)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    }
+  }
+
+  const handleRemoveImage = async () => {
+    setUploadingImage(true)
+    try {
+      const response = await api.delete('/api/users/profile/image')
+      
+      if (response.user) {
+        setProfile(response.user)
+        toast({
+          title: '성공',
+          description: '프로필 사진이 제거되었습니다.'
+        })
+      }
+    } catch {
+      toast({
+        title: '오류',
+        description: '프로필 사진 제거에 실패했습니다.',
+        variant: 'destructive'
+      })
+    } finally {
+      setUploadingImage(false)
     }
   }
 
@@ -96,7 +212,7 @@ export default function ProfilePage() {
 
     setSaving(true)
     try {
-      await api.put('/api/auth/password', {
+      await api.put('/api/users/password', {
         currentPassword: formData.currentPassword,
         newPassword: formData.newPassword
       })
@@ -112,7 +228,7 @@ export default function ProfilePage() {
         newPassword: '',
         confirmPassword: ''
       }))
-    } catch (error) {
+    } catch {
       toast({
         title: '오류',
         description: '비밀번호 변경에 실패했습니다.',
@@ -156,15 +272,37 @@ export default function ProfilePage() {
           <CardContent className="space-y-6">
             <div className="flex items-center gap-6">
               <Avatar className="h-24 w-24">
-                <AvatarImage src={profile?.profileImageUrl} />
+                <AvatarImage src={profile?.profile_image_url} />
                 <AvatarFallback>
-                  {profile?.username?.[0]?.toUpperCase() || 'U'}
+                  {profile?.nickname?.[0]?.toUpperCase() || profile?.username?.[0]?.toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
-              <Button variant="outline">
-                <Camera className="h-4 w-4 mr-2" />
-                사진 변경
-              </Button>
+              <div className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <Button 
+                  variant="outline" 
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploadingImage}
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  {uploadingImage ? '업로드 중...' : '사진 변경'}
+                </Button>
+                {profile?.profile_image_url && (
+                  <Button 
+                    variant="outline"
+                    onClick={handleRemoveImage}
+                    disabled={uploadingImage}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
             </div>
 
             <div className="grid gap-4">
@@ -196,6 +334,18 @@ export default function ProfilePage() {
                   value={formData.email}
                   onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="이메일을 입력하세요"
+                />
+              </div>
+
+              <div className="grid gap-2">
+                <Label htmlFor="bio">자기소개</Label>
+                <textarea
+                  id="bio"
+                  value={formData.bio}
+                  onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
+                  placeholder="자기소개를 입력하세요"
+                  className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  rows={3}
                 />
               </div>
             </div>

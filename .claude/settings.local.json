@@ -1,0 +1,38 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(npm:*)",
+      "Bash(git:*)"
+    ],
+    "deny": [],
+    "ask": []
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "filesystem",
+    "github",
+    "sqlite",
+    "task-master-ai",
+    "server-sequential-thinking",
+    "desktop-commander",
+    "@21st-dev/magic",
+    "context7",
+    "brave-search",
+    "windows-cli",
+    "claude-memory",
+    "eslint-mcp",
+    "code-analyzer",
+    "lighthouse-mcp",
+    "figma-mcp",
+    "screenshot",
+    "interactive-mcp",
+    "npm-mcp",
+    "sourcesage-mcp",
+    "code-checker-mcp",
+    "ruff-mcp",
+    "daisyui-mcp",
+    "figma-context-mcp"
+  ]
+}

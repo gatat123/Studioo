@@ -9,6 +9,7 @@ import { Project, ProjectParticipant } from '@/types';
 export interface CreateProjectDto {
   name: string;
   description?: string;
+  project_type?: 'studio' | 'work';  // Changed to snake_case to match backend
   deadline?: string;
   tag?: 'illustration' | 'storyboard';
 }
@@ -28,23 +29,32 @@ export interface ProjectWithParticipants extends Project {
     participants: number;
     comments: number;
   };
+  archivedAt?: string | null;
+  archivedBy?: string | null;
+  deletionDate?: string | null;
 }
 
 export const projectsAPI = {
   /**
    * Get all projects for current user
    */
-  async getProjects(): Promise<Project[]> {
-    const response = await api.get('/api/projects');
+  async getProjects(type: 'studio' | 'work' = 'studio'): Promise<Project[]> {
+    // Requesting projects with type - adding as query parameter in URL
+    const response = await api.get(`/api/projects?type=${type}`);
+    // Raw API response received
+
     // Backend returns { success: true, data: { projects: [...], pagination: {...} } }
     // Extract just the projects array
-    return response.data?.projects || response.projects || [];
+    const projects = response.data?.projects || response.projects || [];
+    // Extracted projects from response
+
+    return projects;
   },
 
   /**
    * Join project by invite code
    */
-  async joinByInviteCode(inviteCode: string): Promise<any> {
+  async joinByInviteCode(inviteCode: string): Promise<Project> {
     const response = await api.post('/api/projects/join', { inviteCode });
     return response.data || response;
   },

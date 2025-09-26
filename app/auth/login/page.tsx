@@ -14,18 +14,28 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
-import SplashCursor from '@/components/ui/splash-cursor';
+import dynamic from 'next/dynamic';
 import StarBorder from '@/components/ui/star-border';
+
+// WebGL 성능 문제로 인해 동적 로딩 및 조건부 렌더링
+const SplashCursor = dynamic(() => import('@/components/ui/splash-cursor'), {
+  ssr: false,
+  loading: () => null
+});
 
 export default function LoginPage() {
   const router = useRouter();
   const { login, isLoading, error, clearError, isAuthenticated, checkAuth } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
+  const [isWhale, setIsWhale] = useState(false);
   
-  // Check if already authenticated
+  // Check if already authenticated and detect Whale browser
   useEffect(() => {
-    checkAuth();
-  }, []);
+    void checkAuth();
+    // 네이버 웨일 브라우저 감지
+    const userAgent = navigator.userAgent.toLowerCase();
+    setIsWhale(userAgent.includes('whale'));
+  }, [checkAuth]);
   
   useEffect(() => {
     if (isAuthenticated) {
@@ -58,24 +68,21 @@ export default function LoginPage() {
         password: data.password
       });
       
-      // Debug: 로그인 후 토큰 확인
-      console.log('🆕 After login - localStorage token:', localStorage.getItem('token'));
-      console.log('🆕 After login - cookie token:', document.cookie.split('; ').find(row => row.startsWith('token='))?.split('=')[1]);
-      
       // 로그인 성공 시 스튜디오 페이지로 이동
       router.push('/studio');
-    } catch (err) {
-      // 에러는 store에서 처리
-      console.error('Login failed:', err);
+    } catch {
+      // 에러는 store에서 처리됨
     }
   };
 
   return (
     <div className="min-h-screen relative bg-gray-50 dark:bg-gray-900">
-      {/* Background effect */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <SplashCursor />
-      </div>
+      {/* Background effect - 웨일 브라우저에서는 비활성화 */}
+      {!isWhale && (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <SplashCursor />
+        </div>
+      )}
       
       {/* Login content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">

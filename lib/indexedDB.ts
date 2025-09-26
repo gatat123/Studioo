@@ -1,5 +1,4 @@
 // IndexedDB utility for image storage
-import { toast } from 'sonner';
 
 const DB_NAME = 'StudioImageDB';
 const DB_VERSION = 1;

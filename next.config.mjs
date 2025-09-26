@@ -2,12 +2,19 @@
 const nextConfig = {
   reactStrictMode: true,
   images: {
+    domains: ['dustdio.com', 'www.dustdio.com'],
     remotePatterns: [
       {
         protocol: 'https',
         hostname: '**',
       },
+      {
+        protocol: 'http',
+        hostname: 'localhost',
+      },
     ],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   eslint: {
     ignoreDuringBuilds: true,
@@ -21,6 +28,31 @@ const nextConfig = {
       {
         source: '/api/:path*',
         destination: `${backendUrl}/api/:path*`,
+      },
+    ];
+  },
+  async headers() {
+    return [
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: 'https://studioo-production-eb03.up.railway.app',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, DELETE, OPTIONS, PATCH',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization, X-Requested-With',
+          },
+          {
+            key: 'Access-Control-Allow-Credentials',
+            value: 'true',
+          },
+        ],
       },
     ];
   },

@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -29,12 +28,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { 
-  Search, 
-  MoreHorizontal, 
+import {
+  Search,
+  MoreHorizontal,
   Folder,
   Users,
-  Calendar,
   Eye,
   Archive,
   Trash2,

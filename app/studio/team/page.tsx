@@ -1,175 +1,309 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Input } from '@/components/ui/input'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  Send, 
-  Users, 
-  MessageSquare, 
-  Video, 
-  Phone,
+import {
+  Send,
+  MessageSquare,
   MoreVertical,
   Search,
   Plus,
   Hash,
   AtSign,
-  Smile
+  Smile,
+  UserPlus,
+  Settings,
+  LogOut,
+  Trash2
 } from 'lucide-react'
 import { socketClient } from '@/lib/socket/client'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { channelsAPI, type Channel, type ChannelMember, type ChannelMessage, type ChannelInvitation } from '@/lib/api/channels'
+import { useAuthStore } from '@/store/useAuthStore'
+import { CreateChannelModal } from '@/components/team/CreateChannelModal'
+import { InviteMemberModal } from '@/components/team/InviteMemberModal'
+import { DeleteChannelModal } from '@/components/team/DeleteChannelModal'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
-interface TeamMember {
-  id: string
-  username: string
-  nickname: string
-  profileImageUrl?: string
-  status: 'online' | 'offline' | 'away'
-  role: string
-}
 
-interface ChatMessage {
-  id: string
-  userId: string
-  username: string
-  nickname: string
-  profileImageUrl?: string
-  content: string
-  timestamp: Date
-  type: 'text' | 'image' | 'file'
-  channel: string
-}
-
-interface ChatChannel {
-  id: string
-  name: string
-  type: 'general' | 'project' | 'direct'
-  unreadCount: number
-  lastMessage?: ChatMessage
-}
-
-export default function TeamPage() {
+function TeamPageContent() {
   const { toast } = useToast()
-  const [selectedChannel, setSelectedChannel] = useState<ChatChannel | null>(null)
-  const [channels, setChannels] = useState<ChatChannel[]>([
-    { id: '1', name: 'general', type: 'general', unreadCount: 0 },
-    { id: '2', name: 'design-team', type: 'project', unreadCount: 3 },
-    { id: '3', name: 'dev-team', type: 'project', unreadCount: 0 },
-  ])
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const { user: currentUser } = useAuthStore()
+  const searchParams = useSearchParams()
+  const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null)
+  const [channels, setChannels] = useState<Channel[]>([])
+  const [pendingInvites, setPendingInvites] = useState<ChannelInvitation[]>([])
+  const [channelMembers, setChannelMembers] = useState<ChannelMember[]>([])
+  const [messages, setMessages] = useState<ChannelMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [createChannelOpen, setCreateChannelOpen] = useState(false)
+  const [inviteMemberOpen, setInviteMemberOpen] = useState(false)
+  const [deleteChannelOpen, setDeleteChannelOpen] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [hasMore, setHasMore] = useState(false)
+  const [nextCursor, setNextCursor] = useState<string | undefined>()
 
   useEffect(() => {
+    // Load initial channels
+    loadChannels()
+
     // Connect to Socket.io
-    const socket = socketClient.connect()
-    
-    // Join team channel
-    socketClient.emit('join:team')
-    
-    // Listen for team events
-    socketClient.on('team:member-joined', (member: TeamMember) => {
-      setTeamMembers(prev => [...prev, member])
-      toast({
-        title: '팀 멤버 참여',
-        description: `${member.nickname}님이 팀에 참여했습니다.`
-      })
+    socketClient.connect()
+
+    // Listen for user presence updates globally
+    // @ts-expect-error - Custom event not in typed events
+    socketClient.socket?.on('user_presence_update', (data: { userId: string; status: 'online' | 'offline' }) => {
+      // Update member online status in the member list
+      setChannelMembers(prev => prev.map(member =>
+        member.userId === data.userId
+          ? { ...member, user: { ...member.user, isActive: data.status === 'online' } }
+          : member
+      ))
     })
-    
-    socketClient.on('team:member-left', (memberId: string) => {
-      setTeamMembers(prev => prev.filter(m => m.id !== memberId))
+
+    // @ts-expect-error - Custom event not in typed events
+    socketClient.socket?.on('presence_update', (data: { userId: string; isOnline: boolean }) => {
+      // Alternative presence update event
+      setChannelMembers(prev => prev.map(member =>
+        member.userId === data.userId
+          ? { ...member, user: { ...member.user, isActive: data.isOnline } }
+          : member
+      ))
     })
-    
-    socketClient.on('team:message', (message: ChatMessage) => {
-      setMessages(prev => [...prev, message])
-      scrollToBottom()
-    })
-    
-    socketClient.on('team:typing', (data: { userId: string, isTyping: boolean }) => {
-      // Handle typing indicator
-    })
-    
-    // Load initial data
-    loadTeamMembers()
-    loadMessages()
-    
+
     return () => {
-      socketClient.emit('leave:team')
-      socketClient.off('team:member-joined')
-      socketClient.off('team:member-left')
-      socketClient.off('team:message')
-      socketClient.off('team:typing')
+      socketClient.off('user_presence_update')
+      socketClient.off('presence_update')
+      if (selectedChannel) {
+        // @ts-expect-error - Custom event not in typed events
+        socketClient.socket?.emit('leave:channel', { channel_id: selectedChannel.id })
+      }
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  
+  useEffect(() => {
+    if (selectedChannel) {
+      // Join channel using correct Socket.io event names
+      // @ts-expect-error - Custom event not in typed events
+      socketClient.socket?.emit('join_channel', { channel_id: selectedChannel.id })
+      
+      // Listen for real-time channel messages
+      // @ts-expect-error - Custom event not in typed events
+      socketClient.socket?.on('new_channel_message', (data: { message: ChannelMessage }) => {
+        if (data.message.channelId === selectedChannel.id) {
+          setMessages(prev => {
+            // Avoid duplicate messages
+            const exists = prev.some(m => m.id === data.message.id)
+            if (exists) return prev
+            return [...prev, data.message]
+          })
+          scrollToBottom()
+        }
+      })
+      
+      // Listen for member joined
+      // @ts-expect-error - Custom event not in typed events
+      socketClient.socket?.on('member_joined_channel', (data: { userId: string, user: { nickname: string } }) => {
+        if (data.user) {
+          loadChannelMembers(selectedChannel.id)
+          toast({
+            title: '새 멤버',
+            description: `${data.user.nickname}님이 채널에 참여했습니다.`
+          })
+        }
+      })
+      
+      // Listen for member left
+      // @ts-expect-error - Custom event not in typed events
+      socketClient.socket?.on('member_left_channel', (data: { userId: string }) => {
+        setChannelMembers(prev => prev.filter(m => m.userId !== data.userId))
+      })
+      
+      // Listen for typing indicators
+      // @ts-expect-error - Custom event not in typed events
+      socketClient.socket?.on('user_typing_channel', (data: { userId: string, user: { nickname: string } }) => {
+        // Handle typing indicator
+        if (data.userId !== currentUser?.id) {
+          // Show typing indicator for other users
+        }
+      })
+      
+      // @ts-expect-error - Custom event not in typed events
+      socketClient.socket?.on('user_stopped_typing_channel', () => {
+        // Hide typing indicator
+      })
+      
+      // 초대 수신 이벤트
+      // @ts-expect-error - Custom event not in typed events
+      socketClient.socket?.on('channel_invite_received', (data: { invite: ChannelInvitation }) => {
+        loadChannels() // 채널 목록 새로고침
+        toast({
+          title: '채널 초대',
+          description: `${data.invite.inviter.nickname}님이 ${data.invite.channel.name} 채널에 초대했습니다.`
+        })
+      })
+      
+      // Load channel data
+      loadChannelMembers(selectedChannel.id)
+      loadMessages(selectedChannel.id)
+      
+      return () => {
+        // @ts-expect-error - Custom event not in typed events
+        socketClient.socket?.emit('leave_channel', { channel_id: selectedChannel.id })
+        socketClient.off('new_channel_message')
+        socketClient.off('member_joined_channel')
+        socketClient.off('member_left_channel')
+        socketClient.off('user_typing_channel')
+        socketClient.off('user_stopped_typing_channel')
+        socketClient.off('channel_invite_received')
+      }
+    }
+  }, [selectedChannel, currentUser, toast]) // eslint-disable-line react-hooks/exhaustive-deps
+  
+  const loadChannels = useCallback(async () => {
+    try {
+      const response = await channelsAPI.getChannels()
+      
+      setChannels(response.channels)
+      setPendingInvites(response.pendingInvites)
+      
+      // Auto-select first channel if available
+      if (response.channels.length > 0 && !selectedChannel) {
+        setSelectedChannel(response.channels[0])
+      }
+    } catch {
+      // Failed to load channels
+      toast({
+        title: '오류',
+        description: '채널 목록을 불러오는데 실패했습니다',
+        variant: 'destructive'
+      })
+    }
+  }, [selectedChannel, toast])
+  
+  const loadChannelMembers = async (channel_id: string) => {
+    try {
+      const members = await channelsAPI.getMembers(channel_id)
+      // Initialize all members as offline, Socket.io will update actual status
+      const membersWithOfflineStatus = members.map(member => ({
+        ...member,
+        user: {
+          ...member.user,
+          isActive: false, // Start with offline status
+          isOnline: false
+        }
+      }))
+      setChannelMembers(membersWithOfflineStatus)
+
+      // Request presence status for all members after loading
+      if (socketClient.isConnected()) {
+        // Request presence status through public emit method
+        socketClient.emit('request_presence_status' as never, {
+          channel_id,
+          user_ids: members.map(m => m.userId)
+        } as never)
+      }
+    } catch {
+      // Failed to load channel members
+    }
+  }
+  
+  const loadMessages = useCallback(async (channel_id: string, cursor?: string) => {
+    try {
+      setLoading(true)
+      const result = await channelsAPI.getMessages(channel_id, 50, cursor)
+      
+      if (cursor) {
+        // Append to existing messages for pagination
+        setMessages(prev => [...result.messages, ...prev])
+      } else {
+        // Replace messages for initial load
+        setMessages(result.messages)
+      }
+      
+      setHasMore(result.hasMore)
+      setNextCursor(result.nextCursor)
+      
+      if (!cursor) {
+        scrollToBottom()
+      }
+    } catch {
+      // Failed to load messages
+    } finally {
+      setLoading(false)
     }
   }, [])
   
-  const loadTeamMembers = async () => {
-    // TODO: Load team members from API
-    setTeamMembers([
-      {
-        id: '1',
-        username: 'john_doe',
-        nickname: 'John',
-        status: 'online',
-        role: 'Designer'
-      },
-      {
-        id: '2',
-        username: 'jane_smith',
-        nickname: 'Jane',
-        status: 'away',
-        role: 'Developer'
-      },
-      {
-        id: '3',
-        username: 'bob_wilson',
-        nickname: 'Bob',
-        status: 'offline',
-        role: 'Manager'
-      }
-    ])
-  }
-  
-  const loadMessages = async () => {
-    // TODO: Load messages from API
-    if (selectedChannel) {
-      // Load messages for selected channel
-    }
-  }
-  
-  const sendMessage = () => {
+  const sendMessage = async () => {
     if (!newMessage.trim() || !selectedChannel) return
     
-    const message: ChatMessage = {
-      id: Date.now().toString(),
-      userId: 'current-user',
-      username: 'current-username',
-      nickname: 'You',
-      content: newMessage,
-      timestamp: new Date(),
-      type: 'text',
-      channel: selectedChannel.id
-    }
-    
-    // Emit message through socket
-    socketClient.emit('team:send-message', {
+    const tempId = `temp-${Date.now()}`
+    const optimisticMessage = {
+      id: tempId,
       channelId: selectedChannel.id,
-      content: newMessage
-    })
+      senderId: currentUser?.id || '',
+      content: newMessage.trim(),
+      type: 'text',
+      created_at: new Date().toISOString(),
+      sender: {
+        id: currentUser?.id || '',
+        username: currentUser?.username || '',
+        nickname: currentUser?.nickname || '',
+        profile_image_url: currentUser?.profile_image_url
+      }
+    } as ChannelMessage
     
     // Optimistically add message
-    setMessages(prev => [...prev, message])
+    setMessages(prev => [...prev, optimisticMessage])
     setNewMessage('')
     scrollToBottom()
+    
+    // Send through Socket.io for real-time delivery
+    // @ts-expect-error - Custom event not in typed events
+    socketClient.socket?.emit('send_channel_message', {
+      channel_id: selectedChannel.id,
+      content: newMessage.trim(),
+      type: 'text',
+      tempId
+    })
+    
+    // Listen for confirmation
+    const handleMessageSent = (data: { message: ChannelMessage, tempId: string }) => {
+      if (data.tempId === tempId) {
+        setMessages(prev => prev.map(msg => 
+          msg.id === tempId ? data.message : msg
+        ))
+        // @ts-expect-error - Custom event not in typed events
+        socketClient.socket?.off('channel_message_sent', handleMessageSent)
+      }
+    }
+    // @ts-expect-error - Custom event not in typed events
+    socketClient.socket?.on('channel_message_sent', handleMessageSent)
+    
+    const handleMessageError = (data: { error: string, tempId: string }) => {
+      if (data.tempId === tempId) {
+        // Remove optimistic message
+        setMessages(prev => prev.filter(msg => msg.id !== tempId))
+        toast({
+          title: '오류',
+          description: data.error || '메시지 전송에 실패했습니다',
+          variant: 'destructive'
+        })
+        // @ts-expect-error - Custom event not in typed events
+        socketClient.socket?.off('channel_message_error', handleMessageError)
+      }
+    }
+    // @ts-expect-error - Custom event not in typed events
+    socketClient.socket?.on('channel_message_error', handleMessageError)
   }
   
   const scrollToBottom = () => {
@@ -179,34 +313,115 @@ export default function TeamPage() {
   }
   
   const handleTyping = () => {
-    if (!isTyping) {
+    if (!isTyping && selectedChannel) {
       setIsTyping(true)
-      socketClient.emit('team:typing', { channelId: selectedChannel?.id, isTyping: true })
+      // @ts-expect-error - Custom event not in typed events
+      socketClient.socket?.emit('typing_start_channel', { channel_id: selectedChannel.id })
       
       setTimeout(() => {
         setIsTyping(false)
-        socketClient.emit('team:typing', { channelId: selectedChannel?.id, isTyping: false })
+        if (selectedChannel) {
+          // @ts-expect-error - Custom event not in typed events
+        socketClient.socket?.emit('typing_stop_channel', { channel_id: selectedChannel.id })
+        }
       }, 2000)
     }
   }
   
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'online': return 'bg-green-500'
-      case 'away': return 'bg-yellow-500'
-      case 'offline': return 'bg-gray-400'
-      default: return 'bg-gray-400'
+  const handleChannelCreated = () => {
+    loadChannels()
+  }
+  
+  const handleLeaveChannel = async () => {
+    if (!selectedChannel) return
+    
+    const isAdmin = channelMembers.find(m => m.userId === currentUser?.id)?.role === 'admin'
+    const otherMembers = channelMembers.filter(m => m.userId !== currentUser?.id)
+    
+    if (isAdmin && otherMembers.length > 0) {
+      // Admin leaving - need to assign new admin
+      toast({
+        title: '새 관리자 지정',
+        description: '채널을 나가기 전에 새 관리자를 지정해주세요.',
+        variant: 'destructive'
+      })
+      // TODO: Open modal to select new admin
+      return
+    }
+    
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/${selectedChannel.id}/leave`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      
+      if (response.ok) {
+        toast({
+          title: '채널 탈퇴',
+          description: `${selectedChannel.name} 채널에서 나갔습니다.`
+        })
+        
+        // Remove channel from list
+        setChannels(prev => prev.filter(ch => ch.id !== selectedChannel.id))
+        setSelectedChannel(null)
+        
+        // Emit socket event
+        // @ts-expect-error - Custom event not in typed events
+        socketClient.socket?.emit('leave_channel', { channel_id: selectedChannel.id })
+      } else {
+        // Failed to leave channel
+      }
+    } catch {
+      // Leave channel error
+      toast({
+        title: '오류',
+        description: '채널 탈퇴에 실패했습니다.',
+        variant: 'destructive'
+      })
     }
   }
+  
+  const handleChannelSettings = () => {
+    // TODO: Open channel settings modal for admin
+    toast({
+      title: '채널 설정',
+      description: '채널 설정 기능은 준비 중입니다.'
+    })
+  }
+
+  const handleChannelDeleted = () => {
+    // Remove the deleted channel from the list
+    if (selectedChannel) {
+      setChannels(prev => prev.filter(ch => ch.id !== selectedChannel.id))
+
+      // Select another channel or clear selection
+      const remainingChannels = channels.filter(ch => ch.id !== selectedChannel.id)
+      setSelectedChannel(remainingChannels.length > 0 ? remainingChannels[0] : null)
+
+      // Clear channel-specific data
+      setChannelMembers([])
+      setMessages([])
+    }
+  }
+  
+  // Removed unused getStatusColor function
 
   return (
-    <div className="flex h-full">
-      {/* Left Sidebar - Channels */}
-      <div className="w-64 border-r bg-muted/30">
+    <>
+      <div className="flex h-full overflow-hidden">
+        {/* Left Sidebar - Channels */}
+      <div className="w-64 border-r bg-muted/30 flex flex-col h-full">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold">채널</h2>
-            <Button size="icon" variant="ghost">
+            <Button 
+              size="icon" 
+              variant="ghost"
+              onClick={() => setCreateChannelOpen(true)}
+            >
               <Plus className="h-4 w-4" />
             </Button>
           </div>
@@ -221,7 +436,80 @@ export default function TeamPage() {
             />
           </div>
           
-          <ScrollArea className="h-[calc(100vh-240px)]">
+          <div className="flex-1 overflow-y-auto">
+            {/* 대기 중인 초대 */}
+            {pendingInvites.length > 0 && (
+              <div className="mb-4">
+                <h3 className="text-xs font-semibold text-muted-foreground px-2 mb-2">초대받은 채널</h3>
+                <div className="space-y-1">
+                  {pendingInvites.map((invite) => (
+                    <div key={invite.id} className="px-2 py-2 mx-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <Hash className="h-4 w-4 text-yellow-600" />
+                          <span className="text-sm font-medium">{invite.channel.name}</span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {invite.inviter.nickname}님이 초대
+                      </p>
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          size="sm"
+                          variant="default"
+                          className="h-7 text-xs"
+                          onClick={async () => {
+                            try {
+                              const token = localStorage.getItem('token');
+                              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/invitations/${invite.id}/accept`, {
+                                method: 'POST',
+                                headers: {
+                                  'Authorization': `Bearer ${token}`
+                                }
+                              });
+                              if (response.ok) {
+                                toast({ title: '채널에 참여했습니다!' });
+                                await loadChannels();
+                              }
+                            } catch {
+                              toast({ title: '오류', description: '처리 중 오류가 발생했습니다.', variant: 'destructive' });
+                            }
+                          }}
+                        >
+                          수락
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-7 text-xs"
+                          onClick={async () => {
+                            try {
+                              const token = localStorage.getItem('token');
+                              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/invitations/${invite.id}/reject`, {
+                                method: 'POST',
+                                headers: {
+                                  'Authorization': `Bearer ${token}`
+                                }
+                              });
+                              if (response.ok) {
+                                toast({ title: '초대를 거절했습니다.' });
+                                await loadChannels();
+                              }
+                            } catch {
+                              toast({ title: '오류', description: '처리 중 오류가 발생했습니다.', variant: 'destructive' });
+                            }
+                          }}
+                        >
+                          거절
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
+            {/* 채널 목록 */}
             <div className="space-y-1">
               {channels.filter(ch => 
                 ch.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -232,97 +520,208 @@ export default function TeamPage() {
                   className="w-full justify-start"
                   onClick={() => setSelectedChannel(channel)}
                 >
-                  <Hash className="h-4 w-4 mr-2" />
+                  {channel.type === 'private' ? (
+                    <AtSign className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Hash className="h-4 w-4 mr-2" />
+                  )}
                   <span className="flex-1 text-left">{channel.name}</span>
-                  {channel.unreadCount > 0 && (
-                    <Badge variant="default" className="ml-2">
-                      {channel.unreadCount}
+                  {channel._count?.messages && channel._count.messages > 0 && (
+                    <Badge variant="outline" className="ml-2">
+                      {channel._count.messages}
                     </Badge>
                   )}
                 </Button>
               ))}
             </div>
-          </ScrollArea>
-        </div>
-        
-        {/* Team Members */}
-        <div className="p-4">
-          <h3 className="font-semibold mb-3 text-sm">팀 멤버 ({teamMembers.length})</h3>
-          <div className="space-y-2">
-            {teamMembers.map((member) => (
-              <div key={member.id} className="flex items-center gap-2">
-                <div className="relative">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={member.profileImageUrl} />
-                    <AvatarFallback className="text-xs">
-                      {member.nickname[0].toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className={cn(
-                    "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background",
-                    getStatusColor(member.status)
-                  )} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{member.nickname}</p>
-                  <p className="text-xs text-muted-foreground truncate">{member.role}</p>
-                </div>
-              </div>
-            ))}
           </div>
         </div>
+        
+        {/* Channel Members */}
+        {selectedChannel && (() => {
+          // Check if admin is viewing as admin (from admin dashboard)
+          const isAdminMode = searchParams.get('channel') === selectedChannel.id && currentUser?.is_admin
+          // Filter out admin from members if in admin mode
+          const displayMembers = isAdminMode
+            ? channelMembers.filter(m => m.userId !== currentUser?.id)
+            : channelMembers
+
+          return (
+            <div className="p-4">
+              <h3 className="font-semibold mb-3 text-sm">채널 멤버 ({displayMembers.length})</h3>
+              <div className="space-y-2">
+                {displayMembers.slice(0, 5).map((member) => (
+                <div key={member.id} className="flex items-center gap-2">
+                  <div className="relative">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage src={member.user.profile_image_url} />
+                      <AvatarFallback className="text-xs">
+                        {member.user.nickname[0].toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className={cn(
+                      "absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full border-2 border-background",
+                      // Current user is always online
+                      member.userId === currentUser?.id ? 'bg-green-500' :
+                      (member.user.isActive || member.user.isOnline ? 'bg-green-500' : 'bg-gray-400')
+                    )} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{member.user.nickname}</p>
+                    <p className="text-xs text-muted-foreground truncate">{member.role}</p>
+                  </div>
+                </div>
+                ))}
+                {displayMembers.length > 5 && (
+                  <p className="text-xs text-muted-foreground text-center">+{displayMembers.length - 5} 더 보기</p>
+                )}
+              </div>
+            </div>
+          )
+        })()}
       </div>
       
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      {/* Main Chat Area - 50% width reduction */}
+      <div className="flex-1 max-w-[800px] flex flex-col h-full">
         {selectedChannel ? (
           <>
             {/* Chat Header */}
-            <div className="p-4 border-b bg-background/95 backdrop-blur">
+            <div className="p-4 border-b bg-background/95 backdrop-blur flex-shrink-0">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Hash className="h-5 w-5 text-muted-foreground" />
                   <h2 className="font-semibold">{selectedChannel.name}</h2>
                   <Badge variant="outline">
-                    {teamMembers.filter(m => m.status === 'online').length} 온라인
+                    {(() => {
+                      const isAdminMode = searchParams.get('channel') === selectedChannel.id && currentUser?.is_admin
+                      const onlineMembers = channelMembers.filter(m => {
+                        // If admin mode, exclude admin from count
+                        if (isAdminMode && m.userId === currentUser?.id) return false
+                        // Current user is always online
+                        if (m.userId === currentUser?.id) return true
+                        return m.user.isActive || m.user.isOnline
+                      })
+                      return onlineMembers.length
+                    })()} 온라인
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button size="icon" variant="ghost">
-                    <Phone className="h-4 w-4" />
+                  <Button 
+                    size="icon" 
+                    variant="ghost"
+                    onClick={() => setInviteMemberOpen(true)}
+                  >
+                    <UserPlus className="h-4 w-4" />
                   </Button>
-                  <Button size="icon" variant="ghost">
-                    <Video className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setInviteMemberOpen(true)}>
+                        <UserPlus className="h-4 w-4 mr-2" />
+                        멤버 초대
+                      </DropdownMenuItem>
+                      {channelMembers.find(m => m.userId === currentUser?.id && m.role === 'admin') && (
+                        <DropdownMenuItem onClick={() => handleChannelSettings()}>
+                          <Settings className="h-4 w-4 mr-2" />
+                          채널 설정
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      {/* Show delete option only for admins or channel creators */}
+                      {(channelMembers.find(m => m.userId === currentUser?.id && m.role === 'admin') ||
+                        selectedChannel?.creator_id === currentUser?.id) && (
+                        <DropdownMenuItem
+                          className="text-destructive"
+                          onClick={() => setDeleteChannelOpen(true)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          채널 삭제
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => handleLeaveChannel()}
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        채널 나가기
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </div>
             
             {/* Messages Area */}
-            <ScrollArea className="flex-1 p-4" ref={scrollAreaRef}>
+            <div className="flex-1 overflow-y-auto p-4" ref={scrollAreaRef}>
+              {hasMore && (
+                <div className="text-center py-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => loadMessages(selectedChannel.id, nextCursor)}
+                    disabled={loading}
+                  >
+                    {loading ? '로딩 중...' : '이전 메시지 보기'}
+                  </Button>
+                </div>
+              )}
               <div className="space-y-4">
-                {messages.filter(m => m.channel === selectedChannel.id).map((message) => (
-                  <div key={message.id} className="flex gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={message.profileImageUrl} />
-                      <AvatarFallback className="text-xs">
-                        {message.nickname[0].toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-baseline gap-2">
-                        <span className="font-medium text-sm">{message.nickname}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(message.timestamp).toLocaleTimeString()}
+                {messages.map((message) => {
+                  if (message.type === 'system') {
+                    return (
+                      <div key={message.id} className="text-center py-2">
+                        <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
+                          {message.content}
                         </span>
                       </div>
-                      <p className="text-sm mt-1">{message.content}</p>
+                    )
+                  }
+                  
+                  const isOwnMessage = currentUser?.id === message.senderId
+                  
+                  return (
+                    <div key={message.id} className={cn(
+                      "flex gap-3",
+                      isOwnMessage && "flex-row-reverse"
+                    )}>
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={message.sender.profile_image_url} />
+                        <AvatarFallback className="text-xs">
+                          {message.sender.nickname[0].toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className={cn(
+                        "max-w-[70%] flex flex-col",
+                        isOwnMessage && "items-end"
+                      )}>
+                        <div className={cn(
+                          "flex flex-col",
+                          isOwnMessage && "items-end"
+                        )}>
+                          <span className="font-medium text-sm mb-1">{message.sender.nickname}</span>
+                          <div className={cn(
+                            "px-3 py-2 rounded-lg inline-block",
+                            isOwnMessage 
+                              ? "bg-primary text-primary-foreground" 
+                              : "bg-muted"
+                          )}>
+                            <p className="text-sm">{message.content}</p>
+                          </div>
+                          <span className="text-xs text-muted-foreground mt-1">
+                            {new Date(message.created_at).toLocaleTimeString('ko-KR', { 
+                              hour: '2-digit', 
+                              minute: '2-digit'
+                            })}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
                 
                 {messages.length === 0 && (
                   <div className="text-center py-8">
@@ -332,10 +731,10 @@ export default function TeamPage() {
                   </div>
                 )}
               </div>
-            </ScrollArea>
+            </div>
             
-            {/* Message Input */}
-            <div className="p-4 border-t">
+            {/* Message Input - Moved up from bottom */}
+            <div className="p-4 border-t bg-background flex-shrink-0">
               <div className="flex gap-2">
                 <Button size="icon" variant="ghost">
                   <Plus className="h-4 w-4" />
@@ -348,7 +747,7 @@ export default function TeamPage() {
                     setNewMessage(e.target.value)
                     handleTyping()
                   }}
-                  onKeyPress={(e) => {
+                  onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
                       e.preventDefault()
                       sendMessage()
@@ -370,7 +769,7 @@ export default function TeamPage() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center h-full">
             <div className="text-center">
               <MessageSquare className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-medium mb-2">채널을 선택하세요</h3>
@@ -382,76 +781,63 @@ export default function TeamPage() {
         )}
       </div>
       
-      {/* Right Sidebar - Info Panel (Optional) */}
-      <div className="w-80 border-l bg-muted/30">
-        <Tabs defaultValue="members" className="h-full">
-          <TabsList className="w-full">
-            <TabsTrigger value="members" className="flex-1">
-              <Users className="h-4 w-4 mr-2" />
-              멤버
-            </TabsTrigger>
-            <TabsTrigger value="files" className="flex-1">
-              파일
-            </TabsTrigger>
-            <TabsTrigger value="info" className="flex-1">
-              정보
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="members" className="p-4">
-            <ScrollArea className="h-[calc(100vh-120px)]">
-              <div className="space-y-3">
-                {teamMembers.map((member) => (
-                  <Card key={member.id}>
-                    <CardContent className="p-3">
-                      <div className="flex items-center gap-3">
-                        <Avatar>
-                          <AvatarImage src={member.profileImageUrl} />
-                          <AvatarFallback>
-                            {member.nickname[0].toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <p className="font-medium text-sm">{member.nickname}</p>
-                          <p className="text-xs text-muted-foreground">@{member.username}</p>
-                          <Badge variant="outline" className="mt-1">
-                            {member.role}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-          
-          <TabsContent value="files" className="p-4">
-            <p className="text-sm text-muted-foreground text-center py-8">
-              공유된 파일이 없습니다
-            </p>
-          </TabsContent>
-          
-          <TabsContent value="info" className="p-4">
-            {selectedChannel && (
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-sm mb-1">채널 이름</h4>
-                  <p className="text-sm text-muted-foreground">#{selectedChannel.name}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm mb-1">채널 유형</h4>
-                  <p className="text-sm text-muted-foreground">{selectedChannel.type}</p>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm mb-1">멤버 수</h4>
-                  <p className="text-sm text-muted-foreground">{teamMembers.length}명</p>
-                </div>
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+      {/* Right Sidebar - Extra space for future features */}
+      <div className="flex-1 border-l bg-muted/10 h-full overflow-y-auto">
+        {/* Future features area */}
+        <div className="p-8 text-center">
+          <div className="text-muted-foreground">
+            <p className="text-sm">추후 기능이 추가될 예정입니다</p>
+          </div>
+        </div>
       </div>
-    </div>
+      </div>
+      
+      {/* Modals */}
+      <CreateChannelModal 
+        open={createChannelOpen}
+        onOpenChange={setCreateChannelOpen}
+        onChannelCreated={handleChannelCreated}
+      />
+      
+      {selectedChannel && (
+        <InviteMemberModal
+          open={inviteMemberOpen}
+          onOpenChange={setInviteMemberOpen}
+          channelId={selectedChannel.id}
+          channelName={selectedChannel.name}
+        />
+      )}
+
+      <DeleteChannelModal
+        open={deleteChannelOpen}
+        onOpenChange={setDeleteChannelOpen}
+        channel={selectedChannel}
+        onChannelDeleted={handleChannelDeleted}
+      />
+    </>
+  )
+}
+
+export default function TeamPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex h-[calc(100vh-4rem)]">
+        <div className="w-64 border-r bg-muted/10 animate-pulse">
+          <div className="p-4">
+            <div className="h-8 bg-muted rounded mb-4"></div>
+            <div className="space-y-2">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-12 bg-muted rounded"></div>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-muted-foreground">Loading...</div>
+        </div>
+      </div>
+    }>
+      <TeamPageContent />
+    </Suspense>
   )
 }

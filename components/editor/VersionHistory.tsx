@@ -1,18 +1,19 @@
 'use client'
 
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
+import Image from 'next/image'
 import { format } from 'date-fns'
 import { ko } from 'date-fns/locale'
-import { 
-  Clock, 
-  RotateCcw, 
-  Eye, 
-  Filter, 
+import { socketClient } from '@/lib/socket/client'
+import {
+  Clock,
+  RotateCcw,
+  Eye,
+  Filter,
   ChevronDown,
   User,
   Calendar,
   ArrowUpDown,
-  Loader2,
   Check
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -78,10 +79,42 @@ export default function VersionHistory({
   const [sortBy, setSortBy] = useState<'date' | 'author' | 'type'>('date')
   const [filterBy, setFilterBy] = useState<'all' | 'lineart' | 'art'>('all')
   const [isCompareMode, setIsCompareMode] = useState(false)
+  const [localVersions, setLocalVersions] = useState<Version[]>(versions)
+
+  // Update local versions when prop changes
+  useEffect(() => {
+    setLocalVersions(versions)
+  }, [versions])
+
+  // Socket.io listeners for real-time updates
+  useEffect(() => {
+    const socket = socketClient.getSocket()
+    if (!socket) return
+
+    // Listen for version updates
+    const handleVersionUpdate = (data: { version: Version, action: 'add' | 'update' | 'restore' }) => {
+
+      if (data.action === 'add') {
+        setLocalVersions(prev => [data.version, ...prev])
+      } else if (data.action === 'update' || data.action === 'restore') {
+        setLocalVersions(prev => prev.map(v =>
+          v.id === data.version.id ? { ...data.version, isCurrent: true } : { ...v, isCurrent: false }
+        ))
+      }
+    }
+
+    socket.on('version:update', handleVersionUpdate)
+    socket.on('history:update', handleVersionUpdate)
+
+    return () => {
+      socket.off('version:update', handleVersionUpdate)
+      socket.off('history:update', handleVersionUpdate)
+    }
+  }, [])
 
   // Sort and filter versions
   const processedVersions = useMemo(() => {
-    let filtered = versions
+    let filtered = localVersions
 
     // Apply filter
     if (filterBy !== 'all') {
@@ -89,7 +122,7 @@ export default function VersionHistory({
     }
 
     // Apply sort
-    const sorted = [...filtered].sort((a, b) => {
+    return [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'date':
           return b.timestamp.getTime() - a.timestamp.getTime()
@@ -101,9 +134,7 @@ export default function VersionHistory({
           return 0
       }
     })
-
-    return sorted
-  }, [versions, sortBy, filterBy])
+  }, [localVersions, sortBy, filterBy])
 
   // Handle version selection for comparison
   const handleVersionClick = (version: Version) => {
@@ -264,10 +295,13 @@ export default function VersionHistory({
               <div className="flex gap-3">
                 {/* Thumbnail */}
                 <div className="relative w-20 h-20 flex-shrink-0 rounded overflow-hidden bg-muted">
-                  <img
+                  <Image
                     src={version.thumbnailUrl}
                     alt={`Version ${version.versionNumber}`}
-                    className="w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="80px"
+                    unoptimized
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
                   <span className="absolute bottom-1 left-1 text-white text-xs font-semibold">

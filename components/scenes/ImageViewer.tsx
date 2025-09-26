@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { 
   RotateCw, 
   Download, 
@@ -20,7 +20,7 @@ interface ImageViewerProps {
   artImage?: string | null
 }
 
-export default function ImageViewer({ sceneId, lineartImage, artImage }: ImageViewerProps) {
+export default function ImageViewer({ lineartImage, artImage }: ImageViewerProps) {
   const [zoom, setZoom] = useState(100)
   const [rotation, setRotation] = useState(0)
   const [activeTab, setActiveTab] = useState<'lineart' | 'art'>('lineart')
@@ -98,9 +98,8 @@ export default function ImageViewer({ sceneId, lineartImage, artImage }: ImageVi
     setIsImageSelected(false)
   }
 
-  const handleFileUpload = async (type: 'lineart' | 'art', file: File) => {
+  const handleFileUpload = async (_type: 'lineart' | 'art', _file: File) => {
     // TODO: 파일 업로드 API 호출
-    console.log(`Uploading ${type} file:`, file.name)
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -189,23 +188,26 @@ export default function ImageViewer({ sceneId, lineartImage, artImage }: ImageVi
       >
         <div className="min-h-full flex items-center justify-center p-8">
           {currentImage ? (
-            <img
-              ref={imageRef}
-              src={currentImage}
-              alt={`${activeTab} image`}
-              className={cn(
-                "max-w-full h-auto transition-all duration-200",
-                isImageSelected && "ring-2 ring-primary ring-offset-2",
-                isPanning && "cursor-grabbing",
-                zoom > 100 && isImageSelected && !isPanning && "cursor-grab"
-              )}
-              style={{
-                transform: `scale(${zoom / 100}) rotate(${rotation}deg) translate(${panPosition.x}px, ${panPosition.y}px)`,
-                transition: isPanning ? 'none' : 'transform 0.2s ease-in-out'
-              }}
-              onClick={handleImageClick}
-              onMouseDown={handleMouseDown}
-            />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                ref={imageRef}
+                src={currentImage}
+                alt={`${activeTab} image`}
+                className={cn(
+                  "max-w-full h-auto transition-all duration-200",
+                  isImageSelected && "ring-2 ring-primary ring-offset-2",
+                  isPanning && "cursor-grabbing",
+                  zoom > 100 && isImageSelected && !isPanning && "cursor-grab"
+                )}
+                style={{
+                  transform: `scale(${zoom / 100}) rotate(${rotation}deg) translate(${panPosition.x}px, ${panPosition.y}px)`,
+                  transition: isPanning ? 'none' : 'transform 0.2s ease-in-out'
+                }}
+                onClick={handleImageClick}
+                onMouseDown={handleMouseDown}
+              />
+            </>
           ) : (
             <Card className="p-12 text-center">
               <Upload className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />

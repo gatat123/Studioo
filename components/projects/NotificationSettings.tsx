@@ -21,7 +21,7 @@ interface NotificationSetting {
   emailEnabled: boolean
 }
 
-export default function NotificationSettings({ projectId }: NotificationSettingsProps) {
+export default function NotificationSettings({ }: NotificationSettingsProps) {
   const { toast } = useToast()
 
   const [settings, setSettings] = useState<NotificationSetting[]>([
@@ -79,7 +79,6 @@ export default function NotificationSettings({ projectId }: NotificationSettings
 
   const handleSaveSettings = () => {
     // Here you would typically save to backend
-    console.log('Saving notification settings:', settings)
     
     toast({
       title: 'Settings Saved',

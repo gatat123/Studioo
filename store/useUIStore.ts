@@ -37,7 +37,7 @@ interface UIState {
   
   // Modals
   activeModal: ModalType;
-  modalData: any;
+  modalData: unknown;
   
   // Notifications
   notifications: Notification[];
@@ -59,7 +59,7 @@ interface UIState {
   setMobileMenuOpen: (isOpen: boolean) => void;
   
   // Modal actions
-  openModal: (modalType: ModalType, data?: any) => void;
+  openModal: (modalType: ModalType, data?: unknown) => void;
   closeModal: () => void;
   
   // Notification actions

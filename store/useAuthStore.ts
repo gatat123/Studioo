@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { authAPI } from '@/lib/api/auth';
-import Cookies from 'js-cookie';
+import { setAuthToken, getAuthToken, removeAuthToken, hasAuthToken } from '@/lib/utils/cookies';
 import type { User } from '@/types';
 
 // Auth store state interface
@@ -14,7 +14,7 @@ interface AuthState {
   // Actions
   login: (credentials: { username: string; password: string }) => Promise<void>;
   register: (data: { username: string; email: string; password: string; nickname: string }) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   setUser: (user: User) => void;
   clearError: () => void;
   checkAuth: () => Promise<void>;
@@ -39,25 +39,18 @@ export const useAuthStore = create<AuthState>()(
           if (response.user) {
             const user: User = {
               ...response.user,
-              profileImageUrl: response.user.profileImageUrl || undefined,
-              createdAt: response.user.createdAt || new Date().toISOString(),
-              updatedAt: response.user.updatedAt || new Date().toISOString(),
-              isActive: response.user.isActive !== undefined ? response.user.isActive : true
+              profile_image_url: response.user.profile_image_url || undefined,
+              created_at: response.user.created_at || new Date().toISOString(),
+              updated_at: response.user.updated_at || new Date().toISOString(),
+              is_active: response.user.is_active !== undefined ? response.user.is_active : true,
+              // 임시로 특정 사용자를 관리자로 설정 (테스트용)
+              is_admin: response.user.username === 'gatat123' ? true : response.user.is_admin
             };
             
-            // Set cookie for middleware authentication
+            // Set authentication token
             const token = response.accessToken || response.token;
             if (token) {
-              // Extract domain for cookie (for Railway deployment)
-              const hostname = window.location.hostname;
-              const domain = hostname.includes('railway.app') ? `.${hostname.split('.').slice(-3).join('.')}` : undefined;
-              
-              Cookies.set('token', token, { 
-                expires: 7,
-                sameSite: 'lax',
-                secure: window.location.protocol === 'https:',
-                domain: domain
-              });
+              setAuthToken(token);
             }
             
             set({
@@ -67,12 +60,13 @@ export const useAuthStore = create<AuthState>()(
               error: null,
             });
           }
-        } catch (error: any) {
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : '로그인에 실패했습니다.';
           set({
             user: null,
             isAuthenticated: false,
             isLoading: false,
-            error: error?.message || '로그인에 실패했습니다.',
+            error: errorMessage,
           });
           throw error;
         }
@@ -88,25 +82,18 @@ export const useAuthStore = create<AuthState>()(
           if (response.user) {
             const user: User = {
               ...response.user,
-              profileImageUrl: response.user.profileImageUrl || undefined,
-              createdAt: response.user.createdAt || new Date().toISOString(),
-              updatedAt: response.user.updatedAt || new Date().toISOString(),
-              isActive: response.user.isActive !== undefined ? response.user.isActive : true
+              profile_image_url: response.user.profile_image_url || undefined,
+              created_at: response.user.created_at || new Date().toISOString(),
+              updated_at: response.user.updated_at || new Date().toISOString(),
+              is_active: response.user.is_active !== undefined ? response.user.is_active : true,
+              // 임시로 특정 사용자를 관리자로 설정 (테스트용)
+              is_admin: response.user.username === 'gatat123' ? true : response.user.is_admin
             };
             
-            // Set cookie for middleware authentication
+            // Set authentication token
             const token = response.accessToken || response.token;
             if (token) {
-              // Extract domain for cookie (for Railway deployment)
-              const hostname = window.location.hostname;
-              const domain = hostname.includes('railway.app') ? `.${hostname.split('.').slice(-3).join('.')}` : undefined;
-              
-              Cookies.set('token', token, { 
-                expires: 7,
-                sameSite: 'lax',
-                secure: window.location.protocol === 'https:',
-                domain: domain
-              });
+              setAuthToken(token);
             }
             
             set({
@@ -116,12 +103,13 @@ export const useAuthStore = create<AuthState>()(
               error: null,
             });
           }
-        } catch (error: any) {
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : '회원가입에 실패했습니다.';
           set({
             user: null,
             isAuthenticated: false,
             isLoading: false,
-            error: error?.message || '회원가입에 실패했습니다.',
+            error: errorMessage,
           });
           throw error;
         }
@@ -131,28 +119,38 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         try {
           await authAPI.logout();
-        } catch (error) {
-          console.error('Logout error:', error);
+        } catch {
+          
         } finally {
-          // Clear state and cookies
+          // Clear state first
           set({
             user: null,
             isAuthenticated: false,
             error: null,
           });
-          
-          // Remove authentication cookie
-          Cookies.remove('token');
-          
-          // Clear other stores if needed
+
+          // Remove authentication token
+          removeAuthToken();
+
+          // Clear all localStorage items related to auth
           if (typeof window !== 'undefined') {
-            // Clear any other persisted data
+            // Clear zustand stores
+            localStorage.removeItem('auth-storage');
             localStorage.removeItem('project-storage');
             localStorage.removeItem('ui-storage');
-            localStorage.removeItem('auth-storage');
+            localStorage.removeItem('socket-storage');
+            localStorage.removeItem('team-storage');
+            localStorage.removeItem('notification-storage');
+
+            // Clear any token/user related items
             localStorage.removeItem('token');
             localStorage.removeItem('userId');
             localStorage.removeItem('user');
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+
+            // Clear session storage as well
+            sessionStorage.clear();
           }
         }
       },
@@ -173,66 +171,71 @@ export const useAuthStore = create<AuthState>()(
 
       // Check authentication status
       checkAuth: async () => {
+        const currentState = get();
+
+        // If already authenticated with valid user, skip API call
+        // This prevents unnecessary API calls during navigation
+        if (currentState.isAuthenticated && currentState.user && hasAuthToken()) {
+          set({ isLoading: false });
+          return;
+        }
+
+        // Skip check if already logged out intentionally
+        if (currentState.isAuthenticated === false && !hasAuthToken()) {
+          set({ isLoading: false });
+          return;
+        }
+
         set({ isLoading: true });
-        
+
         try {
-          // Check both cookie and localStorage for token
-          const cookieToken = Cookies.get('token');
-          const localToken = localStorage.getItem('token');
-          const token = cookieToken || localToken;
-          
-          if (!token) {
+          // Check for authentication token
+          const authToken = getAuthToken();
+
+          if (!authToken) {
+            // No token means user is not authenticated
             set({
               user: null,
               isAuthenticated: false,
               isLoading: false,
             });
+            // Clear localStorage to ensure clean state
+            localStorage.removeItem('auth-storage');
             return;
           }
-          
-          // Sync token between cookie and localStorage
-          if (cookieToken && !localToken) {
-            localStorage.setItem('token', cookieToken);
-          } else if (!cookieToken && localToken) {
-            // Extract domain for cookie (for Railway deployment)
-            const hostname = typeof window !== 'undefined' ? window.location.hostname : '';
-            const domain = hostname.includes('railway.app') ? `.${hostname.split('.').slice(-3).join('.')}` : undefined;
-            
-            Cookies.set('token', localToken, { 
-              expires: 7,
-              sameSite: 'lax',
-              secure: typeof window !== 'undefined' && window.location.protocol === 'https:',
-              domain: domain
-            });
-          }
-          
+
+          // Only make API call if we have token but no user data
           const sessionUser = await authAPI.getSession();
-          console.log('🔐 CheckAuth - Session response:', sessionUser);
-          
+
           if (sessionUser) {
             const user: User = {
               ...sessionUser,
-              profileImageUrl: sessionUser.profileImageUrl || undefined,
-              createdAt: sessionUser.createdAt || new Date().toISOString(),
-              updatedAt: sessionUser.updatedAt || new Date().toISOString(),
-              isActive: sessionUser.isActive !== undefined ? sessionUser.isActive : true
+              profile_image_url: sessionUser.profile_image_url || undefined,
+              created_at: sessionUser.created_at || new Date().toISOString(),
+              updated_at: sessionUser.updated_at || new Date().toISOString(),
+              is_active: sessionUser.is_active !== undefined ? sessionUser.is_active : true,
+              // 임시로 특정 사용자를 관리자로 설정 (테스트용)
+              is_admin: sessionUser.username === 'gatat123' ? true : sessionUser.is_admin
             };
-            
-            console.log('✅ CheckAuth - User authenticated:', user.username);
+
             set({
               user,
               isAuthenticated: true,
               isLoading: false,
+              error: null,
             });
           } else {
-            console.log('❌ CheckAuth - No session user returned');
+            // Session expired or invalid
             set({
               user: null,
               isAuthenticated: false,
               isLoading: false,
             });
+            // Clear token since session is invalid
+            removeAuthToken();
           }
         } catch (error) {
+          console.error('Auth check failed:', error);
           set({
             user: null,
             isAuthenticated: false,

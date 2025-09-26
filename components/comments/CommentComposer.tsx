@@ -7,11 +7,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   Bold,
   Italic,
-  Link,
   Image as ImageIcon,
   Paperclip,
-  Send,
-  Smile
+  Send
 } from 'lucide-react';
 import { Comment } from '@/types/comment';
 import useCommentStore from '@/store/useCommentStore';
@@ -191,9 +189,8 @@ export const CommentComposer: React.FC<CommentComposerProps> = ({
                 type="file"
                 className="hidden"
                 accept="image/*"
-                onChange={(e) => {
+                onChange={(_e) => {
                   // Handle file upload
-                  console.log('File selected:', e.target.files);
                 }}
               />
             </>

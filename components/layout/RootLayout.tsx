@@ -1,29 +1,30 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
-import Footer from './Footer';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useStores';
+import { useUIStore } from '@/store/useUIStore';
 
 interface RootLayoutProps {
   children: React.ReactNode;
-  showFooter?: boolean;
   showSidebar?: boolean;
   containerClassName?: string;
 }
 
 const RootLayout: React.FC<RootLayoutProps> = ({
   children,
-  showFooter = true,
   showSidebar = true,
   containerClassName,
 }) => {
   const { user } = useAuth();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const { isSidebarOpen, setSidebarOpen } = useUIStore();
+  const [isMobile, setIsMobile] = React.useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
+
+  // Check if it's a project page
+  const isProjectPage = typeof window !== 'undefined' && window.location.pathname.startsWith('/studio/projects/');
 
   // Check if mobile on mount and resize
   useEffect(() => {
@@ -32,20 +33,26 @@ const RootLayout: React.FC<RootLayoutProps> = ({
       setIsMobile(mobile);
       // Auto-close sidebar on mobile
       if (mobile) {
-        setIsSidebarOpen(false);
+        setSidebarOpen(false);
       } else {
-        setIsSidebarOpen(true);
+        setSidebarOpen(true);
       }
     };
 
     checkMobile();
+
+    // Auto-minimize sidebar on project pages
+    if (isProjectPage && !isMobile) {
+      setIsSidebarCollapsed(true);
+    }
+
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  }, [isProjectPage, isMobile, setSidebarOpen]);
 
   const handleMenuClick = () => {
     if (isMobile) {
-      setIsSidebarOpen(!isSidebarOpen);
+      setSidebarOpen(!isSidebarOpen);
     } else {
       setIsSidebarCollapsed(!isSidebarCollapsed);
     }
@@ -69,6 +76,7 @@ const RootLayout: React.FC<RootLayoutProps> = ({
         onMenuClick={handleMenuClick}
         userName={user?.nickname || user?.username || 'Guest'}
         userEmail={user?.email || ''}
+        userProfileImage={user?.profile_image_url}
         notificationCount={0}
       />
 
@@ -78,8 +86,9 @@ const RootLayout: React.FC<RootLayoutProps> = ({
         {showSidebar && (
           <Sidebar
             isOpen={isSidebarOpen}
-            onToggle={isMobile ? () => setIsSidebarOpen(false) : handleSidebarToggle}
+            onToggle={isMobile ? () => setSidebarOpen(false) : handleSidebarToggle}
             isMobile={isMobile}
+            isCollapsed={isSidebarCollapsed}
           />
         )}
 
@@ -95,8 +104,6 @@ const RootLayout: React.FC<RootLayoutProps> = ({
             {children}
           </div>
           
-          {/* Footer */}
-          {showFooter && <Footer />}
         </main>
       </div>
     </div>

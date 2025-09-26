@@ -1,0 +1,538 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                                                 String                 @id @default(uuid())
+  username                                           String                 @unique @db.VarChar(50)
+  email                                              String                 @unique @db.VarChar(255)
+  password_hash                                      String                 @db.VarChar(255)
+  nickname                                           String                 @unique @db.VarChar(100)
+  profile_image_url                                  String?
+  is_admin                                           Boolean                @default(false)
+  created_at                                         DateTime               @default(now())
+  updated_at                                         DateTime
+  last_login_at                                      DateTime?
+  is_active                                          Boolean                @default(true)
+  bio                                                String?
+  assignedSubTasks                                   SubTask[]              @relation("SubTaskAssignee")
+  createdSubTasks                                    SubTask[]              @relation("SubTaskCreator")
+  subTaskAttachments                                 SubTaskAttachment[]
+  subTaskComments                                    SubTaskComment[]
+  assignedWorkTasks                                  WorkTask[]             @relation("WorkTaskAssignee")
+  createdWorkTasks                                   WorkTask[]             @relation("WorkTaskCreator")
+  workTaskComments                                   WorkTaskComment[]
+  workTaskParticipants                               WorkTaskParticipant[]
+  annotations                                        annotations[]
+  channel_files                                      channel_files[]
+  channel_invites_channel_invites_invitee_idTousers  channel_invites[]      @relation("channel_invites_invitee_idTousers")
+  channel_invites_channel_invites_inviter_idTousers  channel_invites[]      @relation("channel_invites_inviter_idTousers")
+  channel_members                                    channel_members[]
+  channel_messages                                   channel_messages[]
+  channels                                           channels[]
+  collaboration_logs                                 collaboration_logs[]
+  comments                                           comments[]
+  friend_requests_friend_requests_receiver_idTousers friend_requests[]      @relation("friend_requests_receiver_idTousers")
+  friend_requests_friend_requests_sender_idTousers   friend_requests[]      @relation("friend_requests_sender_idTousers")
+  friendships_friendships_user1_idTousers            friendships[]          @relation("friendships_user1_idTousers")
+  friendships_friendships_user2_idTousers            friendships[]          @relation("friendships_user2_idTousers")
+  image_history                                      image_history[]
+  images                                             images[]
+  messages_messages_receiver_idTousers               messages[]             @relation("messages_receiver_idTousers")
+  messages_messages_sender_idTousers                 messages[]             @relation("messages_sender_idTousers")
+  notifications                                      notifications[]
+  project_participants                               project_participants[]
+  projects                                           Project[]
+  scenes                                             scenes[]
+  studios                                            studios?
+  user_presence                                      user_presence[]
+
+  @@index([email])
+  @@index([nickname])
+  @@index([username])
+  @@map("users")
+}
+
+model Project {
+  id                   String                 @id @default(uuid())
+  studio_id            String
+  creator_id           String
+  name                 String                 @db.VarChar(255)
+  description          String?
+  deadline             DateTime?              @db.Date
+  tag                  String?                @db.VarChar(50)
+  invite_code          String?                @unique @db.VarChar(20)
+  status               String                 @default("active") @db.VarChar(50)
+  has_updates          Boolean                @default(false)
+  created_at           DateTime               @default(now())
+  updated_at           DateTime
+  character_list       Json?
+  overall_story        String?
+  set_list             Json?
+  project_type         String                 @db.VarChar(50)
+  collaboration_logs   collaboration_logs[]
+  comments             comments[]
+  notifications        notifications[]
+  project_participants project_participants[]
+  users                User                   @relation(fields: [creator_id], references: [id])
+  studios              studios                @relation(fields: [studio_id], references: [id], onDelete: Cascade)
+  scenes               scenes[]
+  user_presence        user_presence[]
+
+  @@index([creator_id])
+  @@index([invite_code])
+  @@index([studio_id])
+  @@map("projects")
+}
+
+model annotations {
+  id           String   @id
+  image_id     String
+  user_id      String
+  type         String   @db.VarChar(50)
+  position_x   Float
+  position_y   Float
+  width        Float?
+  height       Float?
+  content      String?
+  drawing_data Json?
+  color        String?  @db.VarChar(7)
+  created_at   DateTime @default(now())
+  updated_at   DateTime
+  images       images   @relation(fields: [image_id], references: [id], onDelete: Cascade)
+  users        User     @relation(fields: [user_id], references: [id])
+
+  @@index([image_id])
+}
+
+model channel_files {
+  id               String            @id
+  channel_id       String
+  message_id       String?
+  uploader_id      String
+  file_name        String            @db.VarChar(255)
+  file_url         String
+  file_size        BigInt
+  mime_type        String            @db.VarChar(100)
+  metadata         Json?
+  created_at       DateTime          @default(now())
+  channels         channels          @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  channel_messages channel_messages? @relation(fields: [message_id], references: [id])
+  users            User              @relation(fields: [uploader_id], references: [id], onDelete: Cascade)
+
+  @@index([channel_id])
+  @@index([uploader_id])
+}
+
+model channel_invites {
+  id                                      String    @id
+  channel_id                              String
+  inviter_id                              String
+  invitee_id                              String
+  status                                  String    @default("pending") @db.VarChar(20)
+  expires_at                              DateTime?
+  accepted_at                             DateTime?
+  created_at                              DateTime  @default(now())
+  channels                                channels  @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  users_channel_invites_invitee_idTousers User      @relation("channel_invites_invitee_idTousers", fields: [invitee_id], references: [id], onDelete: Cascade)
+  users_channel_invites_inviter_idTousers User      @relation("channel_invites_inviter_idTousers", fields: [inviter_id], references: [id], onDelete: Cascade)
+
+  @@unique([channel_id, invitee_id])
+  @@index([channel_id])
+  @@index([invitee_id, status])
+}
+
+model channel_members {
+  id           String    @id
+  channel_id   String
+  user_id      String
+  role         String    @default("member") @db.VarChar(20)
+  joined_at    DateTime  @default(now())
+  last_read_at DateTime?
+  channels     channels  @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  users        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([channel_id, user_id])
+  @@index([channel_id])
+  @@index([user_id])
+}
+
+model channel_messages {
+  id            String          @id
+  channel_id    String
+  sender_id     String
+  content       String
+  type          String          @default("text") @db.VarChar(20)
+  metadata      Json?
+  edited_at     DateTime?
+  deleted_at    DateTime?
+  created_at    DateTime        @default(now())
+  channel_files channel_files[]
+  channels      channels        @relation(fields: [channel_id], references: [id], onDelete: Cascade)
+  users         User            @relation(fields: [sender_id], references: [id], onDelete: Cascade)
+
+  @@index([channel_id, created_at(sort: Desc)])
+  @@index([sender_id])
+}
+
+model channels {
+  id               String             @id
+  name             String             @db.VarChar(100)
+  description      String?
+  type             String             @default("public") @db.VarChar(20)
+  creator_id       String
+  studio_id        String?
+  is_archived      Boolean            @default(false)
+  created_at       DateTime           @default(now())
+  updated_at       DateTime
+  channel_files    channel_files[]
+  channel_invites  channel_invites[]
+  channel_members  channel_members[]
+  channel_messages channel_messages[]
+  users            User               @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+  studios          studios?           @relation(fields: [studio_id], references: [id], onDelete: Cascade)
+
+  @@index([creator_id])
+  @@index([name])
+  @@index([studio_id])
+}
+
+model collaboration_logs {
+  id          String   @id
+  project_id  String
+  user_id     String
+  action_type String   @db.VarChar(50)
+  target_type String?  @db.VarChar(50)
+  target_id   String?
+  description String?
+  metadata    Json?
+  created_at  DateTime @default(now())
+  projects    Project  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  users       User     @relation(fields: [user_id], references: [id])
+
+  @@index([created_at(sort: Desc)])
+  @@index([project_id])
+  @@index([user_id])
+}
+
+model comments {
+  id                String     @id
+  project_id        String?
+  scene_id          String?
+  parent_comment_id String?
+  user_id           String
+  content           String
+  created_at        DateTime   @default(now())
+  updated_at        DateTime
+  is_edited         Boolean    @default(false)
+  is_deleted        Boolean    @default(false)
+  metadata          Json?
+  comments          comments?  @relation("commentsTocomments", fields: [parent_comment_id], references: [id], onDelete: Cascade)
+  other_comments    comments[] @relation("commentsTocomments")
+  projects          Project?   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  scenes            scenes?    @relation(fields: [scene_id], references: [id], onDelete: Cascade)
+  users             User       @relation(fields: [user_id], references: [id])
+
+  @@index([project_id])
+  @@index([scene_id])
+  @@index([user_id])
+}
+
+model friend_requests {
+  id                                       String    @id
+  sender_id                                String
+  receiver_id                              String
+  status                                   String    @default("pending") @db.VarChar(20)
+  message                                  String?
+  created_at                               DateTime  @default(now())
+  responded_at                             DateTime?
+  users_friend_requests_receiver_idTousers User      @relation("friend_requests_receiver_idTousers", fields: [receiver_id], references: [id], onDelete: Cascade)
+  users_friend_requests_sender_idTousers   User      @relation("friend_requests_sender_idTousers", fields: [sender_id], references: [id], onDelete: Cascade)
+
+  @@unique([sender_id, receiver_id])
+  @@index([receiver_id, status])
+  @@index([sender_id, status])
+}
+
+model friendships {
+  id                                String   @id
+  user1_id                          String
+  user2_id                          String
+  created_at                        DateTime @default(now())
+  user1_memo                        String?
+  user2_memo                        String?
+  users_friendships_user1_idTousers User     @relation("friendships_user1_idTousers", fields: [user1_id], references: [id], onDelete: Cascade)
+  users_friendships_user2_idTousers User     @relation("friendships_user2_idTousers", fields: [user2_id], references: [id], onDelete: Cascade)
+
+  @@unique([user1_id, user2_id])
+  @@index([user1_id])
+  @@index([user2_id])
+}
+
+model image_history {
+  id                 String   @id
+  image_id           String
+  scene_id           String
+  version_number     Int
+  file_url           String
+  uploaded_by        String
+  uploaded_at        DateTime @default(now())
+  change_description String?
+  images             images   @relation(fields: [image_id], references: [id], onDelete: Cascade)
+  scenes             scenes   @relation(fields: [scene_id], references: [id], onDelete: Cascade)
+  users              User     @relation(fields: [uploaded_by], references: [id])
+
+  @@index([image_id])
+  @@index([scene_id])
+}
+
+model images {
+  id            String          @id
+  scene_id      String
+  type          String          @db.VarChar(20)
+  file_url      String
+  file_size     BigInt?
+  width         Int?
+  height        Int?
+  format        String?         @db.VarChar(10)
+  is_current    Boolean         @default(true)
+  uploaded_by   String
+  uploaded_at   DateTime        @default(now())
+  metadata      Json?
+  annotations   annotations[]
+  image_history image_history[]
+  scenes        scenes          @relation(fields: [scene_id], references: [id], onDelete: Cascade)
+  users         User            @relation(fields: [uploaded_by], references: [id])
+
+  @@index([scene_id])
+  @@index([scene_id, type, is_current])
+  @@index([type])
+}
+
+model messages {
+  id                                String    @id
+  sender_id                         String
+  receiver_id                       String
+  content                           String
+  is_read                           Boolean   @default(false)
+  read_at                           DateTime?
+  created_at                        DateTime  @default(now())
+  updated_at                        DateTime
+  users_messages_receiver_idTousers User      @relation("messages_receiver_idTousers", fields: [receiver_id], references: [id], onDelete: Cascade)
+  users_messages_sender_idTousers   User      @relation("messages_sender_idTousers", fields: [sender_id], references: [id], onDelete: Cascade)
+
+  @@index([created_at(sort: Desc)])
+  @@index([receiver_id, is_read])
+  @@index([sender_id, receiver_id])
+}
+
+model notifications {
+  id         String    @id
+  user_id    String
+  project_id String?
+  type       String    @db.VarChar(50)
+  title      String    @db.VarChar(255)
+  content    String?
+  is_read    Boolean   @default(false)
+  created_at DateTime  @default(now())
+  read_at    DateTime?
+  projects   Project?  @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  users      User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id, is_read])
+}
+
+model project_participants {
+  id             String    @id
+  project_id     String
+  user_id        String
+  role           String    @default("member") @db.VarChar(50)
+  joined_at      DateTime  @default(now())
+  last_viewed_at DateTime?
+  projects       Project   @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  users          User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([project_id, user_id])
+  @@index([project_id])
+  @@index([user_id])
+}
+
+model scenes {
+  id            String          @id
+  project_id    String
+  scene_number  Int
+  description   String?
+  notes         String?
+  created_by    String
+  created_at    DateTime        @default(now())
+  updated_at    DateTime
+  script        Json?
+  comments      comments[]
+  image_history image_history[]
+  images        images[]
+  users         User            @relation(fields: [created_by], references: [id])
+  projects      Project         @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  user_presence user_presence[]
+
+  @@unique([project_id, scene_number])
+  @@index([project_id])
+}
+
+model studios {
+  id          String     @id
+  user_id     String     @unique
+  name        String     @db.VarChar(255)
+  description String?
+  created_at  DateTime   @default(now())
+  updated_at  DateTime
+  channels    channels[]
+  projects    Project[]
+  users       User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+}
+
+model user_presence {
+  id            String   @id
+  user_id       String
+  project_id    String?
+  scene_id      String?
+  status        String?  @db.VarChar(20)
+  cursor_x      Float?
+  cursor_y      Float?
+  is_typing     Boolean  @default(false)
+  last_activity DateTime @default(now())
+  socket_id     String?  @db.VarChar(255)
+  projects      Project? @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  scenes        scenes?  @relation(fields: [scene_id], references: [id], onDelete: Cascade)
+  users         User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, project_id])
+  @@index([project_id])
+  @@index([status])
+}
+
+model WorkTask {
+  id           String                @id @default(uuid())
+  title        String                @db.VarChar(255)
+  description  String?
+  status       String                @default("pending") @db.VarChar(50)
+  priority     String                @default("medium") @db.VarChar(20)
+  dueDate      DateTime?
+  startDate    DateTime?
+  completedAt  DateTime?
+  assigneeId   String?
+  createdById  String
+  position     Int                   @default(0)
+  tags         String[]
+  inviteCode   String?               @unique @db.VarChar(20)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  subtasks     SubTask[]
+  assignee     User?                 @relation("WorkTaskAssignee", fields: [assigneeId], references: [id])
+  createdBy    User                  @relation("WorkTaskCreator", fields: [createdById], references: [id])
+  comments     WorkTaskComment[]
+  participants WorkTaskParticipant[]
+
+  @@index([createdById])
+  @@index([assigneeId])
+  @@index([status])
+  @@index([inviteCode])
+}
+
+model WorkTaskParticipant {
+  id           String    @id @default(uuid())
+  workTaskId   String
+  userId       String
+  role         String    @default("member") @db.VarChar(20)
+  joinedAt     DateTime  @default(now())
+  lastViewedAt DateTime?
+  user         User      @relation(fields: [userId], references: [id])
+  workTask     WorkTask  @relation(fields: [workTaskId], references: [id], onDelete: Cascade)
+
+  @@unique([workTaskId, userId])
+  @@index([workTaskId])
+  @@index([userId])
+}
+
+model SubTask {
+  id          String              @id @default(uuid())
+  workTaskId  String
+  title       String              @db.VarChar(255)
+  description String?
+  status      String              @default("todo") @db.VarChar(50)
+  priority    String              @default("medium") @db.VarChar(20)
+  dueDate     DateTime?
+  startDate   DateTime?
+  completedAt DateTime?
+  assigneeId  String?
+  createdById String
+  position    Int                 @default(0)
+  tags        String[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  assignee    User?               @relation("SubTaskAssignee", fields: [assigneeId], references: [id])
+  createdBy   User                @relation("SubTaskCreator", fields: [createdById], references: [id])
+  workTask    WorkTask            @relation(fields: [workTaskId], references: [id], onDelete: Cascade)
+  attachments SubTaskAttachment[]
+  comments    SubTaskComment[]
+
+  @@index([workTaskId])
+  @@index([createdById])
+  @@index([assigneeId])
+  @@index([status])
+}
+
+model WorkTaskComment {
+  id         String   @id @default(uuid())
+  workTaskId String
+  userId     String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  isEdited   Boolean  @default(false)
+  isDeleted  Boolean  @default(false)
+  user       User     @relation(fields: [userId], references: [id])
+  workTask   WorkTask @relation(fields: [workTaskId], references: [id], onDelete: Cascade)
+
+  @@index([workTaskId])
+  @@index([userId])
+}
+
+model SubTaskComment {
+  id        String   @id @default(uuid())
+  subTaskId String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isEdited  Boolean  @default(false)
+  isDeleted Boolean  @default(false)
+  subTask   SubTask  @relation(fields: [subTaskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([subTaskId])
+  @@index([userId])
+}
+
+model SubTaskAttachment {
+  id           String   @id @default(uuid())
+  subTaskId    String
+  fileName     String   @db.VarChar(255)
+  originalName String   @db.VarChar(255)
+  fileSize     Int
+  mimeType     String   @db.VarChar(100)
+  fileUrl      String
+  uploadedById String
+  createdAt    DateTime @default(now())
+  subTask      SubTask  @relation(fields: [subTaskId], references: [id], onDelete: Cascade)
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
+
+  @@index([subTaskId])
+  @@index([uploadedById])
+}

@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
+import AdminSidebar from '@/components/admin/AdminSidebar';
+import AdminAuthProvider from '@/components/admin/AdminAuthProvider';
 
 export default function AdminLayout({
   children,
@@ -10,33 +12,68 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, checkAuth } = useAuthStore();
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
-    // Check if user is authenticated and is an admin
-    if (!isAuthenticated) {
-      router.push('/auth/login');
-      return;
-    }
+    const initializeAuth = async () => {
+      // Only check auth on initial mount
+      if (!isInitialized) {
+        // If we have persisted auth state, use it
+        if (isAuthenticated && user) {
+          // Verify the user is admin
+          if (!user.is_admin) {
+            router.push('/studio');
+            return;
+          }
+          setIsInitialized(true);
+        } else {
+          // Only call checkAuth if we don't have auth state
+          await checkAuth();
 
-    // Check if user has admin privileges
-    // In real app, this would check the actual user role from the auth store
-    // For now, we'll check if username is 'admin' for demo purposes
-    if (user?.username !== 'admin') {
-      // Redirect non-admin users to studio
-      router.push('/studio');
-      return;
-    }
-  }, [isAuthenticated, user, router]);
+          const currentUser = useAuthStore.getState().user;
+          const currentAuth = useAuthStore.getState().isAuthenticated;
 
-  // Show loading state while checking auth
-  if (!isAuthenticated || user?.username !== 'admin') {
+          if (!currentAuth || !currentUser || !currentUser.is_admin) {
+            router.push('/studio');
+            return;
+          }
+
+          setIsInitialized(true);
+        }
+      }
+    };
+
+    initializeAuth();
+  }, [isInitialized, isAuthenticated, user, router, checkAuth]);
+
+  // Show loading only on initial load
+  if (!isInitialized) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-500">Checking permissions...</div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
-  return <>{children}</>;
+  // Verify admin status
+  if (!user?.is_admin) {
+    return null;
+  }
+
+  return (
+    <AdminAuthProvider>
+      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
+        {/* Admin Sidebar */}
+        <AdminSidebar />
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="container mx-auto px-6 py-8">
+            {children}
+          </div>
+        </main>
+      </div>
+    </AdminAuthProvider>
+  );
 }

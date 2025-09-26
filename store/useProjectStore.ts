@@ -38,9 +38,9 @@ interface ProjectState {
   addComment: (projectId: string, sceneId: string, comment: Comment) => void;
   
   // Async actions (connected to API)
-  fetchProjects: () => Promise<void>;
+  fetchProjects: (type?: 'studio' | 'work') => Promise<void>;
   fetchProject: (projectId: string) => Promise<void>;
-  createProject: (projectData: { name: string; description?: string; deadline?: string; tag?: 'illustration' | 'storyboard' }) => Promise<void>;
+  createProject: (projectData: { name: string; description?: string; project_type?: 'studio' | 'work'; deadline?: string; tag?: 'illustration' | 'storyboard' }) => Promise<void>;
   joinProject: (inviteCode: string) => Promise<void>;
   
   // Settings actions
@@ -247,20 +247,20 @@ export const useProjectStore = create<ProjectState>()(
       },
 
       // Fetch all projects from API
-      fetchProjects: async () => {
+      fetchProjects: async (type: 'studio' | 'work' = 'studio') => {
         set({ isLoading: true, error: null });
-        
+
         try {
-          const projects = await projectsAPI.getProjects();
-          
+          const projects = await projectsAPI.getProjects(type);
+
           // Projects from API already have proper date formats
           const formattedProjects = projects.map(p => ({
             ...p,
             deadline: p.deadline ? p.deadline : null,
-            createdAt: p.createdAt,
-            updatedAt: p.updatedAt,
+            created_at: p.created_at,
+            updated_at: p.updated_at,
           }));
-          
+
           set({ projects: formattedProjects, isLoading: false });
         } catch (error) {
           set({
@@ -282,8 +282,8 @@ export const useProjectStore = create<ProjectState>()(
           const formattedProject = {
             ...project,
             deadline: project.deadline ? project.deadline : null,
-            createdAt: project.createdAt,
-            updatedAt: project.updatedAt,
+            created_at: project.created_at,
+            updated_at: project.updated_at,
           };
           
           set({ currentProject: formattedProject, isLoading: false });
@@ -307,8 +307,8 @@ export const useProjectStore = create<ProjectState>()(
           const formattedProject = {
             ...newProject,
             deadline: newProject.deadline ? newProject.deadline : null,
-            createdAt: newProject.createdAt,
-            updatedAt: newProject.updatedAt,
+            created_at: newProject.created_at,
+            updated_at: newProject.updated_at,
           };
           
           get().addProject(formattedProject);
@@ -333,8 +333,8 @@ export const useProjectStore = create<ProjectState>()(
           const formattedProject = {
             ...project,
             deadline: project.deadline ? project.deadline : null,
-            createdAt: project.createdAt,
-            updatedAt: project.updatedAt,
+            created_at: project.created_at,
+            updated_at: project.updated_at,
           };
           
           get().addProject(formattedProject);
@@ -352,10 +352,10 @@ export const useProjectStore = create<ProjectState>()(
       generateInviteCode: async (projectId) => {
         try {
           const { inviteCode } = await projectsAPI.generateInviteCode(projectId);
-          get().updateProject(projectId, { inviteCode });
+          get().updateProject(projectId, { invite_code: inviteCode });
           return inviteCode;
-        } catch (error) {
-          console.error('Failed to generate invite code:', error);
+        } catch {
+          
           return null;
         }
       },

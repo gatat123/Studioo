@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { formatDistanceToNow } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { safeFormatDistanceToNow } from '@/lib/utils/date-helpers';
 import { Comment } from '@/types/comment';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -29,13 +28,11 @@ import { cn } from '@/lib/utils';
 interface CommentItemProps {
   comment: Comment;
   isReply?: boolean;
-  onReply?: (commentId: string) => void;
 }
 
 export const CommentItem: React.FC<CommentItemProps> = ({
   comment,
-  isReply = false,
-  onReply
+  isReply = false
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(comment.content);
@@ -117,10 +114,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                 {comment.user.nickname}
               </span>
               <span className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(comment.createdAt), {
-                  addSuffix: true,
-                  locale: ko
-                })}
+                {safeFormatDistanceToNow(comment.createdAt)}
               </span>
               {comment.isEdited && (
                 <span className="text-xs text-muted-foreground">(수정됨)</span>

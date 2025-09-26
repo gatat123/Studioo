@@ -4,10 +4,9 @@ import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Card } from '@/components/ui/card'
-import { 
-  ChevronUp, 
-  ChevronDown, 
-  Save,
+import {
+  ChevronUp,
+  ChevronDown,
   Edit2
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -18,7 +17,7 @@ interface SceneDescriptionProps {
   initialDescription?: string
 }
 
-export default function SceneDescription({ sceneId, initialDescription = '' }: SceneDescriptionProps) {
+export default function SceneDescription({ initialDescription = '' }: SceneDescriptionProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [description, setDescription] = useState(initialDescription)
   const [isEditing, setIsEditing] = useState(false)
@@ -32,6 +31,7 @@ export default function SceneDescription({ sceneId, initialDescription = '' }: S
     if (debouncedDescription !== initialDescription && debouncedDescription !== '') {
       handleSave()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [debouncedDescription])
 
   const handleSave = async () => {
@@ -39,9 +39,8 @@ export default function SceneDescription({ sceneId, initialDescription = '' }: S
     try {
       // TODO: API 호출로 설명 저장
       await new Promise(resolve => setTimeout(resolve, 500))
-      console.log('Saved description:', description)
-    } catch (error) {
-      console.error('Failed to save description:', error)
+    } catch {
+      // Failed to save description
     } finally {
       setIsSaving(false)
     }
