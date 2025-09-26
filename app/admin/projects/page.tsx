@@ -27,8 +27,7 @@ import {
   TrendingUp,
   Clock
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { safeFormat, safeGetTime } from '@/lib/utils/date-helpers';
 
 interface Project {
   id: string;
@@ -151,9 +150,9 @@ export default function ProjectsPage() {
     .sort((a, b) => {
       switch (sortBy) {
         case 'lastUpdated':
-          return new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime();
+          return safeGetTime(b.lastUpdated) - safeGetTime(a.lastUpdated);
         case 'created':
-          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+          return safeGetTime(b.createdAt) - safeGetTime(a.createdAt);
         case 'views':
           return b.views - a.views;
         case 'size':
@@ -351,7 +350,7 @@ export default function ProjectsPage() {
                 <div className="flex items-center justify-between text-xs text-gray-500">
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
-                    {format(new Date(project.lastUpdated), 'yyyy-MM-dd', { locale: ko })}
+                    {safeFormat(project.lastUpdated, 'yyyy-MM-dd')}
                   </div>
                   <Badge variant={project.visibility === 'public' ? 'outline' : 'secondary'}>
                     {project.visibility === 'public' ? '공개' : '비공개'}
@@ -438,7 +437,7 @@ export default function ProjectsPage() {
                     <td className="p-4">{project.views.toLocaleString()}</td>
                     <td className="p-4">{formatFileSize(project.size)}</td>
                     <td className="p-4">
-                      {format(new Date(project.lastUpdated), 'yyyy-MM-dd', { locale: ko })}
+                      {safeFormat(project.lastUpdated, 'yyyy-MM-dd')}
                     </td>
                     <td className="p-4">
                       <div className="flex justify-end gap-2">

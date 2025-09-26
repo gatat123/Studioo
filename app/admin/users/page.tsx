@@ -32,8 +32,7 @@ import {
   Download,
   RefreshCw
 } from 'lucide-react';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { safeFormat } from '@/lib/utils/date-helpers';
 
 interface User {
   id: string;
@@ -409,12 +408,12 @@ export default function UsersPage() {
                   <TableCell>
                     <div className="flex items-center gap-1 text-sm">
                       <Calendar className="w-3 h-3" />
-                      {format(new Date(user.createdAt), 'yyyy-MM-dd', { locale: ko })}
+                      {safeFormat(user.createdAt, 'yyyy-MM-dd')}
                     </div>
                   </TableCell>
                   <TableCell>
                     {user.lastLogin ?
-                      format(new Date(user.lastLogin), 'yyyy-MM-dd HH:mm', { locale: ko }) :
+                      safeFormat(user.lastLogin, 'yyyy-MM-dd HH:mm') :
                       '없음'}
                   </TableCell>
                   <TableCell className="text-right">

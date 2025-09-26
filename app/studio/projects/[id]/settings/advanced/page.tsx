@@ -40,8 +40,8 @@ import {
 } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { safeFormat } from '@/lib/utils/date-helpers';
 
 interface BackupItem {
   id: string;
@@ -325,7 +325,7 @@ export default function AdvancedSettingsPage({ params }: { params: Promise<{ id:
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary">v{backup.version}</Badge>
                         <span className="text-sm">
-                          {format(new Date(backup.createdAt), 'PPP', { locale: ko })}
+                          {safeFormat(backup.createdAt, 'PPP', { locale: ko })}
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground">

@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { safeGetTime } from '@/lib/utils/date-helpers';
 
 // Notification types
 export type NotificationType =
@@ -118,7 +119,7 @@ export const useNotificationStore = create<NotificationState>()(
       setNotifications: (notifications) => {
         set({
           notifications: notifications.sort((a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+            safeGetTime(b.createdAt) - safeGetTime(a.createdAt)
           ),
         });
         get().updateUnreadCount();
@@ -191,7 +192,7 @@ export const useNotificationStore = create<NotificationState>()(
 
           set({
             notifications: notifications.sort((a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              safeGetTime(b.createdAt) - safeGetTime(a.createdAt)
             ),
             isLoading: false,
             lastFetch: new Date().toISOString(),

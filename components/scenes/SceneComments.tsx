@@ -4,8 +4,8 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { safeFormatDistanceToNow } from '@/lib/utils/date-helpers'
 import { Send } from 'lucide-react'
 
 interface Comment {
@@ -14,7 +14,7 @@ interface Comment {
   userName: string
   userAvatar?: string
   content: string
-  createdAt: Date
+  createdAt: string | Date
 }
 
 interface SceneCommentsProps {
@@ -107,9 +107,9 @@ export default function SceneComments({ sceneId }: SceneCommentsProps) {
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm font-medium">{comment.userName}</span>
                 <span className="text-xs text-muted-foreground">
-                  {formatDistanceToNow(comment.createdAt, { 
+                  {safeFormatDistanceToNow(typeof comment.createdAt === 'string' ? comment.createdAt : comment.createdAt.toISOString(), {
                     addSuffix: true,
-                    locale: ko 
+                    locale: ko
                   })}
                 </span>
               </div>

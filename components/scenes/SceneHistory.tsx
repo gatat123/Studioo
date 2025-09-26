@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { safeFormatDistanceToNow } from '@/lib/utils/date-helpers'
 import { Clock, Image, Download, Eye } from 'lucide-react'
 
 interface HistoryItem {
@@ -15,7 +15,7 @@ interface HistoryItem {
   fileUrl?: string
   userId: string
   userName: string
-  createdAt: Date
+  createdAt: string | Date
   version: number
 }
 
@@ -107,9 +107,9 @@ export default function SceneHistory({ sceneId }: SceneHistoryProps) {
           <div className="text-sm">
             <p className="font-medium truncate">{item.fileName}</p>
             <p className="text-muted-foreground">
-              {item.userName} • {formatDistanceToNow(item.createdAt, { 
+              {item.userName} • {safeFormatDistanceToNow(typeof item.createdAt === 'string' ? item.createdAt : item.createdAt.toISOString(), {
                 addSuffix: true,
-                locale: ko 
+                locale: ko
               })}
             </p>
           </div>

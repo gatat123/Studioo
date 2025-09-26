@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import OptimizedCard from '@/components/ui/optimized-card';
 import { useInView } from 'react-intersection-observer';
 import { useDebounce } from '@/hooks/useDebounce';
+import { safeGetTime, safeParseDateString } from '@/lib/utils/date-helpers';
 import {
   Select,
   SelectContent,
@@ -252,13 +253,13 @@ export function ProjectGrid() {
         case 'name':
           return a.name.localeCompare(b.name);
         case 'deadline':
-          const aDeadline = a.deadline ? new Date(a.deadline).getTime() : Infinity;
-          const bDeadline = b.deadline ? new Date(b.deadline).getTime() : Infinity;
+          const aDeadline = a.deadline ? safeGetTime(a.deadline) : Infinity;
+          const bDeadline = b.deadline ? safeGetTime(b.deadline) : Infinity;
           return aDeadline - bDeadline;
         case 'date':
         default:
-          const aUpdated = new Date(a.updated_at).getTime();
-          const bUpdated = new Date(b.updated_at).getTime();
+          const aUpdated = safeGetTime(a.updated_at);
+          const bUpdated = safeGetTime(b.updated_at);
           return bUpdated - aUpdated;
       }
     });
@@ -287,7 +288,12 @@ export function ProjectGrid() {
   const formatDeadline = useCallback((deadline?: Date | string) => {
     if (!deadline) return null;
     const now = new Date();
-    const deadlineDate = deadline instanceof Date ? deadline : new Date(deadline);
+    const deadlineDate = deadline instanceof Date ? deadline : safeParseDateString(deadline as string);
+
+    if (!deadlineDate) {
+      return { text: '날짜 없음', className: 'text-gray-400 bg-gray-50' };
+    }
+
     const diffTime = deadlineDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     

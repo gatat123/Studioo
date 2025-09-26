@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { formatDistanceToNow } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { safeFormatDistanceToNow } from '@/lib/utils/date-helpers';
 import {
   Bell,
   X,
@@ -247,10 +246,7 @@ export function NotificationCenter() {
                                 </Badge>
                               )}
                               <span className="text-xs text-muted-foreground">
-                                {formatDistanceToNow(new Date(notification.createdAt), {
-                                  addSuffix: true,
-                                  locale: ko,
-                                })}
+                                {safeFormatDistanceToNow(notification.createdAt)}
                               </span>
                             </div>
 

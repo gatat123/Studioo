@@ -12,6 +12,7 @@ import { socketClient } from '@/lib/socket/client';
 import { toast } from 'sonner';
 import { format, isToday, isYesterday } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { safeParseDateString } from '@/lib/utils/date-helpers';
 
 interface Friend {
   id: string;
@@ -246,14 +247,22 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose, o
 
   // 날짜 포맷팅
   const formatMessageDate = (date: string) => {
-    const messageDate = new Date(date);
-    
-    if (isToday(messageDate)) {
-      return format(messageDate, 'a h:mm', { locale: ko });
-    } else if (isYesterday(messageDate)) {
-      return `어제 ${format(messageDate, 'a h:mm', { locale: ko })}`;
-    } else {
-      return format(messageDate, 'MM월 dd일 a h:mm', { locale: ko });
+    const messageDate = safeParseDateString(date);
+
+    if (!messageDate) {
+      return '날짜 없음';
+    }
+
+    try {
+      if (isToday(messageDate)) {
+        return format(messageDate, 'a h:mm', { locale: ko });
+      } else if (isYesterday(messageDate)) {
+        return `어제 ${format(messageDate, 'a h:mm', { locale: ko })}`;
+      } else {
+        return format(messageDate, 'MM월 dd일 a h:mm', { locale: ko });
+      }
+    } catch {
+      return '날짜 형식 오류';
     }
   };
 

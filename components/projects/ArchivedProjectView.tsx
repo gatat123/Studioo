@@ -22,8 +22,7 @@ import { commentsAPI } from '@/lib/api/comments'
 import { useToast } from '@/hooks/use-toast'
 import type { Scene, Comment, Image } from '@/types'
 import { cn } from '@/lib/utils'
-import { formatDistanceToNow } from 'date-fns'
-import { ko } from 'date-fns/locale'
+import { safeFormatDistanceToNow } from '@/lib/utils/date-helpers'
 
 // Extended Image type for project
 type ProjectImage = Image & {
@@ -182,10 +181,7 @@ export function ArchivedProjectView({ project_id: projectId, isArchived: _isArch
             <p className="text-sm text-muted-foreground">{project.description}</p>
             {project.archivedAt && (
               <p className="text-xs text-muted-foreground">
-                {formatDistanceToNow(new Date(project.archivedAt), {
-                  addSuffix: true,
-                  locale: ko,
-                })} 아카이브됨
+                {safeFormatDistanceToNow(project.archivedAt)} 아카이브됨
               </p>
             )}
           </div>

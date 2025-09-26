@@ -1,27 +1,51 @@
 import { format, formatDistanceToNow, isValid, parseISO } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { logger } from './debug-helpers';
 
 /**
  * 안전하게 날짜를 파싱하는 함수
  */
-export function safeParseDateString(dateString: string | null | undefined): Date | null {
+export function safeParseDateString(dateString: string | Date | null | undefined): Date | null {
   if (!dateString) return null;
 
   try {
-    // ISO 문자열 파싱 시도
-    const date = parseISO(dateString);
+    // 이미 Date 객체인 경우
+    if (dateString instanceof Date) {
+      return isValid(dateString) ? dateString : null;
+    }
+
+    // 문자열이 아닌 경우 문자열로 변환
+    const dateStr = typeof dateString === 'string' ? dateString : String(dateString);
+
+    // 빈 문자열이나 'null', 'undefined' 처리
+    if (!dateStr || dateStr === 'null' || dateStr === 'undefined') {
+      return null;
+    }
+
+    // ISO 문자열 파싱 시도 (UTC 시간 처리)
+    const date = parseISO(dateStr);
     if (isValid(date)) {
       return date;
     }
 
+    // 타임스탬프 숫자인 경우
+    const timestamp = Number(dateStr);
+    if (!isNaN(timestamp) && timestamp > 0) {
+      const timestampDate = new Date(timestamp);
+      if (isValid(timestampDate)) {
+        return timestampDate;
+      }
+    }
+
     // 일반적인 Date 생성자 시도
-    const fallbackDate = new Date(dateString);
-    if (isValid(fallbackDate)) {
+    const fallbackDate = new Date(dateStr);
+    if (isValid(fallbackDate) && !isNaN(fallbackDate.getTime())) {
       return fallbackDate;
     }
 
     return null;
-  } catch {
+  } catch (error) {
+    logger.dateError(dateString, error, 'safeParseDateString');
     return null;
   }
 }
@@ -30,13 +54,23 @@ export function safeParseDateString(dateString: string | null | undefined): Date
  * 안전한 formatDistanceToNow 함수
  */
 export function safeFormatDistanceToNow(
-  dateString: string | null | undefined,
+  dateInput: string | Date | null | undefined,
   options?: {
     addSuffix?: boolean;
     locale?: typeof ko;
   }
 ): string {
-  const date = safeParseDateString(dateString);
+  if (!dateInput) {
+    return '날짜 없음';
+  }
+
+  // 이미 Date 객체인 경우
+  let date: Date | null;
+  if (dateInput instanceof Date) {
+    date = isValid(dateInput) ? dateInput : null;
+  } else {
+    date = safeParseDateString(dateInput);
+  }
 
   if (!date) {
     return '날짜 없음';
@@ -48,7 +82,8 @@ export function safeFormatDistanceToNow(
       locale: ko,
       ...options
     });
-  } catch {
+  } catch (error) {
+    logger.dateError(dateInput, error, 'safeFormatDistanceToNow');
     return '날짜 형식 오류';
   }
 }
@@ -57,13 +92,23 @@ export function safeFormatDistanceToNow(
  * 안전한 format 함수
  */
 export function safeFormat(
-  dateString: string | null | undefined,
+  dateInput: string | Date | null | undefined,
   formatString: string,
   options?: {
     locale?: typeof ko;
   }
 ): string {
-  const date = safeParseDateString(dateString);
+  if (!dateInput) {
+    return '날짜 없음';
+  }
+
+  // 이미 Date 객체인 경우
+  let date: Date | null;
+  if (dateInput instanceof Date) {
+    date = isValid(dateInput) ? dateInput : null;
+  } else {
+    date = safeParseDateString(dateInput);
+  }
 
   if (!date) {
     return '날짜 없음';
@@ -74,7 +119,8 @@ export function safeFormat(
       locale: ko,
       ...options
     });
-  } catch {
+  } catch (error) {
+    logger.dateError(dateInput, error, `safeFormat(${formatString})`);
     return '날짜 형식 오류';
   }
 }
@@ -82,8 +128,16 @@ export function safeFormat(
 /**
  * 안전한 날짜 정렬을 위한 타임스탬프 반환
  */
-export function safeGetTime(dateString: string | null | undefined): number {
-  const date = safeParseDateString(dateString);
+export function safeGetTime(dateInput: string | Date | null | undefined): number {
+  if (!dateInput) return 0;
+
+  // 이미 Date 객체인 경우
+  if (dateInput instanceof Date) {
+    return isValid(dateInput) && !isNaN(dateInput.getTime()) ? dateInput.getTime() : 0;
+  }
+
+  // 문자열인 경우
+  const date = safeParseDateString(dateInput);
   return date ? date.getTime() : 0;
 }
 
@@ -98,11 +152,20 @@ export function isValidDateString(dateString: string | null | undefined): boolea
  * 안전한 toLocaleDateString
  */
 export function safeToLocaleDateString(
-  dateString: string | null | undefined,
+  dateInput: string | Date | null | undefined,
   locale?: string,
   options?: Intl.DateTimeFormatOptions
 ): string {
-  const date = safeParseDateString(dateString);
+  if (!dateInput) {
+    return '날짜 없음';
+  }
+
+  let date: Date | null;
+  if (dateInput instanceof Date) {
+    date = isValid(dateInput) ? dateInput : null;
+  } else {
+    date = safeParseDateString(dateInput);
+  }
 
   if (!date) {
     return '날짜 없음';
@@ -110,7 +173,8 @@ export function safeToLocaleDateString(
 
   try {
     return date.toLocaleDateString(locale || 'ko-KR', options);
-  } catch {
+  } catch (error) {
+    logger.dateError(dateInput, error, 'safeToLocaleDateString');
     return '날짜 형식 오류';
   }
 }
@@ -119,11 +183,20 @@ export function safeToLocaleDateString(
  * 안전한 toLocaleString
  */
 export function safeToLocaleString(
-  dateString: string | null | undefined,
+  dateInput: string | Date | null | undefined,
   locale?: string,
   options?: Intl.DateTimeFormatOptions
 ): string {
-  const date = safeParseDateString(dateString);
+  if (!dateInput) {
+    return '날짜 없음';
+  }
+
+  let date: Date | null;
+  if (dateInput instanceof Date) {
+    date = isValid(dateInput) ? dateInput : null;
+  } else {
+    date = safeParseDateString(dateInput);
+  }
 
   if (!date) {
     return '날짜 없음';
@@ -131,7 +204,8 @@ export function safeToLocaleString(
 
   try {
     return date.toLocaleString(locale || 'ko-KR', options);
-  } catch {
+  } catch (error) {
+    logger.dateError(dateInput, error, 'safeToLocaleString');
     return '날짜 형식 오류';
   }
 }

@@ -10,6 +10,7 @@ import { MessageSquare, Search, X, ChevronDown, UserPlus, MessageCircle, GripHor
 import { socketClient } from '@/lib/socket/client'
 import { format, formatDistanceToNow } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { safeParseDateString } from '@/lib/utils/date-helpers'
 import { Input } from '@/components/ui/input'
 import ChatModal from '@/components/chat/ChatModal'
 import { cn } from '@/lib/utils'
@@ -255,19 +256,28 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
   }
 
   const formatMessageTime = (date: string) => {
-    const messageDate = new Date(date)
-    const now = new Date()
-    const diff = now.getTime() - messageDate.getTime()
-    const oneDay = 24 * 60 * 60 * 1000
+    const messageDate = safeParseDateString(date)
 
-    if (diff < oneDay) {
-      return format(messageDate, 'HH:mm')
-    } else if (diff < oneDay * 2) {
-      return '어제'
-    } else if (diff < oneDay * 7) {
-      return formatDistanceToNow(messageDate, { addSuffix: true, locale: ko })
-    } else {
-      return format(messageDate, 'MM.dd')
+    if (!messageDate) {
+      return '날짜 없음'
+    }
+
+    try {
+      const now = new Date()
+      const diff = now.getTime() - messageDate.getTime()
+      const oneDay = 24 * 60 * 60 * 1000
+
+      if (diff < oneDay) {
+        return format(messageDate, 'HH:mm')
+      } else if (diff < oneDay * 2) {
+        return '어제'
+      } else if (diff < oneDay * 7) {
+        return formatDistanceToNow(messageDate, { addSuffix: true, locale: ko })
+      } else {
+        return format(messageDate, 'MM.dd')
+      }
+    } catch {
+      return '날짜 형식 오류'
     }
   }
 

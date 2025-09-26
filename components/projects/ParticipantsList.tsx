@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, Suspense } from 'react'
+import { safeParseDateString, safeToLocaleDateString } from '@/lib/utils/date-helpers'
 import { useSearchParams } from 'next/navigation'
 import { Trash2, Shield, Edit, User, Crown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -188,16 +189,27 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
   }
 
   const formatJoinDate = (dateString: string | Date) => {
-    const date = typeof dateString === 'string' ? new Date(dateString) : dateString
-    const now = new Date()
-    const diffTime = Math.abs(now.getTime() - date.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    const date = typeof dateString === 'string'
+      ? safeParseDateString(dateString)
+      : dateString
 
-    if (diffDays === 0) return 'Today'
-    if (diffDays === 1) return 'Yesterday'
-    if (diffDays < 7) return `${diffDays} days ago`
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
-    return date.toLocaleDateString()
+    if (!date) {
+      return '날짜 없음'
+    }
+
+    try {
+      const now = new Date()
+      const diffTime = Math.abs(now.getTime() - date.getTime())
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+      if (diffDays === 0) return 'Today'
+      if (diffDays === 1) return 'Yesterday'
+      if (diffDays < 7) return `${diffDays} days ago`
+      if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`
+      return safeToLocaleDateString(dateString as string)
+    } catch {
+      return '날짜 형식 오류'
+    }
   }
 
   // Filter out admin from participants list when in admin mode

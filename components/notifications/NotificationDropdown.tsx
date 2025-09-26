@@ -16,8 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { socketClient } from '@/lib/socket/client';
 import { useAuthStore } from '@/store/useAuthStore';
 import { cn } from '@/lib/utils';
-import { formatDistanceToNow } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { safeFormatDistanceToNow } from '@/lib/utils/date-helpers';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 
@@ -398,10 +397,7 @@ export default function NotificationDropdown() {
                       {notification.content}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {formatDistanceToNow(new Date(notification.createdAt), {
-                        addSuffix: true,
-                        locale: ko
-                      })}
+                      {safeFormatDistanceToNow(notification.createdAt)}
                     </p>
                     {notification.type === 'channel_invite' && (
                       <div className="flex gap-2 mt-2">

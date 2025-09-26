@@ -44,6 +44,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { safeGetTime, safeToLocaleDateString } from '@/lib/utils/date-helpers';
 
 interface PortfolioProject {
   id: string;
@@ -191,7 +192,7 @@ export default function PortfolioPage({ params }: { params: Promise<{ username: 
         return b.views - a.views;
       case 'latest':
       default:
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+        return safeGetTime(b.createdAt) - safeGetTime(a.createdAt);
     }
   });
 
@@ -646,7 +647,7 @@ export default function PortfolioPage({ params }: { params: Promise<{ username: 
                   <div className="flex items-center gap-4">
                     <Badge>{selectedProject.category}</Badge>
                     <span className="text-sm text-muted-foreground">
-                      {new Date(selectedProject.createdAt).toLocaleDateString('ko-KR')}
+                      {safeToLocaleDateString(selectedProject.createdAt, 'ko-KR')}
                     </span>
                   </div>
 

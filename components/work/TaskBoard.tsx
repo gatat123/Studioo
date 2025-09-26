@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
+import { safeToLocaleDateString, safeToLocaleString } from '@/lib/utils/date-helpers'
 import { workTasksAPI, WorkTask, SubTask, SubTaskComment, SubTaskAttachment } from '@/lib/api/work-tasks'
 import { socketClient } from '@/lib/socket/client'
 import {
@@ -1176,7 +1177,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                         {task.dueDate && (
                           <div className="flex items-center text-xs text-gray-500">
                             <Calendar className="h-3 w-3 mr-1" />
-                            {new Date(task.dueDate).toLocaleDateString()}
+                            {safeToLocaleDateString(task.dueDate)}
                           </div>
                         )}
 
@@ -1297,7 +1298,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                           {comment.user.nickname}
                                         </span>
                                         <span className="text-xs text-gray-500">
-                                          {new Date(comment.createdAt).toLocaleString()}
+                                          {safeToLocaleString(comment.createdAt)}
                                         </span>
                                         {comment.isEdited && (
                                           <span className="text-xs text-gray-400">(편집됨)</span>
@@ -1462,7 +1463,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                             <span>•</span>
                                             <span>{attachment.uploadedBy.nickname}</span>
                                             <span>•</span>
-                                            <span>{new Date(attachment.createdAt).toLocaleString()}</span>
+                                            <span>{safeToLocaleString(attachment.createdAt)}</span>
                                           </div>
                                         </div>
                                       </div>

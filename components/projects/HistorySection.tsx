@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast'
 import type { Comment } from '@/types'
 import { format, isToday, isYesterday, differenceInDays } from 'date-fns'
 import { ko } from 'date-fns/locale'
+import { safeParseDateString } from '@/lib/utils/date-helpers'
 
 interface HistorySectionProps {
   project_id: string
@@ -361,16 +362,24 @@ export function HistorySection({
 
   // Format timestamp
   const formatTimestamp = (timestamp: string) => {
-    const date = new Date(timestamp)
+    const date = safeParseDateString(timestamp)
 
-    if (isToday(date)) {
-      return `오늘 ${format(date, 'HH:mm', { locale: ko })}`
-    } else if (isYesterday(date)) {
-      return `어제 ${format(date, 'HH:mm', { locale: ko })}`
-    } else if (differenceInDays(new Date(), date) < 7) {
-      return format(date, 'EEEE HH:mm', { locale: ko })
-    } else {
-      return format(date, 'MM월 dd일 HH:mm', { locale: ko })
+    if (!date) {
+      return '날짜 없음'
+    }
+
+    try {
+      if (isToday(date)) {
+        return `오늘 ${format(date, 'HH:mm', { locale: ko })}`
+      } else if (isYesterday(date)) {
+        return `어제 ${format(date, 'HH:mm', { locale: ko })}`
+      } else if (differenceInDays(Date.now(), date) < 7) {
+        return format(date, 'EEEE HH:mm', { locale: ko })
+      } else {
+        return format(date, 'MM월 dd일 HH:mm', { locale: ko })
+      }
+    } catch {
+      return '날짜 형식 오류'
     }
   }
 

@@ -10,6 +10,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import { workTasksAPI, WorkTask } from '@/lib/api/work-tasks'
+import { safeToLocaleDateString } from '@/lib/utils/date-helpers'
 
 interface TeamMember {
   id: string
@@ -349,7 +350,7 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
                           </div>
                         </div>
                         <div className="text-xs text-gray-500">
-                          {new Date(task.createdAt).toLocaleDateString('ko-KR')}
+                          {safeToLocaleDateString(task.createdAt, 'ko-KR')}
                         </div>
                       </div>
                       {task.participants && task.participants.length > 0 && (
