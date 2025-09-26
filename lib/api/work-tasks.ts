@@ -171,11 +171,17 @@ export const workTasksAPI = {
    */
   async getWorkTasks(): Promise<WorkTask[]> {
     try {
-      const response = await api.get('/api/work-tasks') as WorkTask[]
+      const response = await api.get('/api/work-tasks') as any
 
-      // Backend returns array directly
-      if (Array.isArray(response)) {
-        return response
+      // Check for backend response structure: { success: true, data: { workTasks: [...] } }
+      if (response && typeof response === 'object') {
+        if (response.success && response.data?.workTasks) {
+          return response.data.workTasks
+        }
+        // Legacy: direct array response
+        if (Array.isArray(response)) {
+          return response
+        }
       }
 
       console.warn('[workTasksAPI] Unexpected response structure:', response)
@@ -199,7 +205,14 @@ export const workTasksAPI = {
    * Create a new work task
    */
   async createWorkTask(data: CreateWorkTaskData): Promise<WorkTask> {
-    return api.post('/api/work-tasks', data)
+    const response = await api.post('/api/work-tasks', data) as any
+
+    // Backend returns { success: true, data: workTask }
+    if (response && response.success && response.data) {
+      return response.data
+    }
+
+    return response
   },
 
   /**
