@@ -96,9 +96,20 @@ export default function WorkPage() {
       console.error('[Work Page] Error loading work tasks:', error)
       // Set empty array on error to prevent map failures
       setWorkTasks([])
+
+      // 더 구체적인 에러 메시지 제공
+      let errorMessage = '업무 목록을 불러올 수 없습니다.'
+      if (error instanceof Error) {
+        if (error.message.includes('서버에 일시적인 문제')) {
+          errorMessage = error.message
+        } else if (error.message.includes('500')) {
+          errorMessage = '서버에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.'
+        }
+      }
+
       toast({
         title: '업무 불러오기 실패',
-        description: '업무 목록을 불러올 수 없습니다.',
+        description: errorMessage,
         variant: 'destructive'
       })
     } finally {

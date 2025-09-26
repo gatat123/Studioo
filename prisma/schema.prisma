@@ -20,6 +20,14 @@ model User {
   last_login_at                                      DateTime?
   is_active                                          Boolean                @default(true)
   bio                                                String?
+  assignedSubTasks                                   SubTask[]              @relation("SubTaskAssignee")
+  createdSubTasks                                    SubTask[]              @relation("SubTaskCreator")
+  subTaskAttachments                                 SubTaskAttachment[]
+  subTaskComments                                    SubTaskComment[]
+  assignedWorkTasks                                  WorkTask[]             @relation("WorkTaskAssignee")
+  createdWorkTasks                                   WorkTask[]             @relation("WorkTaskCreator")
+  workTaskComments                                   WorkTaskComment[]
+  workTaskParticipants                               WorkTaskParticipant[]
   annotations                                        annotations[]
   channel_files                                      channel_files[]
   channel_invites_channel_invites_invitee_idTousers  channel_invites[]      @relation("channel_invites_invitee_idTousers")
@@ -43,15 +51,6 @@ model User {
   scenes                                             scenes[]
   studios                                            studios?
   user_presence                                      user_presence[]
-
-  createdWorkTasks                                   WorkTask[]             @relation("WorkTaskCreator")
-  assignedWorkTasks                                  WorkTask[]             @relation("WorkTaskAssignee")
-  workTaskParticipants                               WorkTaskParticipant[]
-  workTaskComments                                   WorkTaskComment[]
-  createdSubTasks                                    SubTask[]              @relation("SubTaskCreator")
-  assignedSubTasks                                   SubTask[]              @relation("SubTaskAssignee")
-  subTaskComments                                    SubTaskComment[]
-  subTaskAttachments                                 SubTaskAttachment[]
 
   @@index([email])
   @@index([nickname])
@@ -419,27 +418,26 @@ model user_presence {
 }
 
 model WorkTask {
-  id             String                 @id @default(uuid())
-  title          String                 @db.VarChar(255)
-  description    String?
-  status         String                 @default("pending") @db.VarChar(50)
-  priority       String                 @default("medium") @db.VarChar(20)
-  dueDate        DateTime?
-  startDate      DateTime?
-  completedAt    DateTime?
-  assigneeId     String?
-  createdById    String
-  position       Int                    @default(0)
-  tags           String[]
-  inviteCode     String?                @unique @db.VarChar(20)
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-
-  createdBy      User                   @relation("WorkTaskCreator", fields: [createdById], references: [id])
-  assignee       User?                  @relation("WorkTaskAssignee", fields: [assigneeId], references: [id])
-  participants   WorkTaskParticipant[]
-  subtasks       SubTask[]
-  comments       WorkTaskComment[]
+  id           String                @id @default(uuid())
+  title        String                @db.VarChar(255)
+  description  String?
+  status       String                @default("pending") @db.VarChar(50)
+  priority     String                @default("medium") @db.VarChar(20)
+  dueDate      DateTime?
+  startDate    DateTime?
+  completedAt  DateTime?
+  assigneeId   String?
+  createdById  String
+  position     Int                   @default(0)
+  tags         String[]
+  inviteCode   String?               @unique @db.VarChar(20)
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+  subtasks     SubTask[]
+  assignee     User?                 @relation("WorkTaskAssignee", fields: [assigneeId], references: [id])
+  createdBy    User                  @relation("WorkTaskCreator", fields: [createdById], references: [id])
+  comments     WorkTaskComment[]
+  participants WorkTaskParticipant[]
 
   @@index([createdById])
   @@index([assigneeId])
@@ -454,9 +452,8 @@ model WorkTaskParticipant {
   role         String    @default("member") @db.VarChar(20)
   joinedAt     DateTime  @default(now())
   lastViewedAt DateTime?
-
-  workTask     WorkTask  @relation(fields: [workTaskId], references: [id], onDelete: Cascade)
   user         User      @relation(fields: [userId], references: [id])
+  workTask     WorkTask  @relation(fields: [workTaskId], references: [id], onDelete: Cascade)
 
   @@unique([workTaskId, userId])
   @@index([workTaskId])
@@ -464,27 +461,26 @@ model WorkTaskParticipant {
 }
 
 model SubTask {
-  id             String               @id @default(uuid())
-  workTaskId     String
-  title          String               @db.VarChar(255)
-  description    String?
-  status         String               @default("todo") @db.VarChar(50)
-  priority       String               @default("medium") @db.VarChar(20)
-  dueDate        DateTime?
-  startDate      DateTime?
-  completedAt    DateTime?
-  assigneeId     String?
-  createdById    String
-  position       Int                  @default(0)
-  tags           String[]
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-
-  workTask       WorkTask             @relation(fields: [workTaskId], references: [id], onDelete: Cascade)
-  createdBy      User                 @relation("SubTaskCreator", fields: [createdById], references: [id])
-  assignee       User?                @relation("SubTaskAssignee", fields: [assigneeId], references: [id])
-  comments       SubTaskComment[]
-  attachments    SubTaskAttachment[]
+  id          String              @id @default(uuid())
+  workTaskId  String
+  title       String              @db.VarChar(255)
+  description String?
+  status      String              @default("todo") @db.VarChar(50)
+  priority    String              @default("medium") @db.VarChar(20)
+  dueDate     DateTime?
+  startDate   DateTime?
+  completedAt DateTime?
+  assigneeId  String?
+  createdById String
+  position    Int                 @default(0)
+  tags        String[]
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  assignee    User?               @relation("SubTaskAssignee", fields: [assigneeId], references: [id])
+  createdBy   User                @relation("SubTaskCreator", fields: [createdById], references: [id])
+  workTask    WorkTask            @relation(fields: [workTaskId], references: [id], onDelete: Cascade)
+  attachments SubTaskAttachment[]
+  comments    SubTaskComment[]
 
   @@index([workTaskId])
   @@index([createdById])
@@ -493,52 +489,49 @@ model SubTask {
 }
 
 model WorkTaskComment {
-  id          String    @id @default(uuid())
-  workTaskId  String
-  userId      String
-  content     String
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  isEdited    Boolean   @default(false)
-  isDeleted   Boolean   @default(false)
-
-  workTask    WorkTask  @relation(fields: [workTaskId], references: [id], onDelete: Cascade)
-  user        User      @relation(fields: [userId], references: [id])
+  id         String   @id @default(uuid())
+  workTaskId String
+  userId     String
+  content    String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  isEdited   Boolean  @default(false)
+  isDeleted  Boolean  @default(false)
+  user       User     @relation(fields: [userId], references: [id])
+  workTask   WorkTask @relation(fields: [workTaskId], references: [id], onDelete: Cascade)
 
   @@index([workTaskId])
   @@index([userId])
 }
 
 model SubTaskComment {
-  id         String    @id @default(uuid())
-  subTaskId  String
-  userId     String
-  content    String
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
-  isEdited   Boolean   @default(false)
-  isDeleted  Boolean   @default(false)
-
-  subTask    SubTask   @relation(fields: [subTaskId], references: [id], onDelete: Cascade)
-  user       User      @relation(fields: [userId], references: [id])
+  id        String   @id @default(uuid())
+  subTaskId String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isEdited  Boolean  @default(false)
+  isDeleted Boolean  @default(false)
+  subTask   SubTask  @relation(fields: [subTaskId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([subTaskId])
   @@index([userId])
 }
 
 model SubTaskAttachment {
-  id           String    @id @default(uuid())
+  id           String   @id @default(uuid())
   subTaskId    String
-  fileName     String    @db.VarChar(255)
-  originalName String    @db.VarChar(255)
+  fileName     String   @db.VarChar(255)
+  originalName String   @db.VarChar(255)
   fileSize     Int
-  mimeType     String    @db.VarChar(100)
+  mimeType     String   @db.VarChar(100)
   fileUrl      String
   uploadedById String
-  createdAt    DateTime  @default(now())
-
-  subTask      SubTask   @relation(fields: [subTaskId], references: [id], onDelete: Cascade)
-  uploadedBy   User      @relation(fields: [uploadedById], references: [id])
+  createdAt    DateTime @default(now())
+  subTask      SubTask  @relation(fields: [subTaskId], references: [id], onDelete: Cascade)
+  uploadedBy   User     @relation(fields: [uploadedById], references: [id])
 
   @@index([subTaskId])
   @@index([uploadedById])

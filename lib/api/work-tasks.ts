@@ -1,4 +1,4 @@
-import api from './client'
+import api, { APIError } from './client'
 
 export interface WorkTask {
   id: string
@@ -165,30 +165,48 @@ export interface UpdateSubTaskData {
   position?: number
 }
 
+// Backend API Response 타입 정의
+interface APIResponse<T> {
+  success: boolean
+  data?: T
+  message?: string
+  error?: string
+}
+
+interface WorkTasksResponse {
+  workTasks: WorkTask[]
+}
+
 export const workTasksAPI = {
   /**
    * Get all work tasks for the authenticated user
    */
   async getWorkTasks(): Promise<WorkTask[]> {
     try {
-      const response = await api.get('/api/work-tasks') as any
+      const response = await api.get('/api/work-tasks') as APIResponse<WorkTasksResponse>
 
-      // Check for backend response structure: { success: true, data: { workTasks: [...] } }
-      if (response && typeof response === 'object') {
-        if (response.success && response.data?.workTasks) {
-          return response.data.workTasks
-        }
-        // Legacy: direct array response
-        if (Array.isArray(response)) {
-          return response
-        }
+      // 표준 백엔드 응답 형식 처리
+      if (response?.success && response.data?.workTasks) {
+        return response.data.workTasks
       }
 
+      // 응답이 직접 배열인 경우 (레거시 지원)
+      if (Array.isArray(response)) {
+        return response as WorkTask[]
+      }
+
+      // 예상치 못한 응답 구조 로깅 및 빈 배열 반환
       console.warn('[workTasksAPI] Unexpected response structure:', response)
       return []
     } catch (error) {
+      // 500 에러에 대한 특별 처리
+      if (error instanceof Error && error.message.includes('500')) {
+        console.error('[workTasksAPI] Server error (500) - Backend service may be down:', error)
+        // 사용자에게 서버 오류임을 알리기 위해 에러를 throw
+        throw new Error('서버에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.')
+      }
       console.error('[workTasksAPI] Error fetching work tasks:', error)
-      // Return empty array on error to prevent map failures
+      // 에러가 발생해도 빈 배열 반환하여 앱이 크래시되지 않도록 함
       return []
     }
   },
@@ -205,14 +223,40 @@ export const workTasksAPI = {
    * Create a new work task
    */
   async createWorkTask(data: CreateWorkTaskData): Promise<WorkTask> {
-    const response = await api.post('/api/work-tasks', data) as any
+    try {
+      const response = await api.post('/api/work-tasks', data) as APIResponse<WorkTask>
 
-    // Backend returns { success: true, data: workTask }
-    if (response && response.success && response.data) {
-      return response.data
+      // 표준 백엔드 응답 형식 처리
+      if (response?.success && response.data) {
+        return response.data
+      }
+
+      // 직접 업무 객체가 반환된 경우 (레거시 지원)
+      if (response && 'id' in response && 'title' in response) {
+        return response as unknown as WorkTask
+      }
+
+      // 응답 오류 시 예외 발생
+      throw new Error(response?.message || response?.error || '업무 생성에 실패했습니다')
+    } catch (error) {
+      console.error('[workTasksAPI] Error creating work task:', error)
+
+      // APIError 인스턴스 체크
+      if (error instanceof APIError) {
+        // 500 에러 처리
+        if (error.status === 500) {
+          throw new Error('서버에 일시적인 문제가 발생했습니다. 잠시 후 다시 시도해주세요.')
+        }
+        // 400번대 에러 처리
+        if (error.status >= 400 && error.status < 500) {
+          const errorData = error.data as any
+          throw new Error(errorData?.message || errorData?.error || '업무 생성에 실패했습니다.')
+        }
+      }
+
+      // 기타 에러
+      throw error
     }
-
-    return response
   },
 
   /**

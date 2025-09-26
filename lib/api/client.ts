@@ -115,12 +115,25 @@ class APIClient {
 
           // Handle non-OK responses
           if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
+            const errorData = await response.json().catch(() => ({
+              message: `HTTP ${response.status} Error`,
+              error: 'Network or server error occurred'
+            }));
+
+            // 상세한 에러 메시지 생성
+            const errorMessage = errorData.error || errorData.message || `HTTP ${response.status}`
+
             lastError = new APIError(
               response.status,
-              errorData.message || `HTTP ${response.status}`,
+              errorMessage,
               errorData
             );
+
+            console.error(`[API Client] ${(lastError as APIError).status} Error on ${url}:`, {
+              message: errorMessage,
+              data: errorData,
+              headers: Object.fromEntries(response.headers.entries())
+            })
 
             // Don't retry on client errors (4xx)
             if (lastError instanceof APIError && lastError.status >= 400 && lastError.status < 500) {

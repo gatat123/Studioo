@@ -7,6 +7,7 @@ import * as z from 'zod'
 import { Copy, Check, Loader2 } from 'lucide-react'
 import { useProjectStore } from '@/store/useProjectStore'
 import { useToast } from '@/hooks/use-toast'
+import { workTasksAPI } from '@/lib/api/work-tasks'
 import {
   Dialog,
   DialogContent,
@@ -86,53 +87,24 @@ export function CreateWorkTaskModal({ open, onOpenChange }: CreateWorkTaskModalP
     try {
       setIsLoading(true)
 
-      // Create project through API
-      const backendUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || '';
-      const token = localStorage.getItem('token');
-
       const requestBody = {
         title: data.title,
         description: data.description,
-        priority: data.priority,
+        priority: data.priority as 'low' | 'medium' | 'high' | 'urgent',
         dueDate: selectedDate ? selectedDate.toISOString() : undefined,
       };
 
       console.log('Creating Work task with data:', requestBody);
 
-      // Use Work Tasks API endpoint
-      const apiUrl = backendUrl ? `${backendUrl}/api/work-tasks` : '/api/work-tasks';
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && { 'Authorization': `Bearer ${token}` })
-        },
-        credentials: 'include',
-        body: JSON.stringify(requestBody),
-      })
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: '프로젝트 생성에 실패했습니다' }))
-        toast({
-          title: '업무 생성 실패',
-          description: errorData.message || '업무를 생성하는 중 오류가 발생했습니다.',
-          variant: 'destructive'
-        })
-        return
-      }
-
-      const responseData = await response.json()
-      console.log('Work task creation response:', responseData);
-
-      // Backend returns { success: true, data: workTask }
-      const newTask = responseData.data || responseData
+      // 통합 API 클라이언트 사용
+      const newTask = await workTasksAPI.createWorkTask(requestBody)
       console.log('Created Work task:', newTask);
 
       setCreatedProjectId(newTask.id)
 
       // Generate invite code for the created task
-      if (newTask.invite_code) {
-        setInviteCode(newTask.invite_code)
+      if (newTask.inviteCode) {
+        setInviteCode(newTask.inviteCode)
       } else {
         const code = generateInviteCode()
         setInviteCode(code)
@@ -144,10 +116,24 @@ export function CreateWorkTaskModal({ open, onOpenChange }: CreateWorkTaskModalP
       // TODO: Refresh work tasks list when API is ready
       // const fetchWorkTasks = useWorkTaskStore.getState().fetchWorkTasks;
       // await fetchWorkTasks();
-    } catch {
+    } catch (error: any) {
+      console.error('[CreateWorkTask] Unexpected error:', error)
+
+      // 에러 메시지를 더 구체적으로 제공
+      let errorMessage = '업무를 생성하는 중 예기치 않은 오류가 발생했습니다.'
+
+      if (error instanceof Error) {
+        // 서버 오류 메시지 우선 사용
+        if (error.message.includes('서버에 일시적인 문제')) {
+          errorMessage = error.message
+        } else if (error.message) {
+          errorMessage = error.message
+        }
+      }
+
       toast({
         title: '업무 생성 실패',
-        description: '업무를 생성하는 중 예기치 않은 오류가 발생했습니다.',
+        description: errorMessage,
         variant: 'destructive'
       })
     } finally {
