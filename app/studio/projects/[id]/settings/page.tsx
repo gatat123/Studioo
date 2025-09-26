@@ -75,7 +75,7 @@ interface Project {
   tag?: 'illustration' | 'storyboard'
   deadline?: string | Date
   status?: 'active' | 'completed' | 'archived'
-  invite_code?: string
+  inviteCode?: string
 }
 
 export default function ProjectSettingsPage() {
@@ -112,7 +112,7 @@ export default function ProjectSettingsPage() {
           ...data,
           deadline: data.deadline ? String(data.deadline) : undefined
         })
-        setInviteCode(data.invite_code || '')
+        setInviteCode(data.inviteCode || '')
 
         // Check user permissions
         const userIsOwner = data.creator_id === currentUser?.id

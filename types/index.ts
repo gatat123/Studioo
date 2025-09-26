@@ -40,7 +40,7 @@ export interface Project {
   description?: string | null;
   deadline?: string | Date | null;
   tag?: 'illustration' | 'storyboard' | null;
-  invite_code?: string | null;
+  inviteCode?: string | null;
   status: 'active' | 'completed' | 'archived';
   project_type: 'studio' | 'work';
   has_updates: boolean;

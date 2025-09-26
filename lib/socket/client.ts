@@ -18,6 +18,7 @@ class SocketClient {
 
     console.log('[SocketClient] 🔌 Connecting to:', socketUrl);
     console.log('[SocketClient] Auth token present:', !!token);
+    console.log('[SocketClient] Environment:', process.env.NODE_ENV);
 
     this.socket = io(socketUrl, {
       auth: {
@@ -28,6 +29,10 @@ class SocketClient {
       reconnectionDelay: 1000,
       reconnectionDelayMax: 5000,
       reconnectionAttempts: this.maxReconnectAttempts,
+      // Force WebSocket transport in production
+      upgrade: true,
+      // Add timeout for connection
+      timeout: 20000,
     });
 
     this.setupEventListeners();

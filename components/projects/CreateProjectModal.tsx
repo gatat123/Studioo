@@ -136,8 +136,8 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
       setCreatedProjectId(newProject.id)
       
       // Generate invite code for the created project
-      if (newProject.invite_code) {
-        setInviteCode(newProject.invite_code)
+      if (newProject.inviteCode) {
+        setInviteCode(newProject.inviteCode)
       } else {
         const code = generateInviteCode()
         setInviteCode(code)

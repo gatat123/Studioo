@@ -125,40 +125,31 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     }
 
     // Handle subtask updated
-    const handleSubtaskUpdated = (data: { subtask?: SubTask, subtaskId?: string, updates?: any }) => {
-      console.log(`[TaskBoard] ✅ Subtask updated event received:`, {
-        hasSubtask: !!data.subtask,
-        subtaskId: data.subtask?.id || data.subtaskId,
-        workTaskId: (data as any).workTaskId,
-        timestamp: (data as any).timestamp
-      })
+    const handleSubtaskUpdated = (data: any) => {
+      console.log(`[TaskBoard] ✅ Subtask updated event received:`, data)
 
-      // Handle both data formats from backend
+      // The backend sends the full subtask object
       if (data.subtask) {
-        // Full subtask data provided - create new array to force re-render
         setSubtasks(prev => {
-          const newSubtasks = [...prev]
-          const index = newSubtasks.findIndex(task => task.id === data.subtask!.id)
-          if (index !== -1) {
-            newSubtasks[index] = { ...data.subtask! }
-            console.log(`[TaskBoard] Updated subtask at index ${index}:`, data.subtask!.id)
-          }
+          const newSubtasks = prev.map(task =>
+            task.id === data.subtask.id ? { ...data.subtask } : task
+          )
+          console.log(`[TaskBoard] Updated subtask ${data.subtask.id}:`, data.subtask)
           return newSubtasks
         })
-      } else if (data.subtaskId && data.updates) {
-        // Partial update data provided
-        setSubtasks(prev => {
-          const newSubtasks = [...prev]
-          const index = newSubtasks.findIndex(task => task.id === data.subtaskId)
-          if (index !== -1) {
-            newSubtasks[index] = { ...newSubtasks[index], ...data.updates }
-            console.log(`[TaskBoard] Partially updated subtask at index ${index}:`, data.subtaskId)
-          }
-          return newSubtasks
-        })
-      }
 
-      // Don't notify parent to avoid full refresh
+        // Show toast for status changes
+        if (data.previousStatus && data.newStatus && data.previousStatus !== data.newStatus) {
+          toast({
+            title: '세부 업무 상태 변경',
+            description: `세부 업무가 ${
+              data.newStatus === 'todo' ? '할 일' :
+              data.newStatus === 'in_progress' ? '진행중' :
+              data.newStatus === 'review' ? '검토' : '완료'
+            }로 변경되었습니다.`
+          })
+        }
+      }
     }
 
     // Handle subtask order updated (drag and drop)
@@ -258,42 +249,29 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     }
 
     // Handle subtask status changed (more specific event)
-    const handleSubtaskStatusChanged = (data: {
-      subtask: SubTask
-      previousStatus: string
-      newStatus: string
-    }) => {
-      console.log(`[TaskBoard] ✅ Subtask status changed event received:`, {
-        subtaskId: data.subtask.id,
-        previousStatus: data.previousStatus,
-        newStatus: data.newStatus,
-        title: data.subtask.title
-      })
+    const handleSubtaskStatusChanged = (data: any) => {
+      console.log(`[TaskBoard] ✅ Subtask status changed event received:`, data)
 
-      // Create a new array to force re-render
-      setSubtasks(prev => {
-        const newSubtasks = [...prev]
-        const index = newSubtasks.findIndex(task => task.id === data.subtask.id)
-        if (index !== -1) {
-          // Replace the entire object to ensure React detects the change
-          newSubtasks[index] = { ...data.subtask }
-          console.log(`[TaskBoard] Status updated for subtask at index ${index}: ${data.previousStatus} -> ${data.newStatus}`)
-        }
-        console.log(`[TaskBoard] Updated subtasks list:`, newSubtasks)
-        return newSubtasks
-      })
+      // The backend sends the full subtask object
+      if (data.subtask) {
+        setSubtasks(prev => {
+          const newSubtasks = prev.map(task =>
+            task.id === data.subtask.id ? { ...data.subtask } : task
+          )
+          console.log(`[TaskBoard] Status changed for subtask ${data.subtask.id}: ${data.previousStatus} -> ${data.newStatus}`)
+          return newSubtasks
+        })
 
-      // Show toast notification for status changes
-      toast({
-        title: '세부 업무 상태 변경',
-        description: `"${data.subtask.title}"이(가) ${
-          data.newStatus === 'todo' ? '할 일' :
-          data.newStatus === 'in_progress' ? '진행중' :
-          data.newStatus === 'review' ? '검토' : '완료'
-        }로 이동했습니다.`,
-      })
-
-      // Don't notify parent to avoid full refresh
+        // Show toast notification for status changes
+        toast({
+          title: '세부 업무 상태 변경',
+          description: `"${data.subtask.title}"이(가) ${
+            data.newStatus === 'todo' ? '할 일' :
+            data.newStatus === 'in_progress' ? '진행중' :
+            data.newStatus === 'review' ? '검토' : '완료'
+          }로 이동했습니다.`
+        })
+      }
     }
 
     // Handle subtask deleted
