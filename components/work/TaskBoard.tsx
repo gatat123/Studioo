@@ -424,14 +424,21 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
     try {
       setLoading(true)
-      const data = await workTasksAPI.getSubTasks(selectedWorkTask.id)
-      setSubtasks(data)
+      // Check if selectedWorkTask already has subTasks
+      if (selectedWorkTask.subTasks && selectedWorkTask.subTasks.length >= 0) {
+        setSubtasks(selectedWorkTask.subTasks)
+      } else {
+        // Fallback to API call if subTasks not included
+        const data = await workTasksAPI.getSubTasks(selectedWorkTask.id)
+        setSubtasks(data)
+      }
 
       // Load comments and attachments for each subtask
       const commentsData: Record<string, SubTaskComment[]> = {}
       const attachmentsData: Record<string, SubTaskAttachment[]> = {}
+      const subtasksToLoad = selectedWorkTask.subTasks && selectedWorkTask.subTasks.length >= 0 ? selectedWorkTask.subTasks : []
       await Promise.all(
-        data.map(async (subtask) => {
+        subtasksToLoad.map(async (subtask) => {
           try {
             const comments = await workTasksAPI.getSubTaskComments(selectedWorkTask.id, subtask.id)
             commentsData[subtask.id] = comments

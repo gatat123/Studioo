@@ -26,6 +26,7 @@ export interface WorkTask {
   }
   participants?: WorkTaskParticipant[]
   comments?: WorkTaskComment[]
+  subTasks?: SubTask[]
 }
 
 export interface WorkTaskParticipant {
