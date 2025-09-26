@@ -41,8 +41,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useArchiveStore } from '@/store/useArchiveStore';
 import { getArchivedProjects, restoreProject, deleteArchivedProject, batchRestoreProjects } from '@/lib/api/archive';
-import { formatDistanceToNow } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { safeFormatDistanceToNow } from '@/lib/utils/date-helpers';
 import { cn } from '@/lib/utils';
 
 export default function ArchivePage() {
@@ -398,10 +397,7 @@ export default function ArchivePage() {
                           </span>
                           <span className="text-xs text-muted-foreground">•</span>
                           <span className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(project.archivedAt), {
-                              addSuffix: true,
-                              locale: ko,
-                            })} 아카이브됨
+                            {safeFormatDistanceToNow(project.archivedAt)} 아카이브됨
                           </span>
                         </div>
 
@@ -505,10 +501,7 @@ export default function ArchivePage() {
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="w-3 h-3" />
-                            {formatDistanceToNow(new Date(project.archivedAt), {
-                              addSuffix: true,
-                              locale: ko,
-                            })}
+                            {safeFormatDistanceToNow(project.archivedAt)}
                           </span>
                           <span className="flex items-center gap-1">
                             <Users className="w-3 h-3" />

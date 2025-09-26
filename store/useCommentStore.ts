@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { Comment, SortOption } from '@/types/comment';
+import { safeGetTime } from '@/lib/utils/date-helpers';
 
 interface CommentState {
   comments: Comment[];
@@ -159,10 +160,10 @@ const useCommentStore = create<CommentState>()(
           
           switch (sortBy) {
             case 'newest':
-              sorted.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+              sorted.sort((a, b) => safeGetTime(b.createdAt) - safeGetTime(a.createdAt));
               break;
             case 'oldest':
-              sorted.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+              sorted.sort((a, b) => safeGetTime(a.createdAt) - safeGetTime(b.createdAt));
               break;
             case 'mostReplies':
               sorted.sort((a, b) => (b.replies?.length || 0) - (a.replies?.length || 0));

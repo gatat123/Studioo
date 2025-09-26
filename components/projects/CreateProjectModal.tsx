@@ -31,9 +31,6 @@ import { Textarea } from '@/components/ui/textarea'
 // Validation schema
 const projectSchema = z.object({
   name: z.string().min(1, 'Project name is required').max(100, 'Project name is too long'),
-  project_type: z.enum(['studio', 'work'], {
-    required_error: 'Please select a service type',
-  }).default('studio'),
   type: z.enum(['illustration', 'storyboard'], {
     required_error: 'Please select a project type',
   }),
@@ -72,7 +69,6 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
     defaultValues: {
       name: '',
       description: '',
-      project_type: 'studio',
     },
   })
 
@@ -118,7 +114,7 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
         body: JSON.stringify({
           name: data.name,
           description: data.description,
-          project_type: data.project_type,
+          project_type: 'studio', // 스튜디오 프로젝트는 항상 studio 타입
           tag: data.type as 'illustration' | 'storyboard',
           deadline: selectedDate ? selectedDate.toISOString() : undefined,
         }),
@@ -184,19 +180,19 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
         {!showSuccess ? (
           <>
             <DialogHeader>
-              <DialogTitle>Create New Project</DialogTitle>
+              <DialogTitle>새 프로젝트 생성</DialogTitle>
               <DialogDescription>
-                Create a new project and invite collaborators to work together.
+                스토리보드 또는 일러스트 프로젝트를 생성하고 팀원을 초대하세요.
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="grid gap-4 py-4">
                 {/* Project Name */}
                 <div className="grid gap-2">
-                  <Label htmlFor="name">Project Name</Label>
+                  <Label htmlFor="name">프로젝트 이름</Label>
                   <Input
                     id="name"
-                    placeholder="Enter project name"
+                    placeholder="프로젝트 이름을 입력하세요"
                     {...register('name')}
                     disabled={isLoading}
                   />
@@ -205,39 +201,19 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
                   )}
                 </div>
 
-                {/* Service Type */}
-                <div className="grid gap-2">
-                  <Label htmlFor="project_type">Service Type</Label>
-                  <Select
-                    disabled={isLoading}
-                    onValueChange={(value) => setValue('project_type', value as 'studio' | 'work')}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select service type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="studio">Studio (스토리보드 협업)</SelectItem>
-                      <SelectItem value="work">Work (업무 관리)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {errors.project_type && (
-                    <p className="text-sm text-red-500">{errors.project_type.message}</p>
-                  )}
-                </div>
-
                 {/* Project Type */}
                 <div className="grid gap-2">
-                  <Label htmlFor="type">Project Type</Label>
+                  <Label htmlFor="type">프로젝트 유형</Label>
                   <Select
                     disabled={isLoading}
                     onValueChange={(value) => setValue('type', value as 'illustration' | 'storyboard')}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select project type" />
+                      <SelectValue placeholder="프로젝트 유형을 선택하세요" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="illustration">Illustration</SelectItem>
-                      <SelectItem value="storyboard">Storyboard</SelectItem>
+                      <SelectItem value="illustration">일러스트</SelectItem>
+                      <SelectItem value="storyboard">스토리보드</SelectItem>
                     </SelectContent>
                   </Select>
                   {errors.type && (
@@ -247,10 +223,10 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
 
                 {/* Description */}
                 <div className="grid gap-2">
-                  <Label htmlFor="description">Description (Optional)</Label>
+                  <Label htmlFor="description">설명 (선택사항)</Label>
                   <Textarea
                     id="description"
-                    placeholder="Enter project description"
+                    placeholder="프로젝트 설명을 입력하세요"
                     {...register('description')}
                     disabled={isLoading}
                     rows={3}
@@ -261,7 +237,7 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
                 </div>
                 {/* Deadline */}
                 <div className="grid gap-2">
-                  <Label htmlFor="deadline">Deadline (Optional)</Label>
+                  <Label htmlFor="deadline">마감일 (선택사항)</Label>
                   <div className="relative">
                     <Input
                       id="deadline"
@@ -283,11 +259,11 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
                   onClick={handleClose}
                   disabled={isLoading}
                 >
-                  Cancel
+                  취소
                 </Button>
                 <Button type="submit" disabled={isLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isLoading ? 'Creating...' : 'Create Project'}
+                  {isLoading ? '생성 중...' : '프로젝트 생성'}
                 </Button>
               </DialogFooter>
             </form>
@@ -378,7 +354,7 @@ export function CreateProjectModal({ open, onOpenChange }: CreateProjectModalPro
                 }
                 handleClose()
               }} className="w-full">
-                Go to Project
+                프로젝트로 이동
               </Button>
             </DialogFooter>
           </>

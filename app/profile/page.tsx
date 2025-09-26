@@ -12,8 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, Camera, Save, Lock, Mail, User, Calendar, Shield } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
-import { ko } from 'date-fns/locale';
+import { safeFormat } from '@/lib/utils/date-helpers';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -461,7 +460,7 @@ export default function ProfilePage() {
                       가입일
                     </p>
                     <p className="text-sm">
-                      {user.created_at && format(new Date(user.created_at), 'yyyy년 MM월 dd일', { locale: ko })}
+                      {safeFormat(user.created_at, 'yyyy년 MM월 dd일')}
                     </p>
                   </div>
                   <div>
