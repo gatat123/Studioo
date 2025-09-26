@@ -50,10 +50,12 @@ export interface Project {
   participants?: ProjectParticipant[];
   scenes?: Scene[];
   comments?: Comment[];
+  subTasks?: SubTask[];
   _count?: {
     scenes: number;
     participants: number;
     comments: number;
+    subTasks?: number;
   };
 }
 
@@ -85,9 +87,11 @@ export interface Scene {
   creator?: User;
   images?: Image[];
   comments?: Comment[];
+  subTasks?: SubTask[];
   _count?: {
     images: number;
     comments: number;
+    subTasks?: number;
   };
 }
 
@@ -271,4 +275,56 @@ export interface Session {
   user: User;
   token: string;
   expiresAt: string;
+}
+// SubTask types
+export interface SubTask {
+  id: string;
+  workTaskId: string;
+  title: string;
+  description?: string | null;
+  status: 'todo' | 'in_progress' | 'review' | 'done';
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  dueDate?: string | Date | null;
+  startDate?: string | Date | null;
+  completedAt?: string | Date | null;
+  assigneeId?: string | null;
+  createdById: string;
+  position: number;
+  tags?: any;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  workTask?: Project;
+  assignee?: User;
+  createdBy?: User;
+  comments?: SubTaskComment[];
+  attachments?: SubTaskAttachment[];
+}
+
+// SubTask Comment types
+export interface SubTaskComment {
+  id: string;
+  subTaskId: string;
+  userId: string;
+  content: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  isEdited: boolean;
+  isDeleted: boolean;
+  subTask?: SubTask;
+  user?: User;
+}
+
+// SubTask Attachment types
+export interface SubTaskAttachment {
+  id: string;
+  subTaskId: string;
+  fileName: string;
+  originalName: string;
+  fileSize: number;
+  mimeType: string;
+  fileUrl: string;
+  uploadedById: string;
+  createdAt: string | Date;
+  subTask?: SubTask;
+  uploadedBy?: User;
 }
