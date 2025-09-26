@@ -171,28 +171,11 @@ export const workTasksAPI = {
    */
   async getWorkTasks(): Promise<WorkTask[]> {
     try {
-      const response = await api.get('/api/work-tasks')
+      const response = await api.get<WorkTask[]>('/api/work-tasks')
 
-      // Ensure we always return an array
+      // Backend returns array directly
       if (Array.isArray(response)) {
         return response
-      }
-
-      if (response && typeof response === 'object') {
-        // Check for the new API response structure first
-        if (response.success && Array.isArray(response.data?.workTasks)) {
-          return response.data.workTasks
-        }
-        // Legacy response structures
-        if (Array.isArray(response.data)) {
-          return response.data
-        }
-        if (Array.isArray(response.workTasks)) {
-          return response.workTasks
-        }
-        if (Array.isArray(response.items)) {
-          return response.items
-        }
       }
 
       console.warn('[workTasksAPI] Unexpected response structure:', response)
@@ -282,19 +265,11 @@ export const workTasksAPI = {
    */
   async getSubTasks(workTaskId: string): Promise<SubTask[]> {
     try {
-      const response = await api.get(`/api/work-tasks/${workTaskId}/subtasks`)
+      const response = await api.get<SubTask[]>(`/api/work-tasks/${workTaskId}/subtasks`)
 
+      // Backend returns array directly
       if (Array.isArray(response)) {
         return response
-      }
-
-      if (response && typeof response === 'object') {
-        if (Array.isArray(response.data)) {
-          return response.data
-        }
-        if (Array.isArray(response.subtasks)) {
-          return response.subtasks
-        }
       }
 
       console.warn('[workTasksAPI] Unexpected subtask response structure:', response)
@@ -331,19 +306,11 @@ export const workTasksAPI = {
    */
   async getSubTaskComments(workTaskId: string, subtaskId: string): Promise<SubTaskComment[]> {
     try {
-      const response = await api.get(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/comments`)
+      const response = await api.get<SubTaskComment[]>(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/comments`)
 
+      // Backend returns array directly
       if (Array.isArray(response)) {
         return response
-      }
-
-      if (response && typeof response === 'object') {
-        if (Array.isArray(response.data)) {
-          return response.data
-        }
-        if (Array.isArray(response.comments)) {
-          return response.comments
-        }
       }
 
       console.warn('[workTasksAPI] Unexpected subtask comments response structure:', response)
@@ -387,19 +354,11 @@ export const workTasksAPI = {
    */
   async getSubTaskAttachments(workTaskId: string, subtaskId: string): Promise<SubTaskAttachment[]> {
     try {
-      const response = await api.get(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/attachments`)
+      const response = await api.get<SubTaskAttachment[]>(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/attachments`)
 
+      // Backend returns array directly
       if (Array.isArray(response)) {
         return response
-      }
-
-      if (response && typeof response === 'object') {
-        if (Array.isArray(response.data)) {
-          return response.data
-        }
-        if (Array.isArray(response.attachments)) {
-          return response.attachments
-        }
       }
 
       console.warn('[workTasksAPI] Unexpected subtask attachments response structure:', response)
