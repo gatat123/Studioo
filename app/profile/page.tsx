@@ -27,7 +27,7 @@ export default function ProfilePage() {
     currentPassword: '',
     newPassword: '',
     confirmPassword: '',
-    profile_image_url: ''
+    profileImageUrl: ''
   });
 
   useEffect(() => {
@@ -42,7 +42,7 @@ export default function ProfilePage() {
         ...prev,
         email: user.email || '',
         bio: user.bio || '',
-        profile_image_url: user.profile_image_url || ''
+        profileImageUrl: user.profile_image_url || ''
       }));
     }
   }, [user]);
@@ -110,7 +110,22 @@ export default function ProfilePage() {
           title: '성공',
           description: '프로필이 업데이트되었습니다.'
         });
-        
+
+        // 전역 상태 업데이트
+        const authStore = useAuthStore.getState();
+        if (authStore.user && data.user) {
+          // 백엔드 API 응답의 profileImageUrl을 프론트엔드의 profile_image_url로 매핑
+          const mappedUser = {
+            ...data.user,
+            profile_image_url: data.user.profileImageUrl || data.user.profile_image_url
+          };
+
+          authStore.setUser({
+            ...authStore.user,
+            ...mappedUser
+          });
+        }
+
         // Clear password fields
         setProfileData(prev => ({
           ...prev,
@@ -179,17 +194,18 @@ export default function ProfilePage() {
 
       if (response.ok && data.success) {
         // 프로필 이미지 URL 업데이트
+        const newProfileImageUrl = data.user?.profileImageUrl || '';
         setProfileData(prev => ({
           ...prev,
-          profile_image_url: data.fileDetails?.url || data.user?.profile_image_url || ''
+          profileImageUrl: newProfileImageUrl
         }));
-        
+
         // 전역 상태 업데이트
         const authStore = useAuthStore.getState();
         if (authStore.user) {
           authStore.setUser({
             ...authStore.user,
-            profile_image_url: data.fileDetails?.url || data.user?.profile_image_url
+            profile_image_url: newProfileImageUrl
           });
         }
         
@@ -260,7 +276,7 @@ export default function ProfilePage() {
                 {/* Profile Image */}
                 <div className="flex items-center space-x-4">
                   <Avatar className="h-24 w-24">
-                    <AvatarImage src={profileData.profile_image_url} />
+                    <AvatarImage src={profileData.profileImageUrl} />
                     <AvatarFallback className="text-2xl">
                       {user.nickname?.[0]?.toUpperCase() || user.username?.[0]?.toUpperCase()}
                     </AvatarFallback>
