@@ -95,10 +95,38 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     // Check initial socket connection state
     console.log(`[TaskBoard] Socket connection state:`, socket.connected)
     console.log(`[TaskBoard] Socket ID:`, socket.id)
+    console.log(`[TaskBoard] Socket URL:`, socket.io?.uri)
 
-    // Join work task room for real-time updates
-    console.log(`[TaskBoard] Attempting to join work-task room: ${selectedWorkTask.id}`)
-    socket.emit('join:work-task', selectedWorkTask.id)
+    // Wait for connection before joining room
+    const handleConnect = () => {
+      console.log(`[TaskBoard] ✅ Socket connected! ID:`, socket.id)
+      console.log(`[TaskBoard] Joining work-task room: ${selectedWorkTask.id}`)
+      socket.emit('join:work-task', selectedWorkTask.id)
+    }
+
+    // Handle connection error
+    const handleConnectError = (error: any) => {
+      console.error(`[TaskBoard] ❌ Socket connection error:`, error)
+    }
+
+    // If already connected, join immediately
+    if (socket.connected) {
+      handleConnect()
+    } else {
+      socket.on('connect', handleConnect)
+    }
+
+    socket.on('connect_error', handleConnectError)
+
+    // Add debug listener for join acknowledgment
+    socket.once('joined:work-task', (data: any) => {
+      console.log(`[TaskBoard] ✅ Successfully joined work-task room:`, data)
+    })
+
+    // Add debug listener for all events
+    socket.onAny((eventName, ...args) => {
+      console.log(`[TaskBoard] 📡 Received event: ${eventName}`, args)
+    })
 
     // Handle subtask created
     const handleSubtaskCreated = (data: { subtask: SubTask }) => {
@@ -357,10 +385,8 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     }
 
     // Register event listeners
-    socket.on('connect', handleSocketConnected)
     socket.on('disconnect', handleSocketDisconnected)
     socket.on('error', handleSocketError)
-    socket.on('joined:work-task', handleJoinedWorkTask)
     socket.on('subtask:created', handleSubtaskCreated)
     socket.on('subtask:updated', handleSubtaskUpdated)
     socket.on('subtask:status-changed', handleSubtaskStatusChanged)
@@ -377,10 +403,10 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       console.log(`[TaskBoard] 🚪 Cleaning up and leaving work-task room: ${selectedWorkTask.id}`)
 
       // Remove all event listeners
-      socket.off('connect', handleSocketConnected)
+      socket.off('connect', handleConnect)
+      socket.off('connect_error', handleConnectError)
       socket.off('disconnect', handleSocketDisconnected)
       socket.off('error', handleSocketError)
-      socket.off('joined:work-task', handleJoinedWorkTask)
       socket.off('subtask:created', handleSubtaskCreated)
       socket.off('subtask:updated', handleSubtaskUpdated)
       socket.off('subtask:status-changed', handleSubtaskStatusChanged)
@@ -844,17 +870,8 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       const tasksInColumn = subtasks.filter(t => t.status === status)
       const newPosition = tasksInColumn.length
 
-      // Emit socket event for drag and drop
-      const socket = socketClient.connect()
-      socket.emit('subtask:order-update', {
-        workTaskId: selectedWorkTask?.id,
-        subtaskId: draggedTask.id,
-        previousStatus: draggedTask.status,
-        previousPosition: draggedTask.position,
-        newStatus: status,
-        newPosition: newPosition
-      })
-      console.log(`[TaskBoard] Emitting subtask:order-update event for drag and drop`)
+      // Don't emit - backend will emit after API call
+      console.log(`[TaskBoard] Drag and drop completed, waiting for socket event from backend`)
 
       handleUpdateSubTaskStatus(draggedTask.id, status, newPosition)
     }
@@ -1172,15 +1189,8 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                               const targetTasks = filteredSubTasks.filter(t => t.status === 'in_progress')
                               const newPosition = targetTasks.length
 
-                              // Emit socket event for status button click
-                              const socket = socketClient.connect()
-                              socket.emit('subtask:status-update', {
-                                workTaskId: selectedWorkTask?.id,
-                                subtaskId: task.id,
-                                previousStatus: task.status,
-                                newStatus: 'in_progress'
-                              })
-                              console.log(`[TaskBoard] Emitting subtask:status-update event for status button click`)
+                              // Don't emit - backend will emit after API call
+                              console.log(`[TaskBoard] Status button clicked, waiting for socket event from backend`)
 
                               handleUpdateSubTaskStatus(task.id, 'in_progress', newPosition)
                             }}
@@ -1199,15 +1209,8 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                               const targetTasks = filteredSubTasks.filter(t => t.status === 'review')
                               const newPosition = targetTasks.length
 
-                              // Emit socket event for status button click
-                              const socket = socketClient.connect()
-                              socket.emit('subtask:status-update', {
-                                workTaskId: selectedWorkTask?.id,
-                                subtaskId: task.id,
-                                previousStatus: task.status,
-                                newStatus: 'review'
-                              })
-                              console.log(`[TaskBoard] Emitting subtask:status-update event for status button click`)
+                              // Don't emit - backend will emit after API call
+                              console.log(`[TaskBoard] Status button clicked, waiting for socket event from backend`)
 
                               handleUpdateSubTaskStatus(task.id, 'review', newPosition)
                             }}
@@ -1226,15 +1229,8 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                               const targetTasks = filteredSubTasks.filter(t => t.status === 'done')
                               const newPosition = targetTasks.length
 
-                              // Emit socket event for status button click
-                              const socket = socketClient.connect()
-                              socket.emit('subtask:status-update', {
-                                workTaskId: selectedWorkTask?.id,
-                                subtaskId: task.id,
-                                previousStatus: task.status,
-                                newStatus: 'done'
-                              })
-                              console.log(`[TaskBoard] Emitting subtask:status-update event for status button click`)
+                              // Don't emit - backend will emit after API call
+                              console.log(`[TaskBoard] Status button clicked, waiting for socket event from backend`)
 
                               handleUpdateSubTaskStatus(task.id, 'done', newPosition)
                             }}
