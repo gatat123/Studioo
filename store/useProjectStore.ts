@@ -352,10 +352,10 @@ export const useProjectStore = create<ProjectState>()(
       generateInviteCode: async (projectId) => {
         try {
           const { inviteCode } = await projectsAPI.generateInviteCode(projectId);
-          get().updateProject(projectId, { invite_code: inviteCode });
+          get().updateProject(projectId, { inviteCode: inviteCode });
           return inviteCode;
         } catch {
-          
+
           return null;
         }
       },
