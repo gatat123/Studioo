@@ -95,7 +95,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     // Check initial socket connection state
     console.log(`[TaskBoard] Socket connection state:`, socket.connected)
     console.log(`[TaskBoard] Socket ID:`, socket.id)
-    console.log(`[TaskBoard] Socket URL:`, (socket.io as any)?.uri || 'Not available')
+    console.log(`[TaskBoard] Socket connected:`, socket.connected)
 
     // Wait for connection before joining room
     const handleConnect = () => {
