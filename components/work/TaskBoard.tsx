@@ -1491,7 +1491,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
           <h3 className="text-sm font-semibold text-blue-800 flex items-center gap-2">
             📢 공지사항
           </h3>
-          {user?.isAdmin && (
+          {user?.is_admin && (
             <Button
               size="sm"
               variant="outline"
