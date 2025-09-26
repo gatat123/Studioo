@@ -108,7 +108,7 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
         <Link href="/studio" className="flex items-center space-x-2 mr-6">
           <Image src="/dustdio-logo.svg" alt="DustDio Logo" className="h-8 w-8 rounded-lg object-cover bg-white p-0.5" width={32} height={32} />
           <span className="hidden font-semibold sm:inline-block">
-            DustDio
+            봇치포트
           </span>
         </Link>
 
