@@ -171,7 +171,7 @@ export const workTasksAPI = {
    */
   async getWorkTasks(): Promise<WorkTask[]> {
     try {
-      const response = await api.get<WorkTask[]>('/api/work-tasks')
+      const response = await api.get('/api/work-tasks') as WorkTask[]
 
       // Backend returns array directly
       if (Array.isArray(response)) {
@@ -265,7 +265,7 @@ export const workTasksAPI = {
    */
   async getSubTasks(workTaskId: string): Promise<SubTask[]> {
     try {
-      const response = await api.get<SubTask[]>(`/api/work-tasks/${workTaskId}/subtasks`)
+      const response = await api.get(`/api/work-tasks/${workTaskId}/subtasks`) as SubTask[]
 
       // Backend returns array directly
       if (Array.isArray(response)) {
@@ -306,7 +306,7 @@ export const workTasksAPI = {
    */
   async getSubTaskComments(workTaskId: string, subtaskId: string): Promise<SubTaskComment[]> {
     try {
-      const response = await api.get<SubTaskComment[]>(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/comments`)
+      const response = await api.get(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/comments`) as SubTaskComment[]
 
       // Backend returns array directly
       if (Array.isArray(response)) {
@@ -354,7 +354,7 @@ export const workTasksAPI = {
    */
   async getSubTaskAttachments(workTaskId: string, subtaskId: string): Promise<SubTaskAttachment[]> {
     try {
-      const response = await api.get<SubTaskAttachment[]>(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/attachments`)
+      const response = await api.get(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/attachments`) as SubTaskAttachment[]
 
       // Backend returns array directly
       if (Array.isArray(response)) {
