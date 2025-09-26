@@ -6,7 +6,7 @@
     "dev": "next dev",
     "dev:socket": "node server/socket-server.js",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:socket\"",
-    "build": "next build",
+    "build": "prisma generate && prisma migrate deploy && next build",
     "start": "next start",
     "start:socket": "node server/socket-server.js",
     "start:all": "concurrently \"npm run start\" \"npm run start:socket\"",
