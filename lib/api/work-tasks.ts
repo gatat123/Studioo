@@ -91,7 +91,22 @@ export interface SubTask {
     nickname: string
     profileImageUrl?: string
   }
+  participants?: SubTaskParticipant[]
   comments?: SubTaskComment[]
+}
+
+export interface SubTaskParticipant {
+  id: string
+  subtaskId: string
+  userId: string
+  role?: string
+  joinedAt?: string
+
+  user: {
+    id: string
+    nickname: string
+    profileImageUrl?: string
+  }
 }
 
 export interface SubTaskComment {
@@ -482,5 +497,21 @@ export const workTasksAPI = {
    */
   async deleteSubTaskAttachment(workTaskId: string, subtaskId: string, attachmentId: string): Promise<void> {
     return api.delete(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/attachments/${attachmentId}`)
+  },
+
+  // ===== SubTask Participant Methods =====
+
+  /**
+   * Add a participant to subtask
+   */
+  async addSubTaskParticipant(workTaskId: string, subtaskId: string, userId: string): Promise<SubTaskParticipant> {
+    return api.post(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/participants`, { userId })
+  },
+
+  /**
+   * Remove a participant from subtask
+   */
+  async removeSubTaskParticipant(workTaskId: string, subtaskId: string, userId: string): Promise<void> {
+    return api.delete(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/participants?userId=${userId}`)
   }
 }

@@ -300,8 +300,18 @@ export interface SubTask {
   workTask?: Project;
   assignee?: User;
   createdBy?: User;
+  participants?: SubTaskParticipant[];
   comments?: SubTaskComment[];
   attachments?: SubTaskAttachment[];
+}
+
+// SubTask Participant types
+export interface SubTaskParticipant {
+  id: string;
+  subtaskId: string;
+  userId: string;
+  joinedAt: string | Date;
+  user: User;
 }
 
 // SubTask Comment types

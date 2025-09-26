@@ -67,38 +67,93 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
       const tasks = await workTasksAPI.getWorkTasks()
       setTasks(tasks)
 
-      // Calculate statistics
-      const stats: WorkStats = {
-        totalTasks: tasks.length,
-        completedTasks: tasks.filter(t => t.status === 'completed').length,
-        inProgressTasks: tasks.filter(t => t.status === 'in_progress').length,
-        reviewTasks: tasks.filter(t => t.status === 'review').length,
-        pendingTasks: tasks.filter(t => t.status === 'pending').length,
-        totalComments: tasks.reduce((sum, task) => sum + (task.comments?.length || 0), 0),
-        activeMembers: 0,
-        completionRate: tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'completed').length / tasks.length) * 100) : 0
+      // Load all subtasks and their comments for each work task
+      const allSubTasks = []
+      const allSubTaskComments = []
+      for (const task of tasks) {
+        try {
+          const subtasks = await workTasksAPI.getSubTasks(task.id)
+          allSubTasks.push(...subtasks)
+
+          // Load comments for each subtask
+          for (const subtask of subtasks) {
+            try {
+              const comments = await workTasksAPI.getSubTaskComments(task.id, subtask.id)
+              allSubTaskComments.push(...comments)
+            } catch (error) {
+              console.error(`Failed to load comments for subtask ${subtask.id}:`, error)
+            }
+          }
+        } catch (error) {
+          console.error(`Failed to load subtasks for task ${task.id}:`, error)
+        }
       }
 
-      // Extract unique team members from participants
-      const allParticipants = tasks.flatMap(task => task.participants || [])
+      // Calculate statistics including subtasks
+      const totalSubTasks = allSubTasks.length
+      const completedSubTasks = allSubTasks.filter(st => st.status === 'done').length
+      const inProgressSubTasks = allSubTasks.filter(st => st.status === 'in_progress').length
+      const reviewSubTasks = allSubTasks.filter(st => st.status === 'review').length
+      const pendingSubTasks = allSubTasks.filter(st => st.status === 'todo').length
+
+      const stats: WorkStats = {
+        totalTasks: totalSubTasks, // SubTask 개수로 변경
+        completedTasks: completedSubTasks,
+        inProgressTasks: inProgressSubTasks,
+        reviewTasks: reviewSubTasks,
+        pendingTasks: pendingSubTasks,
+        totalComments: tasks.reduce((sum, task) => sum + (task.comments?.length || 0), 0) + allSubTaskComments.length,
+        activeMembers: 0,
+        completionRate: totalSubTasks > 0 ? Math.round((completedSubTasks / totalSubTasks) * 100) : 0
+      }
+
+      // Extract unique team members from work task participants AND subtask participants
+      const workTaskParticipants = tasks.flatMap(task => task.participants || [])
+      const subtaskParticipants = allSubTasks.flatMap(subtask =>
+        subtask.participants?.map(p => ({
+          userId: p.userId,
+          user: p.user,
+          role: p.role || 'member'
+        })) || []
+      )
+
+      // Also include assignees from subtasks
+      const subtaskAssignees = allSubTasks
+        .filter(subtask => subtask.assignee)
+        .map(subtask => ({
+          userId: subtask.assigneeId!,
+          user: subtask.assignee!,
+          role: 'assignee' as const
+        }))
+
+      const allParticipants = [...workTaskParticipants, ...subtaskParticipants, ...subtaskAssignees]
       const uniqueMembers = Array.from(
         new Map(allParticipants.map(p => [p.userId, p])).values()
-      ).map(participant => ({
-        id: participant.userId,
-        nickname: participant.user.nickname,
-        username: participant.user.username,
-        profileImageUrl: participant.user.profileImageUrl,
-        role: participant.role,
-        taskCount: tasks.filter(task =>
-          task.participants?.some(p => p.userId === participant.userId)
-        ).length,
-        completedTaskCount: tasks.filter(task =>
-          task.status === 'completed' && task.participants?.some(p => p.userId === participant.userId)
-        ).length,
-        commentCount: tasks.reduce((sum, task) =>
+      ).map(participant => {
+        // Count subtasks where user is assignee or participant
+        const userSubTasks = allSubTasks.filter(subtask =>
+          subtask.assigneeId === participant.userId ||
+          subtask.participants?.some(p => p.userId === participant.userId)
+        )
+        const userCompletedSubTasks = userSubTasks.filter(subtask => subtask.status === 'done')
+
+        // Count comments from both work tasks and subtasks
+        const workTaskCommentCount = tasks.reduce((sum, task) =>
           sum + (task.comments?.filter(comment => comment.userId === participant.userId).length || 0), 0
         )
-      }))
+        const subTaskCommentCount = allSubTaskComments.filter(comment => comment.userId === participant.userId).length
+
+        return {
+          id: participant.userId,
+          nickname: participant.user.nickname,
+          username: participant.user.username,
+          profileImageUrl: participant.user.profileImageUrl,
+          role: participant.role,
+          taskCount: userSubTasks.length, // SubTask 개수로 변경
+          completedTaskCount: userCompletedSubTasks.length,
+          commentCount: workTaskCommentCount + subTaskCommentCount
+        }
+      })
 
       stats.activeMembers = uniqueMembers.length
       setTeamMembers(uniqueMembers)

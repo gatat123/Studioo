@@ -16,7 +16,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useToast } from '@/hooks/use-toast'
 import { useAuthStore } from '@/store/useAuthStore'
 import { safeToLocaleDateString, safeToLocaleString } from '@/lib/utils/date-helpers'
-import { workTasksAPI, WorkTask, SubTask, SubTaskComment, SubTaskAttachment } from '@/lib/api/work-tasks'
+import { workTasksAPI, WorkTask, SubTask, SubTaskComment, SubTaskAttachment, SubTaskParticipant } from '@/lib/api/work-tasks'
 import { socketClient } from '@/lib/socket/client'
 import {
   Dialog,
@@ -333,10 +333,29 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     // Handle subtask comment created
     const handleSubtaskCommentCreated = (data: { comment: SubTaskComment, subtaskId: string }) => {
       console.log(`[TaskBoard] Subtask comment created:`, data)
-      setSubtaskComments(prev => ({
-        ...prev,
-        [data.subtaskId]: [data.comment, ...(prev[data.subtaskId] || [])]
-      }))
+
+      // 중복 체크 - 이미 존재하는 댓글인지 확인
+      setSubtaskComments(prev => {
+        const existingComments = prev[data.subtaskId] || []
+        const commentExists = existingComments.some(comment => comment.id === data.comment.id)
+
+        if (commentExists) {
+          console.log(`[TaskBoard] Comment ${data.comment.id} already exists, skipping duplicate add`)
+          return prev
+        }
+
+        console.log(`[TaskBoard] Adding new comment to ${existingComments.length} existing comments`)
+        return {
+          ...prev,
+          [data.subtaskId]: [data.comment, ...existingComments]
+        }
+      })
+
+      // 성공 Toast 표시
+      toast({
+        title: '댓글 추가 완료',
+        description: '새로운 댓글이 추가되었습니다.',
+      })
     }
 
     // Handle subtask comment updated
@@ -348,6 +367,11 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
           comment.id === data.comment.id ? data.comment : comment
         )
       }))
+
+      toast({
+        title: '댓글 수정 완료',
+        description: '댓글이 수정되었습니다.',
+      })
     }
 
     // Handle subtask comment deleted
@@ -357,6 +381,55 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
         ...prev,
         [data.subtaskId]: (prev[data.subtaskId] || []).filter(comment => comment.id !== data.commentId)
       }))
+
+      toast({
+        title: '댓글 삭제 완료',
+        description: '댓글이 삭제되었습니다.',
+      })
+    }
+
+    // Handle subtask participant added
+    const handleSubtaskParticipantAdded = (data: { participant: any, subtaskId: string }) => {
+      console.log(`[TaskBoard] Subtask participant added:`, data)
+      setSubtasks(prev => prev.map(task =>
+        task.id === data.subtaskId
+          ? {
+              ...task,
+              participants: [...(task.participants || []), data.participant]
+            }
+          : task
+      ))
+
+      toast({
+        title: '참여자 추가 완료',
+        description: `${data.participant.user.nickname}님이 참여자로 추가되었습니다.`,
+      })
+    }
+
+    // Handle subtask participant removed
+    const handleSubtaskParticipantRemoved = (data: { userId: string, subtaskId: string }) => {
+      console.log(`[TaskBoard] Subtask participant removed:`, data)
+
+      // 제거될 참여자의 정보를 먼저 저장
+      const removedParticipant = subtasks
+        .find(task => task.id === data.subtaskId)
+        ?.participants?.find(p => p.userId === data.userId)
+
+      setSubtasks(prev => prev.map(task =>
+        task.id === data.subtaskId
+          ? {
+              ...task,
+              participants: (task.participants || []).filter(p => p.userId !== data.userId)
+            }
+          : task
+      ))
+
+      if (removedParticipant) {
+        toast({
+          title: '참여자 제거 완료',
+          description: `${removedParticipant.user.nickname}님이 참여자에서 제거되었습니다.`,
+        })
+      }
     }
 
     // Handle socket connection events
@@ -396,6 +469,8 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     socket.on('subtask-comment:created', handleSubtaskCommentCreated)
     socket.on('subtask-comment:updated', handleSubtaskCommentUpdated)
     socket.on('subtask-comment:deleted', handleSubtaskCommentDeleted)
+    socket.on('subtask:participant-added', handleSubtaskParticipantAdded)
+    socket.on('subtask:participant-removed', handleSubtaskParticipantRemoved)
 
     console.log(`[TaskBoard] 📡 All event listeners registered for work-task: ${selectedWorkTask.id}`)
 
@@ -416,6 +491,8 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       socket.off('subtask-comment:created', handleSubtaskCommentCreated)
       socket.off('subtask-comment:updated', handleSubtaskCommentUpdated)
       socket.off('subtask-comment:deleted', handleSubtaskCommentDeleted)
+      socket.off('subtask:participant-added', handleSubtaskParticipantAdded)
+      socket.off('subtask:participant-removed', handleSubtaskParticipantRemoved)
 
       // Leave the room
       socket.emit('leave:work-task', selectedWorkTask.id)
@@ -474,26 +551,21 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     if (!selectedWorkTask || !newComment[subtaskId]?.trim()) return
 
     try {
-      const comment = await workTasksAPI.addSubTaskComment(
+      // API 호출 - Socket 이벤트가 상태를 업데이트할 것임
+      await workTasksAPI.addSubTaskComment(
         selectedWorkTask.id,
         subtaskId,
         newComment[subtaskId].trim()
       )
 
-      setSubtaskComments(prev => ({
-        ...prev,
-        [subtaskId]: [comment, ...(prev[subtaskId] || [])]
-      }))
-
+      // 입력 필드만 초기화 (상태 업데이트는 Socket 이벤트에서 처리)
       setNewComment(prev => ({
         ...prev,
         [subtaskId]: ''
       }))
 
-      toast({
-        title: '댓글 추가 완료',
-        description: '새로운 댓글이 추가되었습니다.',
-      })
+      console.log(`[TaskBoard] Comment API call completed, waiting for socket event...`)
+      // Toast는 Socket 이벤트 핸들러에서 표시
     } catch (error) {
       console.error('Failed to add comment:', error)
       toast({
@@ -508,27 +580,20 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     if (!selectedWorkTask || !editingCommentContent.trim()) return
 
     try {
-      const updatedComment = await workTasksAPI.updateSubTaskComment(
+      // API 호출 - Socket 이벤트가 상태를 업데이트할 것임
+      await workTasksAPI.updateSubTaskComment(
         selectedWorkTask.id,
         subtaskId,
         commentId,
         editingCommentContent.trim()
       )
 
-      setSubtaskComments(prev => ({
-        ...prev,
-        [subtaskId]: (prev[subtaskId] || []).map(comment =>
-          comment.id === commentId ? updatedComment : comment
-        )
-      }))
-
+      // 편집 상태만 초기화 (상태 업데이트는 Socket 이벤트에서 처리)
       setEditingComment(null)
       setEditingCommentContent('')
 
-      toast({
-        title: '댓글 수정 완료',
-        description: '댓글이 수정되었습니다.',
-      })
+      console.log(`[TaskBoard] Comment update API call completed, waiting for socket event...`)
+      // Toast는 Socket 이벤트 핸들러에서 표시
     } catch (error) {
       console.error('Failed to update comment:', error)
       toast({
@@ -543,17 +608,11 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     if (!selectedWorkTask) return
 
     try {
+      // API 호출 - Socket 이벤트가 상태를 업데이트할 것임
       await workTasksAPI.deleteSubTaskComment(selectedWorkTask.id, subtaskId, commentId)
 
-      setSubtaskComments(prev => ({
-        ...prev,
-        [subtaskId]: (prev[subtaskId] || []).filter(comment => comment.id !== commentId)
-      }))
-
-      toast({
-        title: '댓글 삭제 완료',
-        description: '댓글이 삭제되었습니다.',
-      })
+      console.log(`[TaskBoard] Comment delete API call completed, waiting for socket event...`)
+      // 상태 업데이트와 Toast는 Socket 이벤트 핸들러에서 처리
     } catch (error) {
       console.error('Failed to delete comment:', error)
       toast({
@@ -833,6 +892,41 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
   }
 
+  // 참여자 관리 함수들
+  const handleAddParticipant = async (subtaskId: string, userId: string) => {
+    if (!selectedWorkTask) return
+
+    try {
+      await workTasksAPI.addSubTaskParticipant(selectedWorkTask.id, subtaskId, userId)
+      console.log(`[TaskBoard] Participant add API call completed, waiting for socket event...`)
+      // 상태 업데이트와 Toast는 Socket 이벤트 핸들러에서 처리
+    } catch (error) {
+      console.error('Failed to add participant:', error)
+      toast({
+        title: '참여자 추가 실패',
+        description: '참여자를 추가할 수 없습니다.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleRemoveParticipant = async (subtaskId: string, userId: string) => {
+    if (!selectedWorkTask) return
+
+    try {
+      await workTasksAPI.removeSubTaskParticipant(selectedWorkTask.id, subtaskId, userId)
+      console.log(`[TaskBoard] Participant remove API call completed, waiting for socket event...`)
+      // 상태 업데이트와 Toast는 Socket 이벤트 핸들러에서 처리
+    } catch (error) {
+      console.error('Failed to remove participant:', error)
+      toast({
+        title: '참여자 제거 실패',
+        description: '참여자를 제거할 수 없습니다.',
+        variant: 'destructive'
+      })
+    }
+  }
+
 
   const handleDragStart = (e: React.DragEvent, task: SubTask) => {
     setDraggedTask(task)
@@ -894,14 +988,16 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
   }
 
   const filteredSubTasks = subtasks.filter(task => {
-    // Filter by selected assignee
+    // Filter by selected assignee (including participants)
     if (selectedAssignee) {
       if (selectedAssignee === 'unassigned') {
-        // Show only unassigned tasks
-        if (task.assigneeId !== null) return false
+        // Show only unassigned tasks (no assignee and no participants)
+        if (task.assigneeId !== null || (task.participants && task.participants.length > 0)) return false
       } else {
-        // Show only tasks assigned to the selected user
-        if (task.assigneeId !== selectedAssignee) return false
+        // Show tasks assigned to or participated by the selected user
+        const isAssignee = task.assigneeId === selectedAssignee
+        const isParticipant = task.participants?.some(p => p.userId === selectedAssignee)
+        if (!isAssignee && !isParticipant) return false
       }
     }
     // When selectedAssignee is null (전체), show all tasks including unassigned ones
@@ -966,30 +1062,42 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
           >
             전체 ({subtasks.length})
           </Button>
-          {/* Show assigned users */}
-          {Array.from(new Set(subtasks.filter(t => t.assigneeId).map(t => t.assigneeId!))).map((assigneeId) => {
-            const assignee = subtasks.find(t => t.assigneeId === assigneeId)?.assignee
-            const count = subtasks.filter(t => t.assigneeId === assigneeId).length
-            if (!assignee) return null
+          {/* Show assigned users and participants */}
+          {Array.from(new Set([
+            ...subtasks.filter(t => t.assigneeId).map(t => t.assigneeId!),
+            ...subtasks.flatMap(t => t.participants?.map(p => p.userId) || [])
+          ])).map((userId) => {
+            // Find user info from assignee or participant
+            const assignee = subtasks.find(t => t.assigneeId === userId)?.assignee
+            const participant = subtasks.flatMap(t => t.participants || []).find(p => p.userId === userId)?.user
+            const user = assignee || participant
+
+            if (!user) return null
+
+            // Count tasks where user is assignee or participant
+            const count = subtasks.filter(t =>
+              t.assigneeId === userId || t.participants?.some(p => p.userId === userId)
+            ).length
+
             return (
               <Button
-                key={assigneeId}
+                key={userId}
                 size="sm"
-                variant={selectedAssignee === assigneeId ? 'default' : 'outline'}
-                onClick={() => setSelectedAssignee(assigneeId)}
+                variant={selectedAssignee === userId ? 'default' : 'outline'}
+                onClick={() => setSelectedAssignee(userId)}
               >
-                {assignee.nickname} ({count})
+                {user.nickname} ({count})
               </Button>
             )
           })}
-          {/* Show unassigned tasks if any exist */}
-          {subtasks.some(t => !t.assigneeId) && (
+          {/* Show unassigned tasks if any exist (no assignee and no participants) */}
+          {subtasks.some(t => !t.assigneeId && (!t.participants || t.participants.length === 0)) && (
             <Button
               size="sm"
               variant={selectedAssignee === 'unassigned' ? 'default' : 'outline'}
               onClick={() => setSelectedAssignee('unassigned')}
             >
-              담당자 없음 ({subtasks.filter(t => !t.assigneeId).length})
+              담당자 없음 ({subtasks.filter(t => !t.assigneeId && (!t.participants || t.participants.length === 0)).length})
             </Button>
           )}
         </div>
@@ -1168,6 +1276,86 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                               </Avatar>
                             </div>
                           )}
+                        </div>
+
+                        {/* Participants */}
+                        <div className="flex items-center gap-1 mt-1">
+                          <span className="text-xs text-gray-500">참여자:</span>
+                          <div className="flex items-center gap-1">
+                            {(task.participants || []).slice(0, 3).map((participant) => (
+                              <div key={participant.id} className="relative group">
+                                <Avatar className="h-4 w-4">
+                                  <AvatarImage src={participant.user.profileImageUrl} />
+                                  <AvatarFallback className="text-[10px]">
+                                    {participant.user.nickname[0]}
+                                  </AvatarFallback>
+                                </Avatar>
+                                {/* 참여자 제거 버튼 (호버 시 표시) */}
+                                <Button
+                                  size="icon"
+                                  variant="destructive"
+                                  className="absolute -top-1 -right-1 h-3 w-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleRemoveParticipant(task.id, participant.userId)
+                                  }}
+                                >
+                                  <X className="h-2 w-2" />
+                                </Button>
+                              </div>
+                            ))}
+                            {(task.participants || []).length > 3 && (
+                              <span className="text-xs text-gray-500">
+                                +{(task.participants || []).length - 3}
+                              </span>
+                            )}
+                            {/* 참여자 추가 버튼 */}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="h-4 w-4 rounded-full border border-dashed border-gray-300 hover:border-gray-400"
+                                >
+                                  <Plus className="h-2 w-2" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="start">
+                                {/* 현재 업무의 참여자 중 이 SubTask에 참여하지 않은 사람들 */}
+                                {selectedWorkTask?.participants
+                                  ?.filter(workTaskParticipant =>
+                                    !(task.participants || []).some(p => p.userId === workTaskParticipant.userId) &&
+                                    workTaskParticipant.userId !== task.assigneeId // 담당자는 제외
+                                  )
+                                  .map((workTaskParticipant) => (
+                                    <DropdownMenuItem
+                                      key={workTaskParticipant.userId}
+                                      onClick={() => handleAddParticipant(task.id, workTaskParticipant.userId)}
+                                    >
+                                      <div className="flex items-center gap-2">
+                                        <Avatar className="h-4 w-4">
+                                          <AvatarImage src={workTaskParticipant.user.profileImageUrl} />
+                                          <AvatarFallback className="text-[8px]">
+                                            {workTaskParticipant.user.nickname[0]}
+                                          </AvatarFallback>
+                                        </Avatar>
+                                        <span className="text-xs">{workTaskParticipant.user.nickname}</span>
+                                      </div>
+                                    </DropdownMenuItem>
+                                  ))}
+                                {/* 추가할 수 있는 사람이 없는 경우 */}
+                                {(!selectedWorkTask?.participants ||
+                                  selectedWorkTask.participants.filter(workTaskParticipant =>
+                                    !(task.participants || []).some(p => p.userId === workTaskParticipant.userId) &&
+                                    workTaskParticipant.userId !== task.assigneeId
+                                  ).length === 0) && (
+                                  <DropdownMenuItem disabled>
+                                    <span className="text-xs text-gray-500">추가할 수 있는 팀원이 없습니다</span>
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
 
                         {/* Due Date */}
