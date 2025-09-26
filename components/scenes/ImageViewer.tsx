@@ -4,15 +4,17 @@ import { useState, useRef, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { 
-  RotateCw, 
-  Download, 
+import {
+  RotateCw,
+  Download,
   Maximize2,
   Upload,
   Image as ImageIcon,
   Mouse
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { socketClient } from '@/lib/socket/client'
+import { useToast } from '@/hooks/use-toast'
 
 interface ImageViewerProps {
   sceneId: string
@@ -20,7 +22,7 @@ interface ImageViewerProps {
   artImage?: string | null
 }
 
-export default function ImageViewer({ lineartImage, artImage }: ImageViewerProps) {
+export default function ImageViewer({ sceneId, lineartImage, artImage }: ImageViewerProps) {
   const [zoom, setZoom] = useState(100)
   const [rotation, setRotation] = useState(0)
   const [activeTab, setActiveTab] = useState<'lineart' | 'art'>('lineart')
@@ -31,6 +33,84 @@ export default function ImageViewer({ lineartImage, artImage }: ImageViewerProps
   const [startPanPosition, setStartPanPosition] = useState({ x: 0, y: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
   const imageRef = useRef<HTMLImageElement>(null)
+  const [currentLineartImage, setCurrentLineartImage] = useState(lineartImage)
+  const [currentArtImage, setCurrentArtImage] = useState(artImage)
+  const { toast } = useToast()
+
+  // Props로 받은 이미지가 변경되면 상태 업데이트
+  useEffect(() => {
+    setCurrentLineartImage(lineartImage)
+    setCurrentArtImage(artImage)
+  }, [lineartImage, artImage])
+
+  // Socket.io 실시간 이미지 업데이트
+  useEffect(() => {
+    if (!sceneId) return
+
+    const socket = socketClient.connect()
+
+    // 이미지 업로드 이벤트 핸들러
+    const handleImageUploaded = (data: { image: any, sceneId: string }) => {
+      console.log(`[ImageViewer] Image uploaded event received:`, data)
+
+      if (data.sceneId === sceneId) {
+        if (data.image.type === 'lineart') {
+          setCurrentLineartImage(data.image.fileUrl)
+        } else if (data.image.type === 'art') {
+          setCurrentArtImage(data.image.fileUrl)
+        }
+
+        toast({
+          title: '이미지 업로드 완료',
+          description: `새로운 ${data.image.type === 'lineart' ? '선화' : '아트'} 이미지가 업로드되었습니다.`,
+        })
+      }
+    }
+
+    // 이미지 업데이트 이벤트 핸들러
+    const handleImageUpdated = (data: { image: any, sceneId: string }) => {
+      console.log(`[ImageViewer] Image updated event received:`, data)
+
+      if (data.sceneId === sceneId) {
+        if (data.image.type === 'lineart') {
+          setCurrentLineartImage(data.image.fileUrl)
+        } else if (data.image.type === 'art') {
+          setCurrentArtImage(data.image.fileUrl)
+        }
+
+        toast({
+          title: '이미지 업데이트 완료',
+          description: `${data.image.type === 'lineart' ? '선화' : '아트'} 이미지가 업데이트되었습니다.`,
+        })
+      }
+    }
+
+    // 이미지 삭제 이벤트 핸들러
+    const handleImageDeleted = (data: { imageId: string, sceneId: string }) => {
+      console.log(`[ImageViewer] Image deleted event received:`, data)
+
+      if (data.sceneId === sceneId) {
+        // 어떤 타입의 이미지가 삭제되었는지 정확히 파악하기 어려우므로
+        // 전체 씬 데이터를 다시 로드하거나 추가 정보가 필요할 수 있습니다.
+        toast({
+          title: '이미지 삭제됨',
+          description: '이미지가 삭제되었습니다.',
+        })
+      }
+    }
+
+    // 이벤트 리스너 등록
+    socket.on('scene:image-uploaded', handleImageUploaded)
+    socket.on('scene:image-updated', handleImageUpdated)
+    socket.on('scene:image-deleted', handleImageDeleted)
+
+    return () => {
+      // 이벤트 리스너 제거
+      socket.off('scene:image-uploaded', handleImageUploaded)
+      socket.off('scene:image-updated', handleImageUpdated)
+      socket.off('scene:image-deleted', handleImageDeleted)
+    }
+  }, [sceneId, toast])
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (!isImageSelected) return
@@ -123,7 +203,7 @@ export default function ImageViewer({ lineartImage, artImage }: ImageViewerProps
     }
   }
 
-  const currentImage = activeTab === 'lineart' ? lineartImage : artImage
+  const currentImage = activeTab === 'lineart' ? currentLineartImage : currentArtImage
 
   return (
     <div className="h-full flex flex-col">

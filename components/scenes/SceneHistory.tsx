@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { ko } from 'date-fns/locale'
 import { safeFormatDistanceToNow } from '@/lib/utils/date-helpers'
 import { Clock, Image, Download, Eye } from 'lucide-react'
+import { socketClient } from '@/lib/socket/client'
+import { useToast } from '@/hooks/use-toast'
 
 interface HistoryItem {
   id: string
@@ -26,6 +28,7 @@ interface SceneHistoryProps {
 export default function SceneHistory({ sceneId }: SceneHistoryProps) {
   const [history, setHistory] = useState<HistoryItem[]>([])
   const [/*selectedVersion, setSelectedVersion*/] = useState<string | null>(null)
+  const { toast } = useToast()
 
   useEffect(() => {
     // TODO: API 호출로 히스토리 로드
@@ -66,6 +69,65 @@ export default function SceneHistory({ sceneId }: SceneHistoryProps) {
     ]
     setHistory(mockHistory)
   }, [sceneId])
+
+  // Socket.io 실시간 히스토리 업데이트
+  useEffect(() => {
+    if (!sceneId) return
+
+    const socket = socketClient.connect()
+
+    // 이미지 업로드 이벤트 핸들러 (히스토리에 추가)
+    const handleImageUploaded = (data: { image: any, sceneId: string }) => {
+      console.log(`[SceneHistory] Image uploaded event received:`, data)
+
+      if (data.sceneId === sceneId) {
+        const newHistoryItem: HistoryItem = {
+          id: data.image.id,
+          type: data.image.type,
+          action: 'upload',
+          fileName: data.image.originalName || `${data.image.type}_${Date.now()}.png`,
+          fileUrl: data.image.fileUrl,
+          userId: data.image.uploadedBy,
+          userName: data.image.uploader?.nickname || '알 수 없는 사용자',
+          createdAt: data.image.uploadedAt || new Date(),
+          version: 1 // 버전 관리가 있다면 적절히 계산
+        }
+
+        setHistory(prev => [newHistoryItem, ...prev])
+      }
+    }
+
+    // 이미지 업데이트 이벤트 핸들러
+    const handleImageUpdated = (data: { image: any, sceneId: string }) => {
+      console.log(`[SceneHistory] Image updated event received:`, data)
+
+      if (data.sceneId === sceneId) {
+        const newHistoryItem: HistoryItem = {
+          id: `${data.image.id}_${Date.now()}`,
+          type: data.image.type,
+          action: 'update',
+          fileName: data.image.originalName || `${data.image.type}_updated.png`,
+          fileUrl: data.image.fileUrl,
+          userId: data.image.uploadedBy,
+          userName: data.image.uploader?.nickname || '알 수 없는 사용자',
+          createdAt: data.image.updatedAt || new Date(),
+          version: (history.filter(h => h.type === data.image.type).length || 0) + 1
+        }
+
+        setHistory(prev => [newHistoryItem, ...prev])
+      }
+    }
+
+    // 이벤트 리스너 등록
+    socket.on('scene:image-uploaded', handleImageUploaded)
+    socket.on('scene:image-updated', handleImageUpdated)
+
+    return () => {
+      // 이벤트 리스너 제거
+      socket.off('scene:image-uploaded', handleImageUploaded)
+      socket.off('scene:image-updated', handleImageUpdated)
+    }
+  }, [sceneId, history])
 
   const handleRestore = async (_item: HistoryItem) => {
     // TODO: API 호출로 버전 복원

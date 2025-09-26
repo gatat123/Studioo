@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { ko } from 'date-fns/locale'
 import { safeFormatDistanceToNow } from '@/lib/utils/date-helpers'
 import { Send } from 'lucide-react'
+import { socketClient } from '@/lib/socket/client'
+import { useToast } from '@/hooks/use-toast'
 
 interface Comment {
   id: string
@@ -25,6 +27,7 @@ export default function SceneComments({ sceneId }: SceneCommentsProps) {
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const { toast } = useToast()
 
   useEffect(() => {
     // TODO: API 호출로 댓글 로드
@@ -45,6 +48,65 @@ export default function SceneComments({ sceneId }: SceneCommentsProps) {
       }
     ]
     setComments(mockComments)
+  }, [sceneId])
+
+  // Socket.io 실시간 댓글 업데이트
+  useEffect(() => {
+    if (!sceneId) return
+
+    const socket = socketClient.connect()
+
+    // 댓글 생성 이벤트 핸들러
+    const handleCommentCreated = (data: { comment: any, targetType: string, targetId: string }) => {
+      console.log(`[SceneComments] Comment created event received:`, data)
+
+      if (data.targetType === 'scene' && data.targetId === sceneId) {
+        const newComment: Comment = {
+          id: data.comment.id,
+          userId: data.comment.userId,
+          userName: data.comment.user?.nickname || '알 수 없는 사용자',
+          userAvatar: data.comment.user?.profileImageUrl,
+          content: data.comment.content,
+          createdAt: data.comment.createdAt
+        }
+
+        setComments(prev => [newComment, ...prev])
+      }
+    }
+
+    // 댓글 업데이트 이벤트 핸들러
+    const handleCommentUpdated = (data: { comment: any, targetType: string, targetId: string }) => {
+      console.log(`[SceneComments] Comment updated event received:`, data)
+
+      if (data.targetType === 'scene' && data.targetId === sceneId) {
+        setComments(prev => prev.map(comment =>
+          comment.id === data.comment.id
+            ? { ...comment, content: data.comment.content }
+            : comment
+        ))
+      }
+    }
+
+    // 댓글 삭제 이벤트 핸들러
+    const handleCommentDeleted = (data: { commentId: string, targetType: string, targetId: string }) => {
+      console.log(`[SceneComments] Comment deleted event received:`, data)
+
+      if (data.targetType === 'scene' && data.targetId === sceneId) {
+        setComments(prev => prev.filter(comment => comment.id !== data.commentId))
+      }
+    }
+
+    // 이벤트 리스너 등록
+    socket.on('comment:created', handleCommentCreated)
+    socket.on('comment:updated', handleCommentUpdated)
+    socket.on('comment:deleted', handleCommentDeleted)
+
+    return () => {
+      // 이벤트 리스너 제거
+      socket.off('comment:created', handleCommentCreated)
+      socket.off('comment:updated', handleCommentUpdated)
+      socket.off('comment:deleted', handleCommentDeleted)
+    }
   }, [sceneId])
 
   const handleSubmit = async () => {
