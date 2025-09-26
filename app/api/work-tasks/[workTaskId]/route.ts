@@ -14,7 +14,7 @@ const updateWorkTaskSchema = z.object({
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ workTaskId: string }> }
 ) {
   try {
     const userId = await verifyAuth(request)
@@ -23,11 +23,11 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = await params
+    const { workTaskId } = await params
 
     const workTask = await prisma.workTask.findFirst({
       where: {
-        id,
+        id: workTaskId,
         OR: [
           { createdById: userId },
           {
@@ -118,7 +118,7 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ workTaskId: string }> }
 ) {
   try {
     const userId = await verifyAuth(request)
@@ -127,13 +127,13 @@ export async function PATCH(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = await params
+    const { workTaskId } = await params
     const body = await request.json()
     const validatedData = updateWorkTaskSchema.parse(body)
 
     const workTask = await prisma.workTask.findFirst({
       where: {
-        id,
+        id: workTaskId,
         OR: [
           { createdById: userId },
           {
@@ -156,7 +156,7 @@ export async function PATCH(
     }
 
     const updatedWorkTask = await prisma.workTask.update({
-      where: { id },
+      where: { id: workTaskId },
       data: validatedData,
       include: {
         createdBy: {
@@ -201,7 +201,7 @@ export async function PATCH(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ workTaskId: string }> }
 ) {
   try {
     const userId = await verifyAuth(request)
@@ -210,11 +210,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { id } = await params
+    const { workTaskId } = await params
 
     const workTask = await prisma.workTask.findFirst({
       where: {
-        id,
+        id: workTaskId,
         createdById: userId,
       },
     })
@@ -227,7 +227,7 @@ export async function DELETE(
     }
 
     await prisma.workTask.delete({
-      where: { id },
+      where: { id: workTaskId },
     })
 
     return NextResponse.json({ success: true })
