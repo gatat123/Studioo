@@ -6,12 +6,14 @@
     "dev": "next dev",
     "dev:socket": "node server/socket-server.js",
     "dev:all": "concurrently \"npm run dev\" \"npm run dev:socket\"",
-    "build": "prisma generate && prisma migrate deploy && next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "start:socket": "node server/socket-server.js",
     "start:all": "concurrently \"npm run start\" \"npm run start:socket\"",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "migrate:deploy": "prisma migrate deploy",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
