@@ -200,7 +200,7 @@ export default function ProjectManagement() {
       case 'illustration':
         return <Badge className="bg-purple-100 text-purple-800">Illustration</Badge>;
       case 'storyboard':
-        return <Badge className="bg-orange-100 text-orange-800">Storyboard</Badge>;
+        return <Badge className="bg-slate-100 text-slate-800">Storyboard</Badge>;
       default:
         return null;
     }
@@ -214,7 +214,7 @@ export default function ProjectManagement() {
     if (daysUntilDeadline < 0) {
       return <span className="text-red-600 flex items-center"><AlertCircle className="h-3 w-3 mr-1" />Overdue</span>;
     } else if (daysUntilDeadline <= 7) {
-      return <span className="text-orange-600 flex items-center"><AlertCircle className="h-3 w-3 mr-1" />{daysUntilDeadline}d left</span>;
+      return <span className="text-slate-600 flex items-center"><AlertCircle className="h-3 w-3 mr-1" />{daysUntilDeadline}d left</span>;
     } else {
       return <span className="text-gray-600">{deadlineDate.toLocaleDateString()}</span>;
     }

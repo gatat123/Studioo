@@ -186,10 +186,10 @@ export default function WorkPage() {
           <p className="text-gray-600 mt-1">업무 현황 관리 및 공유</p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => setShowJoinModal(true)} variant="outline">
+          <Button onClick={() => setShowJoinModal(true)} variant="outline" className="bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-800">
             업무 참여
           </Button>
-          <Button onClick={() => setShowCreateModal(true)}>
+          <Button onClick={() => setShowCreateModal(true)} className="bg-slate-700 text-white hover:bg-slate-800 border-slate-600">
             <Plus className="mr-2 h-4 w-4" />
             새 업무
           </Button>
@@ -217,7 +217,7 @@ export default function WorkPage() {
                 key={workTask.id}
                 className={`min-w-[280px] cursor-pointer transition-all ${
                   selectedWorkTask?.id === workTask.id
-                    ? 'ring-2 ring-primary shadow-lg'
+                    ? 'ring-2 ring-slate-400 shadow-lg bg-slate-50'
                     : 'hover:shadow-md'
                 }`}
                 onClick={() => handleWorkTaskSelect(workTask)}
@@ -341,10 +341,10 @@ export default function WorkPage() {
                 새 업무를 생성하거나 기존 업무에 참여해주세요.
               </p>
               <div className="flex gap-2">
-                <Button onClick={() => setShowCreateModal(true)} className="flex-1">
+                <Button onClick={() => setShowCreateModal(true)} className="flex-1 bg-slate-700 text-white hover:bg-slate-800 border-slate-600">
                   새 업무 생성
                 </Button>
-                <Button onClick={() => setShowJoinModal(true)} variant="outline" className="flex-1">
+                <Button onClick={() => setShowJoinModal(true)} variant="outline" className="flex-1 bg-slate-50 border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-800">
                   업무 참여
                 </Button>
               </div>

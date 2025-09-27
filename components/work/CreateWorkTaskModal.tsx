@@ -266,11 +266,11 @@ export function CreateWorkTaskModal({ open, onOpenChange }: CreateWorkTaskModalP
                 {/* Invite Code Section */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
-                    <div className="h-8 w-1 bg-primary rounded-full" />
+                    <div className="h-8 w-1 bg-slate-600 rounded-full" />
                     <Label className="text-base font-semibold">초대 코드</Label>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="flex-1 p-4 bg-gradient-to-r from-primary/10 to-primary/5 border-2 border-primary/20 rounded-lg font-mono text-2xl font-bold text-center tracking-wider">
+                    <div className="flex-1 p-4 bg-gradient-to-r from-slate-100 to-slate-50 border-2 border-slate-200 rounded-lg font-mono text-2xl font-bold text-center tracking-wider">
                       {inviteCode}
                     </div>
                     <Button
@@ -299,19 +299,19 @@ export function CreateWorkTaskModal({ open, onOpenChange }: CreateWorkTaskModalP
                   <Label className="text-sm font-semibold">팀원 초대 방법</Label>
                   <div className="space-y-2 text-sm text-muted-foreground">
                     <div className="flex gap-2">
-                      <span className="font-semibold text-primary">1.</span>
+                      <span className="font-semibold text-slate-700">1.</span>
                       <span>위 초대 코드를 복사하세요</span>
                     </div>
                     <div className="flex gap-2">
-                      <span className="font-semibold text-primary">2.</span>
+                      <span className="font-semibold text-slate-700">2.</span>
                       <span>팀원에게 초대 코드를 전달하세요</span>
                     </div>
                     <div className="flex gap-2">
-                      <span className="font-semibold text-primary">3.</span>
+                      <span className="font-semibold text-slate-700">3.</span>
                       <span>팀원은 Work 페이지에서 &quot;업무 참여&quot; 버튼을 클릭합니다</span>
                     </div>
                     <div className="flex gap-2">
-                      <span className="font-semibold text-primary">4.</span>
+                      <span className="font-semibold text-slate-700">4.</span>
                       <span>초대 코드를 입력하면 업무에 참여됩니다</span>
                     </div>
                   </div>

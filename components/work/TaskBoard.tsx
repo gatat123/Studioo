@@ -942,14 +942,14 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     e.dataTransfer.dropEffect = 'move'
     // Add visual feedback for drop zone
     const element = e.currentTarget as HTMLElement
-    element.classList.add('ring-2', 'ring-blue-400', 'ring-opacity-50')
+    element.classList.add('ring-2', 'ring-slate-400', 'ring-opacity-50')
   }
 
   const handleDrop = (e: React.DragEvent, status: string) => {
     e.preventDefault()
     // Reset drop zone styles
     const element = e.currentTarget as HTMLElement
-    element.classList.remove('ring-2', 'ring-blue-400', 'ring-opacity-50')
+    element.classList.remove('ring-2', 'ring-slate-400', 'ring-opacity-50')
 
     // Reset dragging styles
     const draggedElements = document.querySelectorAll('[draggable]')
@@ -1011,7 +1011,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600"></div>
       </div>
     )
   }
@@ -1111,7 +1111,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
             onDragOver={handleDragOver}
             onDragLeave={(e) => {
               const element = e.currentTarget as HTMLElement
-              element.classList.remove('ring-2', 'ring-blue-400', 'ring-opacity-50')
+              element.classList.remove('ring-2', 'ring-slate-400', 'ring-opacity-50')
             }}
             onDrop={(e) => handleDrop(e, column.id)}
           >
@@ -1603,7 +1603,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                 disabled={uploadingFiles[task.id]}
                               >
                                 {uploadingFiles[task.id] ? (
-                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-slate-600"></div>
                                 ) : (
                                   <Upload className="h-3 w-3" />
                                 )}
