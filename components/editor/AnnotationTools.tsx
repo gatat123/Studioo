@@ -387,7 +387,7 @@ export function AnnotationTools({
   ]
 
   const colors = [
-    '#FF0000', '#00FF00', '#0000FF', '#FFFF00', 
+    '#FF0000', '#00FF00', '#0000FF', '#94a3b8',
     '#FF00FF', '#00FFFF', '#000000', '#FFFFFF'
   ]
 

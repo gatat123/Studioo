@@ -36,7 +36,7 @@ interface SceneScriptProps {
 
 const HIGHLIGHT_COLORS = {
   red: { label: '장소', bg: 'bg-slate-200 dark:bg-slate-800' },
-  yellow: { label: '소품', bg: 'bg-slate-300 dark:bg-slate-700' },
+  silver: { label: '소품', bg: 'bg-slate-300 dark:bg-slate-700' },
   blue: { label: '등장인물', bg: 'bg-slate-400 dark:bg-slate-600' },
   green: { label: '포인트', bg: 'bg-slate-500 dark:bg-slate-500' },
 }
