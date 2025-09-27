@@ -27,12 +27,12 @@ import Link from 'next/link';
 // 통계 컴포넌트 메모이제이션
 const StudioStats = memo(function StudioStats({ projects }: { projects: Project[] }) {
   const stats = useMemo(() => {
-    // Filter only studio projects as additional safety
-    const studioProjects = projects.filter((p) => p.project_type === 'studio');
+    // Since we're fetching only studio projects, use all projects for stats
+    // project_type filtering is done at API level with fetchProjects('studio')
     return {
-      active: studioProjects.filter((p) => p.status === 'active').length,
-      completed: studioProjects.filter((p) => p.status === 'completed').length,
-      total: studioProjects.length
+      active: projects.filter((p) => p.status === 'active').length,
+      completed: projects.filter((p) => p.status === 'completed').length,
+      total: projects.length
     };
   }, [projects]);
 
