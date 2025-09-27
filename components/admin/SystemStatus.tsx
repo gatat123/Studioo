@@ -150,7 +150,7 @@ export default function SystemStatus() {
         return <CheckCircle className="w-4 h-4 text-green-500" />;
       case 'degraded':
       case 'warning':
-        return <AlertCircle className="w-4 h-4 text-yellow-500" />;
+        return <AlertCircle className="w-4 h-4 text-slate-600" />;
       case 'offline':
       case 'critical':
         return <XCircle className="w-4 h-4 text-red-500" />;
@@ -166,7 +166,7 @@ export default function SystemStatus() {
       case 'offline':
         return <Badge className="bg-red-100 text-red-800">오프라인</Badge>;
       case 'degraded':
-        return <Badge className="bg-yellow-100 text-yellow-800">성능 저하</Badge>;
+        return <Badge className="bg-slate-100 text-slate-800">성능 저하</Badge>;
       default:
         return null;
     }

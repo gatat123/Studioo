@@ -37,42 +37,42 @@ const StudioStats = memo(function StudioStats({ projects }: { projects: Project[
   }, [projects]);
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-      <GlassCard className="p-4">
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
+      <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">진행중인 프로젝트</p>
-            <p className="text-2xl font-bold text-foreground">{stats.active}</p>
+            <p className="text-sm font-medium text-slate-600">진행중인 프로젝트</p>
+            <p className="text-2xl font-bold text-slate-900">{stats.active}</p>
           </div>
-          <div className="rounded-full bg-accent/10 p-2">
-            <TrendingUp className="h-5 w-5 text-accent" />
+          <div className="rounded-full bg-slate-100 p-2">
+            <TrendingUp className="h-5 w-5 text-slate-700" />
           </div>
         </div>
-      </GlassCard>
+      </div>
 
-      <GlassCard className="p-4">
+      <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">완료된 프로젝트</p>
-            <p className="text-2xl font-bold text-foreground">{stats.completed}</p>
+            <p className="text-sm font-medium text-slate-600">완료된 프로젝트</p>
+            <p className="text-2xl font-bold text-slate-900">{stats.completed}</p>
           </div>
-          <div className="rounded-full bg-green-500/10 p-2">
-            <Calendar className="h-5 w-5 text-green-600" />
+          <div className="rounded-full bg-slate-100 p-2">
+            <Calendar className="h-5 w-5 text-slate-700" />
           </div>
         </div>
-      </GlassCard>
+      </div>
 
-      <GlassCard className="p-4">
+      <div className="p-4 bg-white border border-slate-200 rounded-xl shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-muted-foreground">전체 프로젝트</p>
-            <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+            <p className="text-sm font-medium text-slate-600">전체 프로젝트</p>
+            <p className="text-2xl font-bold text-slate-900">{stats.total}</p>
           </div>
-          <div className="rounded-full bg-primary/10 p-2">
-            <BarChart3 className="h-5 w-5 text-primary" />
+          <div className="rounded-full bg-slate-100 p-2">
+            <BarChart3 className="h-5 w-5 text-slate-700" />
           </div>
         </div>
-      </GlassCard>
+      </div>
     </div>
   );
 });
@@ -119,27 +119,27 @@ export default function StudioPage() {
   // Show loading during initialization
   if (isInitializing || isLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-silver-light via-white to-silver-medium flex items-center justify-center">
-        <GlassCard className="p-8 text-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="p-8 text-center bg-white border border-slate-200 rounded-2xl shadow-sm">
           <div className="w-12 h-12 mx-auto mb-4">
             <div className="w-full h-full border-4 border-muted border-t-accent rounded-full animate-spin will-change-transform" />
           </div>
-          <p className="text-muted-foreground">로딩중...</p>
-        </GlassCard>
+          <p className="text-slate-600">로딩중...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-silver-light via-white to-silver-medium">
+    <div className="min-h-screen bg-white">
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <GlassCard className="mb-8 p-6">
+          <div className="mb-8 p-6 bg-white border border-slate-200 rounded-2xl shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h1 className="text-3xl font-bold text-foreground">스튜디오</h1>
-                <p className="text-muted-foreground mt-1">
+                <h1 className="text-3xl font-bold text-slate-900">스튜디오</h1>
+                <p className="text-slate-600 mt-1">
                   {user?.nickname || user?.username}님의 작업 공간
                 </p>
               </div>
@@ -221,7 +221,7 @@ export default function StudioPage() {
 
             {/* Stats */}
             <StudioStats projects={projects} />
-          </GlassCard>
+          </div>
 
           {/* Project Grid Component */}
           <ProjectGrid />

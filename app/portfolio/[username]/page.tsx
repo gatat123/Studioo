@@ -497,7 +497,7 @@ export default function PortfolioPage({ params }: { params: Promise<{ username: 
                                 // Handle star toggle
                               }}
                             >
-                              <Star className={cn("w-4 h-4", project.isStarred && "fill-current text-yellow-500")} />
+                              <Star className={cn("w-4 h-4", project.isStarred && "fill-current text-slate-700")} />
                             </Button>
                           )}
                         </div>
@@ -581,7 +581,7 @@ export default function PortfolioPage({ params }: { params: Promise<{ username: 
                                     // Handle star toggle
                                   }}
                                 >
-                                  <Star className={cn("w-4 h-4", project.isStarred && "fill-current text-yellow-500")} />
+                                  <Star className={cn("w-4 h-4", project.isStarred && "fill-current text-slate-700")} />
                                 </Button>
                               )}
                             </div>

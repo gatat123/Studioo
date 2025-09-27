@@ -52,7 +52,7 @@ const notificationColors: Record<NotificationType, string> = {
   version_upload: 'text-cyan-500',
   member_join: 'text-emerald-500',
   member_leave: 'text-red-500',
-  role_change: 'text-yellow-500',
+  role_change: 'text-slate-600',
   system: 'text-gray-500',
 };
 

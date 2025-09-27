@@ -42,10 +42,10 @@ const statusIcons = {
 }
 
 const statusColors = {
-  todo: 'text-gray-400',
-  in_progress: 'text-blue-500',
-  review: 'text-yellow-500',
-  done: 'text-green-500',
+  todo: 'text-slate-400',
+  in_progress: 'text-slate-600',
+  review: 'text-slate-700',
+  done: 'text-slate-800',
 }
 
 const statusLabels = {

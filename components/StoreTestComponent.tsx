@@ -147,7 +147,7 @@ export default function StoreTestComponent() {
           </button>
           <button
             onClick={() => notification.warning('Warning!', 'This is a warning')}
-            className="px-3 py-1 bg-yellow-500 text-white rounded"
+            className="px-3 py-1 bg-slate-600 text-white rounded"
           >
             Warning
           </button>

@@ -42,10 +42,10 @@ interface TaskBoardProps {
 }
 
 const TASK_COLUMNS = [
-  { id: 'todo', title: '할 일', color: 'bg-gray-100' },
-  { id: 'in_progress', title: '진행중', color: 'bg-blue-50' },
-  { id: 'review', title: '검토', color: 'bg-yellow-50' },
-  { id: 'done', title: '완료', color: 'bg-green-50' },
+  { id: 'todo', title: '할 일', color: 'bg-slate-50 border-slate-200' },
+  { id: 'in_progress', title: '진행중', color: 'bg-slate-100 border-slate-300' },
+  { id: 'review', title: '검토', color: 'bg-slate-150 border-slate-350' },
+  { id: 'done', title: '완료', color: 'bg-slate-200 border-slate-400' },
 ]
 
 export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate }: TaskBoardProps) {
@@ -975,15 +975,15 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
       case 'urgent':
-        return 'text-red-700 bg-red-100 border-red-300'
+        return 'text-slate-900 bg-slate-200 border-slate-400 font-semibold'
       case 'high':
-        return 'text-red-600 bg-red-50 border-red-200'
+        return 'text-slate-800 bg-slate-150 border-slate-350 font-medium'
       case 'medium':
-        return 'text-yellow-600 bg-yellow-50 border-yellow-200'
+        return 'text-slate-700 bg-slate-100 border-slate-300'
       case 'low':
-        return 'text-green-600 bg-green-50 border-green-200'
+        return 'text-slate-600 bg-slate-50 border-slate-200'
       default:
-        return 'text-gray-600 bg-gray-50 border-gray-200'
+        return 'text-slate-500 bg-slate-25 border-slate-150'
     }
   }
 
@@ -1030,7 +1030,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
   return (
     <div className="h-full flex flex-col">
       {/* Selected Work Task Info */}
-      <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+      <div className="mb-4 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-semibold text-lg">{selectedWorkTask.title}</h3>
@@ -1051,7 +1051,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       </div>
 
       {/* Assignee Filter */}
-      <div className="mb-4 flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+      <div className="mb-4 flex items-center gap-2 p-4 bg-white rounded-xl border border-slate-200 shadow-sm">
         <Users className="h-4 w-4 text-gray-600" />
         <span className="text-sm font-medium text-gray-700">담당자별 보기:</span>
         <div className="flex gap-2">
@@ -1107,7 +1107,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
         {TASK_COLUMNS.map((column) => (
           <div
             key={column.id}
-            className={`${column.color} rounded-lg p-4 h-full flex flex-col transition-all duration-300 hover:shadow-lg`}
+            className={`${column.color} rounded-xl p-4 h-full flex flex-col transition-all duration-300 hover:shadow-md border`}
             onDragOver={handleDragOver}
             onDragLeave={(e) => {
               const element = e.currentTarget as HTMLElement
@@ -1145,7 +1145,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                   .map((task) => (
                     <Card
                       key={task.id}
-                      className={`cursor-move hover:shadow-md transition-all duration-300 ease-in-out hover:scale-[1.02] hover:-translate-y-1 ${
+                      className={`cursor-move hover:shadow-lg transition-all duration-300 ease-in-out hover:scale-[1.02] hover:-translate-y-1 border border-slate-200 bg-white ${
                         (task as any)._isNew ? 'animate-in fade-in-0 slide-in-from-bottom-2 duration-500' : ''
                       }`}
                       draggable
@@ -1674,9 +1674,9 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       </div>
 
       {/* Announcement Section - 공지사항 섹션 */}
-      <div className="mt-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-400">
+      <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-blue-800 flex items-center gap-2">
+          <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
             📢 공지사항
           </h3>
           {user?.is_admin && (
@@ -1699,10 +1699,10 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
             </Button>
           )}
         </div>
-        <div className="text-sm text-blue-700">
+        <div className="text-sm text-slate-700">
           {/* TODO: 실제 공지사항 데이터로 교체 */}
           <p>업무 진행 시 실시간 소통을 위해 댓글과 첨부파일을 적극 활용해주세요.</p>
-          <p className="mt-1 text-xs text-blue-600">마지막 업데이트: {new Date().toLocaleDateString('ko-KR')}</p>
+          <p className="mt-1 text-xs text-slate-600">마지막 업데이트: {new Date().toLocaleDateString('ko-KR')}</p>
         </div>
       </div>
 

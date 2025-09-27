@@ -373,10 +373,10 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
                             <Badge
                               variant="outline"
                               className={`text-xs ${
-                                task.status === 'pending' ? 'bg-gray-50' :
-                                task.status === 'in_progress' ? 'bg-blue-50' :
-                                task.status === 'review' ? 'bg-yellow-50' :
-                                'bg-green-50'
+                                task.status === 'pending' ? 'bg-slate-50 text-slate-700' :
+                                task.status === 'in_progress' ? 'bg-slate-100 text-slate-800' :
+                                task.status === 'review' ? 'bg-slate-150 text-slate-800' :
+                                'bg-slate-200 text-slate-900'
                               }`}
                             >
                               {task.status === 'pending' ? '대기' :
@@ -386,10 +386,10 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
                             <Badge
                               variant="outline"
                               className={`text-xs ${
-                                task.priority === 'urgent' ? 'bg-red-50 text-red-700' :
-                                task.priority === 'high' ? 'bg-orange-50 text-orange-700' :
-                                task.priority === 'medium' ? 'bg-yellow-50 text-yellow-700' :
-                                'bg-green-50 text-green-700'
+                                task.priority === 'urgent' ? 'bg-slate-900 text-white' :
+                                task.priority === 'high' ? 'bg-slate-700 text-white' :
+                                task.priority === 'medium' ? 'bg-slate-500 text-white' :
+                                'bg-slate-300 text-slate-800'
                               }`}
                             >
                               {task.priority === 'urgent' ? '긴급' :

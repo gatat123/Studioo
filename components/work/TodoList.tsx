@@ -263,19 +263,19 @@ export default function TodoList({ searchQuery, onCommentCreated }: TodoListProp
                                   )}
                                   <div className="flex items-center gap-2 mt-2">
                                     <span className={`text-xs px-2 py-0.5 rounded-full
-                                      ${task.status === 'pending' ? 'bg-gray-100 text-gray-700' :
-                                        task.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
-                                        task.status === 'review' ? 'bg-yellow-100 text-yellow-700' :
-                                        'bg-green-100 text-green-700'}`}>
+                                      ${task.status === 'pending' ? 'bg-slate-100 text-slate-700' :
+                                        task.status === 'in_progress' ? 'bg-slate-150 text-slate-800' :
+                                        task.status === 'review' ? 'bg-slate-200 text-slate-800' :
+                                        'bg-slate-250 text-slate-900'}`}>
                                       {task.status === 'pending' ? '대기' :
                                        task.status === 'in_progress' ? '진행중' :
                                        task.status === 'review' ? '검토' : '완료'}
                                     </span>
                                     <span className={`text-xs px-2 py-0.5 rounded-full
-                                      ${task.priority === 'urgent' ? 'bg-red-100 text-red-700' :
-                                        task.priority === 'high' ? 'bg-orange-100 text-orange-700' :
-                                        task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                        'bg-green-100 text-green-700'}`}>
+                                      ${task.priority === 'urgent' ? 'bg-slate-900 text-white' :
+                                        task.priority === 'high' ? 'bg-slate-700 text-white' :
+                                        task.priority === 'medium' ? 'bg-slate-500 text-white' :
+                                        'bg-slate-300 text-slate-800'}`}>
                                       {task.priority === 'urgent' ? '긴급' :
                                        task.priority === 'high' ? '높음' :
                                        task.priority === 'medium' ? '보통' : '낮음'}

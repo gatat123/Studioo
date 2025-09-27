@@ -35,10 +35,10 @@ interface SceneScriptProps {
 }
 
 const HIGHLIGHT_COLORS = {
-  red: { label: '장소', bg: 'bg-red-200 dark:bg-red-900/50' },
-  yellow: { label: '소품', bg: 'bg-yellow-200 dark:bg-yellow-900/50' },
-  blue: { label: '등장인물', bg: 'bg-blue-200 dark:bg-blue-900/50' },
-  green: { label: '포인트', bg: 'bg-green-200 dark:bg-green-900/50' },
+  red: { label: '장소', bg: 'bg-slate-200 dark:bg-slate-800' },
+  yellow: { label: '소품', bg: 'bg-slate-300 dark:bg-slate-700' },
+  blue: { label: '등장인물', bg: 'bg-slate-400 dark:bg-slate-600' },
+  green: { label: '포인트', bg: 'bg-slate-500 dark:bg-slate-500' },
 }
 
 export function SceneScript({

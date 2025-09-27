@@ -91,7 +91,7 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full glass-navigation">
+    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-slate-200">
       <div className="flex h-16 items-center px-4 md:px-6">
         {/* Mobile Menu Button */}
         <Button
@@ -119,10 +119,10 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
               key={link.href}
               href={link.href}
               className={cn(
-                'text-sm font-medium transition-colors hover:text-black',
+                'text-sm font-medium transition-colors hover:text-slate-900',
                 pathname === link.href
-                  ? 'text-black'
-                  : 'text-gray-500'
+                  ? 'text-slate-900'
+                  : 'text-slate-600'
               )}
             >
               {link.label}
@@ -159,8 +159,8 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
                     height={32}
                   />
                 ) : (
-                  <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                    <UserCircle className="h-5 w-5 text-gray-600" />
+                  <div className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center">
+                    <UserCircle className="h-5 w-5 text-slate-600" />
                   </div>
                 )}
                 <div className="hidden md:block text-left">
@@ -169,11 +169,11 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
                 <ChevronDown className="h-4 w-4 hidden md:block" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 border-none">
+            <DropdownMenuContent align="end" className="w-56 bg-white border border-slate-200 shadow-lg">
               <DropdownMenuLabel>
                 <div>
                   <p className="text-sm font-medium">{userName}</p>
-                  <p className="text-xs text-gray-500">{userEmail}</p>
+                  <p className="text-xs text-slate-500">{userEmail}</p>
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -193,7 +193,7 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <Link href="/admin" className="flex items-center text-orange-600">
+                    <Link href="/admin" className="flex items-center text-slate-700">
                       <Shield className="mr-2 h-4 w-4" />
                       관리자 대시보드
                     </Link>
@@ -201,7 +201,7 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
                 </>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
+              <DropdownMenuItem onClick={handleSignOut} className="text-slate-700">
                 <LogOut className="mr-2 h-4 w-4" />
                 Sign out
               </DropdownMenuItem>
@@ -219,9 +219,9 @@ const Header: React.FC<HeaderProps> = (props) => {
 
   return (
     <Suspense fallback={
-      <header className="sticky top-0 z-50 w-full glass-navigation">
+      <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-slate-200">
         <div className="flex h-16 items-center px-4 md:px-6">
-          <div className="h-8 w-full animate-pulse bg-muted rounded" />
+          <div className="h-8 w-full animate-pulse bg-slate-200 rounded" />
         </div>
       </header>
     }>

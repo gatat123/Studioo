@@ -443,10 +443,10 @@ function TeamPageContent() {
                 <h3 className="text-xs font-semibold text-muted-foreground px-2 mb-2">초대받은 채널</h3>
                 <div className="space-y-1">
                   {pendingInvites.map((invite) => (
-                    <div key={invite.id} className="px-2 py-2 mx-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                    <div key={invite.id} className="px-2 py-2 mx-2 bg-slate-50 dark:bg-slate-900/20 rounded-lg border border-slate-200 dark:border-slate-800">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <Hash className="h-4 w-4 text-yellow-600" />
+                          <Hash className="h-4 w-4 text-slate-600" />
                           <span className="text-sm font-medium">{invite.channel.name}</span>
                         </div>
                       </div>

@@ -186,7 +186,7 @@ export function ProductionDiagnostics({ className, testData }: DiagnosticsProps)
       case 'success':
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+        return <AlertTriangle className="h-4 w-4 text-slate-600" />;
       case 'error':
         return <XCircle className="h-4 w-4 text-red-500" />;
     }
@@ -197,7 +197,7 @@ export function ProductionDiagnostics({ className, testData }: DiagnosticsProps)
       case 'success':
         return <Badge variant="default" className="bg-green-100 text-green-800">성공</Badge>;
       case 'warning':
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">경고</Badge>;
+        return <Badge variant="secondary" className="bg-slate-100 text-slate-800">경고</Badge>;
       case 'error':
         return <Badge variant="destructive">오류</Badge>;
     }
@@ -242,7 +242,7 @@ export function ProductionDiagnostics({ className, testData }: DiagnosticsProps)
                 {results.map((result, index) => (
                   <Alert key={index} className={cn(
                     result.status === 'error' && "border-red-200 bg-red-50",
-                    result.status === 'warning' && "border-yellow-200 bg-yellow-50",
+                    result.status === 'warning' && "border-slate-200 bg-slate-50",
                     result.status === 'success' && "border-green-200 bg-green-50"
                   )}>
                     <div className="flex items-start gap-3">

@@ -77,7 +77,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen relative bg-gradient-to-br from-silver-light via-white to-silver-medium">
+    <div className="min-h-screen relative bg-white">
       {/* Background effect - 웨일 브라우저에서는 비활성화 */}
       {!isWhale && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -85,21 +85,20 @@ export default function LoginPage() {
         </div>
       )}
 
-      {/* Background Decoration */}
+      {/* Background Decoration - Minimal */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-accent/5 blur-3xl" />
-        <div className="absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute left-1/2 top-1/2 h-96 w-96 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-50 blur-3xl opacity-30" />
       </div>
 
       {/* Login content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-          <GlassCard variant="primary" className="p-0 border-0 shadow-2xl">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-lg p-0">
             <div className="p-6 space-y-6">
               {/* Header */}
               <div className="text-center space-y-2">
-                <h1 className="text-3xl font-bold text-foreground">로그인</h1>
-                <p className="text-muted-foreground">
+                <h1 className="text-3xl font-bold text-slate-900">로그인</h1>
+                <p className="text-slate-600">
                   계정에 로그인하여 작업을 계속하세요
                 </p>
               </div>
@@ -168,9 +167,9 @@ export default function LoginPage() {
                   </Label>
                 </div>
                 
-                <Link 
-                  href="/auth/forgot-password" 
-                  className="text-sm text-primary hover:underline"
+                <Link
+                  href="/auth/forgot-password"
+                  className="text-sm text-slate-700 hover:underline"
                 >
                   비밀번호 찾기
                 </Link>
@@ -194,18 +193,18 @@ export default function LoginPage() {
               </Button>
 
               {/* Register Link */}
-              <div className="text-center text-sm text-muted-foreground">
+              <div className="text-center text-sm text-slate-600">
                 아직 계정이 없으신가요?{' '}
                 <Link
                   href="/auth/register"
-                  className="text-accent font-medium hover:underline"
+                  className="text-slate-900 font-medium hover:underline"
                 >
                   회원가입
                 </Link>
               </div>
             </form>
             </div>
-          </GlassCard>
+          </div>
         </div>
       </div>
     </div>
