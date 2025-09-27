@@ -61,6 +61,48 @@ export default function ProfilePage() {
     }));
   };
 
+  // 최신 사용자 데이터 가져오기 함수
+  const refreshUserData = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/profile`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.user) {
+          // 전역 상태 업데이트
+          const authStore = useAuthStore.getState();
+          const mappedUser = {
+            ...data.user,
+            profile_image_url: data.user.profileImageUrl || data.user.profile_image_url
+          };
+
+          authStore.setUser({
+            ...authStore.user,
+            ...mappedUser
+          });
+
+          // 로컬 상태 업데이트
+          setProfileData(prev => ({
+            ...prev,
+            bio: data.user.bio || '',
+            email: data.user.email || '',
+            profileImageUrl: data.user.profileImageUrl || data.user.profile_image_url || '',
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('사용자 데이터 새로고침 오류:', error);
+    }
+  };
+
   const handleProfileUpdate = async () => {
     try {
       setIsLoading(true);
@@ -117,38 +159,8 @@ export default function ProfilePage() {
           description: data.message || '프로필이 업데이트되었습니다.'
         });
 
-        // 전역 상태 업데이트
-        const authStore = useAuthStore.getState();
-        if (authStore.user && data.user) {
-          // 백엔드 API 응답의 profileImageUrl을 프론트엔드의 profile_image_url로 매핑
-          const mappedUser = {
-            ...data.user,
-            profile_image_url: data.user.profileImageUrl || data.user.profile_image_url
-          };
-
-          authStore.setUser({
-            ...authStore.user,
-            ...mappedUser
-          });
-        }
-
-        // 로컬 상태 업데이트
-        if (data.user) {
-          setProfileData(prev => ({
-            ...prev,
-            bio: data.user.bio || '',
-            email: data.user.email || '',
-            profileImageUrl: data.user.profileImageUrl || data.user.profile_image_url || '',
-            currentPassword: '',
-            newPassword: '',
-            confirmPassword: ''
-          }));
-        }
-
-        // 페이지 새로고침
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        // 최신 사용자 데이터로 새로고침 (페이지 리로드 없이)
+        await refreshUserData();
       } else {
         toast({
           title: '오류',
@@ -209,31 +221,13 @@ export default function ProfilePage() {
       const data = await response.json();
 
       if (response.ok) {
-        // 프로필 이미지 URL 업데이트
-        const newProfileImageUrl = data.user?.profileImageUrl || '';
-        setProfileData(prev => ({
-          ...prev,
-          profileImageUrl: newProfileImageUrl
-        }));
-
-        // 전역 상태 업데이트
-        const authStore = useAuthStore.getState();
-        if (authStore.user) {
-          authStore.setUser({
-            ...authStore.user,
-            profile_image_url: newProfileImageUrl
-          });
-        }
-
         toast({
           title: '성공',
           description: data.message || '프로필 사진이 업데이트되었습니다.'
         });
 
-        // 페이지 새로고침
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        // 최신 사용자 데이터로 새로고침 (페이지 리로드 없이)
+        await refreshUserData();
       } else {
         toast({
           title: '오류',
