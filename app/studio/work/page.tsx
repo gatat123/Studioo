@@ -197,17 +197,17 @@ export default function WorkPage() {
       </div>
 
       {/* Project Selector */}
-      <div className="p-4 border-b bg-gray-50">
+      <div className="p-4 border-b bg-slate-50 dark:bg-slate-900">
         <div className="flex flex-col gap-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">업무 목록</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-white">업무 목록</h2>
             <div className="relative w-64">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-700" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-600 dark:text-slate-400" />
               <Input
                 placeholder="검색..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-9 bg-white dark:bg-slate-800 text-slate-900 dark:text-white border-slate-200 dark:border-slate-700 placeholder:text-slate-500 dark:placeholder:text-slate-400"
               />
             </div>
           </div>
@@ -215,10 +215,10 @@ export default function WorkPage() {
             {(Array.isArray(workTasks) ? workTasks : []).map((workTask) => (
               <Card
                 key={workTask.id}
-                className={`min-w-[280px] cursor-pointer transition-all ${
+                className={`min-w-[280px] cursor-pointer transition-all border border-slate-200 dark:border-slate-700 ${
                   selectedWorkTask?.id === workTask.id
-                    ? 'ring-2 ring-slate-400 shadow-lg bg-slate-50'
-                    : 'hover:shadow-md'
+                    ? 'ring-2 ring-slate-500 shadow-lg bg-white dark:bg-slate-800'
+                    : 'hover:shadow-md bg-white dark:bg-slate-800'
                 }`}
                 onClick={() => handleWorkTaskSelect(workTask)}
               >
@@ -262,7 +262,7 @@ export default function WorkPage() {
                         </DropdownMenu>
                       )}
                     </div>
-                    <p className="text-sm text-gray-600 line-clamp-2">
+                    <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
                       {workTask.description || '설명이 없습니다'}
                     </p>
                     <div className="flex items-center justify-between">
@@ -277,7 +277,7 @@ export default function WorkPage() {
                          workTask.priority === 'medium' ? '보통' : '낮음'}
                       </span>
                       {workTask.dueDate && (
-                        <span className="text-xs text-gray-700">
+                        <span className="text-xs text-slate-600 dark:text-slate-400">
                           마감: {new Date(workTask.dueDate).toLocaleDateString('ko-KR')}
                         </span>
                       )}
