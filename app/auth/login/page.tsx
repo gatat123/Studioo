@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import StarBorder from '@/components/ui/star-border';
+import { GlassCard } from '@/components/ui/glass-card';
 
 // WebGL 성능 문제로 인해 동적 로딩 및 조건부 렌더링
 const SplashCursor = dynamic(() => import('@/components/ui/splash-cursor'), {
@@ -76,33 +77,40 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen relative bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen relative bg-gradient-to-br from-silver-light via-white to-silver-medium">
       {/* Background effect - 웨일 브라우저에서는 비활성화 */}
       {!isWhale && (
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <SplashCursor />
         </div>
       )}
-      
+
+      {/* Background Decoration */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute left-1/4 top-1/4 h-96 w-96 rounded-full bg-accent/5 blur-3xl" />
+        <div className="absolute right-1/4 bottom-1/4 h-96 w-96 rounded-full bg-primary/5 blur-3xl" />
+      </div>
+
       {/* Login content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
-        <StarBorder className="rounded-lg">
-          <Card className="border-0 shadow-lg">
-          <CardHeader className="space-y-1 pb-6">
-            <CardTitle className="text-2xl font-bold text-center">로그인</CardTitle>
-            <CardDescription className="text-center">
-              계정에 로그인하여 작업을 계속하세요
-            </CardDescription>
-          </CardHeader>
+          <GlassCard variant="primary" className="p-0 border-0 shadow-2xl">
+            <div className="p-6 space-y-6">
+              {/* Header */}
+              <div className="text-center space-y-2">
+                <h1 className="text-3xl font-bold text-foreground">로그인</h1>
+                <p className="text-muted-foreground">
+                  계정에 로그인하여 작업을 계속하세요
+                </p>
+              </div>
           
-          <form onSubmit={handleSubmit(onSubmit)}>
-            <CardContent className="space-y-4">
-              {error && (
-                <Alert variant="destructive">
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
+              {/* Form */}
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                {error && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{error}</AlertDescription>
+                  </Alert>
+                )}
               
               <div className="space-y-2">
                 <Label htmlFor="username">사용자명</Label>
@@ -167,12 +175,11 @@ export default function LoginPage() {
                   비밀번호 찾기
                 </Link>
               </div>
-            </CardContent>
 
-            <CardFooter className="flex flex-col space-y-4">
-              <Button 
-                type="submit" 
-                className="w-full" 
+              {/* Submit Button */}
+              <Button
+                type="submit"
+                className="w-full"
                 disabled={isLoading}
                 size="lg"
               >
@@ -185,20 +192,20 @@ export default function LoginPage() {
                   '로그인'
                 )}
               </Button>
-              
-              <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+
+              {/* Register Link */}
+              <div className="text-center text-sm text-muted-foreground">
                 아직 계정이 없으신가요?{' '}
-                <Link 
-                  href="/auth/register" 
-                  className="text-primary font-medium hover:underline"
+                <Link
+                  href="/auth/register"
+                  className="text-accent font-medium hover:underline"
                 >
                   회원가입
                 </Link>
               </div>
-            </CardFooter>
-          </form>
-        </Card>
-        </StarBorder>
+            </form>
+            </div>
+          </GlassCard>
         </div>
       </div>
     </div>

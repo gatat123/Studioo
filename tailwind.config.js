@@ -57,6 +57,25 @@ module.exports = {
   				'3': 'hsl(var(--chart-3))',
   				'4': 'hsl(var(--chart-4))',
   				'5': 'hsl(var(--chart-5))'
+  			},
+  			// New Dark/Silver/White Theme Colors
+  			dark: {
+  				primary: '#0a0a0a',
+  				secondary: '#1a1a1a',
+  				tertiary: '#2a2a2a',
+  				quaternary: '#3a3a3a'
+  			},
+  			silver: {
+  				light: '#f8fafc',
+  				medium: '#e2e8f0',
+  				dark: '#94a3b8',
+  				contrast: '#64748b'
+  			},
+  			glass: {
+  				light: 'rgba(255, 255, 255, 0.05)',
+  				medium: 'rgba(255, 255, 255, 0.1)',
+  				dark: 'rgba(10, 10, 10, 0.85)',
+  				overlay: 'rgba(0, 0, 0, 0.6)'
   			}
   		},
   		borderRadius: {

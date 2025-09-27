@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Plus, UserPlus } from 'lucide-react';
+import { Plus, UserPlus, TrendingUp, Calendar, BarChart3 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProjectGrid } from '@/components/projects/ProjectGrid';
 import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
 import JoinProjectModal from '@/components/projects/JoinProjectModal';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import { GlassCard } from '@/components/ui/glass-card';
 import type { Project } from '@/types';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProjectStore } from '@/store/useProjectStore';
@@ -36,25 +37,42 @@ const StudioStats = memo(function StudioStats({ projects }: { projects: Project[
   }, [projects]);
 
   return (
-    <div className="flex gap-6 mt-4">
-      <div>
-        <span className="text-2xl font-bold text-gray-900">
-          {stats.active}
-        </span>
-        <span className="text-gray-600 ml-2">진행중</span>
-      </div>
-      <div>
-        <span className="text-2xl font-bold text-gray-900">
-          {stats.completed}
-        </span>
-        <span className="text-gray-600 ml-2">완료</span>
-      </div>
-      <div>
-        <span className="text-2xl font-bold text-gray-900">
-          {stats.total}
-        </span>
-        <span className="text-gray-600 ml-2">전체</span>
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+      <GlassCard className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">진행중인 프로젝트</p>
+            <p className="text-2xl font-bold text-foreground">{stats.active}</p>
+          </div>
+          <div className="rounded-full bg-accent/10 p-2">
+            <TrendingUp className="h-5 w-5 text-accent" />
+          </div>
+        </div>
+      </GlassCard>
+
+      <GlassCard className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">완료된 프로젝트</p>
+            <p className="text-2xl font-bold text-foreground">{stats.completed}</p>
+          </div>
+          <div className="rounded-full bg-green-500/10 p-2">
+            <Calendar className="h-5 w-5 text-green-600" />
+          </div>
+        </div>
+      </GlassCard>
+
+      <GlassCard className="p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium text-muted-foreground">전체 프로젝트</p>
+            <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+          </div>
+          <div className="rounded-full bg-primary/10 p-2">
+            <BarChart3 className="h-5 w-5 text-primary" />
+          </div>
+        </div>
+      </GlassCard>
     </div>
   );
 });
@@ -101,28 +119,27 @@ export default function StudioPage() {
   // Show loading during initialization
   if (isInitializing || isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          {/* 부드러운 스핀 애니메이션을 위해 will-change 및 transform 사용 */}
-        <div className="w-12 h-12 mx-auto">
-          <div className="w-full h-full border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin will-change-transform" />
-        </div>
-          <p className="mt-4 text-gray-600">로딩중...</p>
-        </div>
+      <div className="min-h-screen bg-gradient-to-br from-silver-light via-white to-silver-medium flex items-center justify-center">
+        <GlassCard className="p-8 text-center">
+          <div className="w-12 h-12 mx-auto mb-4">
+            <div className="w-full h-full border-4 border-muted border-t-accent rounded-full animate-spin will-change-transform" />
+          </div>
+          <p className="text-muted-foreground">로딩중...</p>
+        </GlassCard>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-silver-light via-white to-silver-medium">
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <div className="mb-8">
+          <GlassCard className="mb-8 p-6">
             <div className="flex items-center justify-between mb-2">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">스튜디오</h1>
-                <p className="text-gray-600 mt-1">
+                <h1 className="text-3xl font-bold text-foreground">스튜디오</h1>
+                <p className="text-muted-foreground mt-1">
                   {user?.nickname || user?.username}님의 작업 공간
                 </p>
               </div>
@@ -204,7 +221,7 @@ export default function StudioPage() {
 
             {/* Stats */}
             <StudioStats projects={projects} />
-          </div>
+          </GlassCard>
 
           {/* Project Grid Component */}
           <ProjectGrid />
