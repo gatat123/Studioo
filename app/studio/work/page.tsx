@@ -211,14 +211,12 @@ export default function WorkPage() {
               />
             </div>
           </div>
-          <div className="flex gap-3 overflow-x-auto pb-2">
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-700">
             {(Array.isArray(workTasks) ? workTasks : []).map((workTask) => (
               <Card
                 key={workTask.id}
-                className={`min-w-[280px] cursor-pointer transition-all border border-slate-200 dark:border-slate-700 ${
-                  selectedWorkTask?.id === workTask.id
-                    ? 'ring-2 ring-slate-500 shadow-lg bg-white dark:bg-slate-800'
-                    : 'hover:shadow-md bg-white dark:bg-slate-800'
+                className={`min-w-[300px] cursor-pointer card-enhanced ${
+                  selectedWorkTask?.id === workTask.id ? 'selected' : ''
                 }`}
                 onClick={() => handleWorkTaskSelect(workTask)}
               >
@@ -266,11 +264,14 @@ export default function WorkPage() {
                       {workTask.description || '설명이 없습니다'}
                     </p>
                     <div className="flex items-center justify-between">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        workTask.priority === 'urgent' ? 'bg-red-100 text-red-800' :
-                        workTask.priority === 'high' ? 'bg-slate-100 text-slate-800' :
-                        workTask.priority === 'medium' ? 'bg-blue-100 text-blue-800' :
-                        'bg-gray-100 text-gray-800'
+                      <span className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                        workTask.priority === 'urgent'
+                          ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-300 dark:border-red-800' :
+                        workTask.priority === 'high'
+                          ? 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-800' :
+                        workTask.priority === 'medium'
+                          ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800' :
+                        'bg-gray-50 text-gray-600 border-gray-200 dark:bg-gray-800/50 dark:text-gray-400 dark:border-gray-700'
                       }`}>
                         {workTask.priority === 'urgent' ? '긴급' :
                          workTask.priority === 'high' ? '높음' :
