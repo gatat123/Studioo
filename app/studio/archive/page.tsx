@@ -233,7 +233,7 @@ export default function ArchivePage() {
             </Card>
             <Card className="px-4 py-2">
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-orange-500" />
+                <Clock className="w-4 h-4 text-slate-600" />
                 <div>
                   <p className="text-2xl font-bold">
                     {archivedProjects.filter(p => p.deletionDate && getDaysUntilDeletion(p.deletionDate)! <= 7).length}

@@ -48,7 +48,7 @@ const notificationColors: Record<NotificationType, string> = {
   comment: 'text-blue-500',
   mention: 'text-purple-500',
   invite: 'text-green-500',
-  project_update: 'text-orange-500',
+  project_update: 'text-slate-600',
   version_upload: 'text-cyan-500',
   member_join: 'text-emerald-500',
   member_leave: 'text-red-500',

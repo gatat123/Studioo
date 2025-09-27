@@ -298,8 +298,8 @@ export function ProjectGrid() {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
     if (diffDays < 0) return { text: '마감 지남', className: 'text-red-600 bg-red-50' };
-    if (diffDays === 0) return { text: '오늘 마감', className: 'text-orange-600 bg-orange-50' };
-    if (diffDays <= 3) return { text: `${diffDays}일 남음`, className: 'text-orange-600 bg-orange-50' };
+    if (diffDays === 0) return { text: '오늘 마감', className: 'text-slate-600 bg-slate-100' };
+    if (diffDays <= 3) return { text: `${diffDays}일 남음`, className: 'text-slate-600 bg-slate-100' };
     if (diffDays <= 7) return { text: `${diffDays}일 남음`, className: 'text-slate-600 bg-slate-100' };
     return { text: `${diffDays}일 남음`, className: 'text-gray-600 bg-gray-50' };
   }, []);

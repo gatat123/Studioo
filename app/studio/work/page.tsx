@@ -268,7 +268,7 @@ export default function WorkPage() {
                     <div className="flex items-center justify-between">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         workTask.priority === 'urgent' ? 'bg-red-100 text-red-800' :
-                        workTask.priority === 'high' ? 'bg-orange-100 text-orange-800' :
+                        workTask.priority === 'high' ? 'bg-slate-100 text-slate-800' :
                         workTask.priority === 'medium' ? 'bg-blue-100 text-blue-800' :
                         'bg-gray-100 text-gray-800'
                       }`}>
