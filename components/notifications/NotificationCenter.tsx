@@ -53,7 +53,7 @@ const notificationColors: Record<NotificationType, string> = {
   member_join: 'text-emerald-500',
   member_leave: 'text-red-500',
   role_change: 'text-slate-600',
-  system: 'text-gray-500',
+  system: 'text-gray-700',
 };
 
 export function NotificationCenter() {

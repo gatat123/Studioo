@@ -189,7 +189,7 @@ export default function ProjectsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">프로젝트 관리</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-gray-600 dark:text-gray-600 mt-2">
             모든 프로젝트를 관리하고 모니터링합니다.
           </p>
         </div>
@@ -253,7 +253,7 @@ export default function ProjectsPage() {
         <CardHeader>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 w-4 h-4" />
               <Input
                 placeholder="프로젝트명 또는 소유자로 검색..."
                 value={searchTerm}
@@ -315,7 +315,7 @@ export default function ProjectsPage() {
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
                     <CardTitle className="text-lg">{project.title}</CardTitle>
-                    <p className="text-sm text-gray-500 mt-1">by {project.owner.username}</p>
+                    <p className="text-sm text-gray-700 mt-1">by {project.owner.username}</p>
                   </div>
                   <Badge variant={getStatusBadgeVariant(project.status)}>
                     {project.status === 'active' ? '활성' :
@@ -324,7 +324,7 @@ export default function ProjectsPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                <p className="text-sm text-gray-600 dark:text-gray-600 line-clamp-2">
                   {project.description || '설명 없음'}
                 </p>
 
@@ -347,7 +347,7 @@ export default function ProjectsPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-xs text-gray-500">
+                <div className="flex items-center justify-between text-xs text-gray-700">
                   <div className="flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     {safeFormat(project.lastUpdated, 'yyyy-MM-dd')}
@@ -422,7 +422,7 @@ export default function ProjectsPage() {
                     <td className="p-4">
                       <div>
                         <div className="font-medium">{project.title}</div>
-                        <div className="text-sm text-gray-500">{project.description?.substring(0, 50)}...</div>
+                        <div className="text-sm text-gray-700">{project.description?.substring(0, 50)}...</div>
                       </div>
                     </td>
                     <td className="p-4">{project.owner.username}</td>
@@ -464,7 +464,7 @@ export default function ProjectsPage() {
       {filteredProjects.length === 0 && (
         <Card>
           <CardContent className="text-center py-8">
-            <p className="text-gray-500">검색 결과가 없습니다.</p>
+            <p className="text-gray-700">검색 결과가 없습니다.</p>
           </CardContent>
         </Card>
       )}

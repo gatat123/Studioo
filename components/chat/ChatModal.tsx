@@ -325,7 +325,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose, o
                 <p className="text-xs text-green-600">접속중</p>
               )}
               {isTyping && !isMinimized && (
-                <p className="text-xs text-gray-500">입력중...</p>
+                <p className="text-xs text-gray-700">입력중...</p>
               )}
             </div>
           </div>
@@ -365,11 +365,11 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose, o
           <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
             {isLoading ? (
               <div className="flex items-center justify-center h-full">
-                <p className="text-gray-500">메시지 불러오는 중...</p>
+                <p className="text-gray-700">메시지 불러오는 중...</p>
               </div>
             ) : messages.length === 0 ? (
               <div className="flex items-center justify-center h-full">
-                <p className="text-gray-500">아직 대화가 없습니다.</p>
+                <p className="text-gray-700">아직 대화가 없습니다.</p>
               </div>
             ) : (
               <div className="space-y-3">
@@ -400,7 +400,7 @@ const ChatModal: React.FC<ChatModalProps> = ({ friend, currentUserId, onClose, o
                         )}>
                           <p className={cn(
                             "text-xs",
-                            isSentByMe ? "text-blue-100" : "text-gray-500"
+                            isSentByMe ? "text-blue-100" : "text-gray-700"
                           )}>
                             {formatMessageDate(message.createdAt)}
                           </p>

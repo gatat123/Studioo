@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
             </CardHeader>
             
             <CardContent className="space-y-4">
-              <div className="text-sm text-gray-600 dark:text-gray-400 space-y-2">
+              <div className="text-sm text-gray-600 dark:text-gray-600 space-y-2">
                 <p>• 이메일이 도착하는 데 몇 분이 걸릴 수 있습니다.</p>
                 <p>• 스팸 폴더도 확인해보세요.</p>
                 <p>• 링크는 24시간 동안 유효합니다.</p>

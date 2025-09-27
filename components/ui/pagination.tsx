@@ -68,7 +68,7 @@ export function Pagination({
         <React.Fragment key={index}>
           {page === '...' ? (
             <span className="px-2">
-              <MoreHorizontal className="h-4 w-4 text-gray-400" />
+              <MoreHorizontal className="h-4 w-4 text-gray-600" />
             </span>
           ) : (
             <Button

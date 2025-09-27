@@ -76,7 +76,7 @@ export default function AdminSidebar() {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-gray-900 dark:text-white">관리자</h2>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{user?.username}</p>
+              <p className="text-sm text-gray-700 dark:text-gray-600">{user?.username}</p>
             </div>
           </div>
         </div>

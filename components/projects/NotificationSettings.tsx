@@ -111,7 +111,7 @@ export default function NotificationSettings({ }: NotificationSettingsProps) {
               <div className="flex-1 space-y-3">
                 <div>
                   <h4 className="font-medium">{setting.label}</h4>
-                  <p className="text-sm text-gray-500">{setting.description}</p>
+                  <p className="text-sm text-gray-700">{setting.description}</p>
                 </div>
                 
                 <div className="space-y-2">

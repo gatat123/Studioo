@@ -320,7 +320,7 @@ export default function ProfilePage() {
                       onChange={handleImageUpload}
                       disabled={isLoading}
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-gray-700 mt-1">
                       JPG, PNG 파일 (최대 5MB)
                     </p>
                   </div>
@@ -338,7 +338,7 @@ export default function ProfilePage() {
                     disabled
                     className="bg-gray-50"
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-700">
                     사용자명은 변경할 수 없습니다
                   </p>
                 </div>
@@ -355,7 +355,7 @@ export default function ProfilePage() {
                     disabled
                     className="bg-gray-50"
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-700">
                     닉네임은 변경할 수 없습니다
                   </p>
                 </div>
@@ -373,7 +373,7 @@ export default function ProfilePage() {
                     maxLength={500}
                     disabled={isLoading}
                   />
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-700">
                     {profileData.bio.length}/500
                   </p>
                 </div>
@@ -442,7 +442,7 @@ export default function ProfilePage() {
                       value={profileData.newPassword}
                       onChange={handleInputChange}
                     />
-                    <p className="text-xs text-gray-500">
+                    <p className="text-xs text-gray-700">
                       최소 8자 이상, 영문과 숫자를 포함해주세요
                     </p>
                   </div>
@@ -485,17 +485,17 @@ export default function ProfilePage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-sm font-medium text-gray-500">사용자 ID</p>
+                    <p className="text-sm font-medium text-gray-700">사용자 ID</p>
                     <p className="text-sm">{user.id}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">계정 상태</p>
+                    <p className="text-sm font-medium text-gray-700">계정 상태</p>
                     <p className="text-sm">
                       {user.is_active ? '활성' : '비활성'}
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-700">
                       <Calendar className="h-4 w-4 inline mr-1" />
                       가입일
                     </p>
@@ -504,7 +504,7 @@ export default function ProfilePage() {
                     </p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-700">
                       <Shield className="h-4 w-4 inline mr-1" />
                       권한
                     </p>
@@ -515,11 +515,11 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="pt-4 border-t">
-                  <p className="text-sm text-gray-500 mb-2">위험 구역</p>
+                  <p className="text-sm text-gray-700 mb-2">위험 구역</p>
                   <Button variant="destructive" size="sm" disabled>
                     계정 비활성화
                   </Button>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-gray-700 mt-2">
                     계정을 비활성화하면 모든 데이터가 보존되지만 로그인할 수 없습니다
                   </p>
                 </div>

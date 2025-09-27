@@ -279,7 +279,7 @@ export default function SettingsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">시스템 설정</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-gray-600 dark:text-gray-600 mt-2">
             플랫폼 전반의 설정을 관리합니다.
           </p>
         </div>
@@ -445,7 +445,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label htmlFor="maintenanceMode">유지보수 모드</Label>
-                    <p className="text-sm text-gray-500">사이트를 일시적으로 차단합니다</p>
+                    <p className="text-sm text-gray-700">사이트를 일시적으로 차단합니다</p>
                   </div>
                   <Switch
                     id="maintenanceMode"
@@ -500,7 +500,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>이메일 인증 필수</Label>
-                    <p className="text-sm text-gray-500">신규 가입 시 이메일 인증을 요구합니다</p>
+                    <p className="text-sm text-gray-700">신규 가입 시 이메일 인증을 요구합니다</p>
                   </div>
                   <Switch
                     checked={settings.security.requireEmailVerification}
@@ -514,7 +514,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>회원가입 허용</Label>
-                    <p className="text-sm text-gray-500">새로운 사용자의 가입을 허용합니다</p>
+                    <p className="text-sm text-gray-700">새로운 사용자의 가입을 허용합니다</p>
                   </div>
                   <Switch
                     checked={settings.security.allowRegistration}
@@ -528,7 +528,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>강력한 비밀번호 요구</Label>
-                    <p className="text-sm text-gray-500">대소문자, 숫자, 특수문자 포함</p>
+                    <p className="text-sm text-gray-700">대소문자, 숫자, 특수문자 포함</p>
                   </div>
                   <Switch
                     checked={settings.security.requireStrongPassword}
@@ -542,7 +542,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>2단계 인증</Label>
-                    <p className="text-sm text-gray-500">추가 보안을 위한 2FA 활성화</p>
+                    <p className="text-sm text-gray-700">추가 보안을 위한 2FA 활성화</p>
                   </div>
                   <Switch
                     checked={settings.security.enableTwoFactor}
@@ -697,7 +697,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between md:col-span-2">
                   <div className="space-y-0.5">
                     <Label>보안 연결 (TLS/SSL)</Label>
-                    <p className="text-sm text-gray-500">암호화된 연결 사용</p>
+                    <p className="text-sm text-gray-700">암호화된 연결 사용</p>
                   </div>
                   <Switch
                     checked={settings.email.smtpSecure}
@@ -785,7 +785,7 @@ export default function SettingsPage() {
                           storage: { ...settings.storage, maxFileSize: parseInt(e.target.value) * 1048576 }
                         })}
                       />
-                      <span className="flex items-center px-3 text-sm text-gray-500">MB</span>
+                      <span className="flex items-center px-3 text-sm text-gray-700">MB</span>
                     </div>
                   </div>
 
@@ -801,7 +801,7 @@ export default function SettingsPage() {
                           storage: { ...settings.storage, storageLimit: parseInt(e.target.value) * 1073741824 }
                         })}
                       />
-                      <span className="flex items-center px-3 text-sm text-gray-500">GB</span>
+                      <span className="flex items-center px-3 text-sm text-gray-700">GB</span>
                     </div>
                   </div>
 
@@ -847,7 +847,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>캐시 활성화</Label>
-                    <p className="text-sm text-gray-500">페이지와 API 응답 캐싱</p>
+                    <p className="text-sm text-gray-700">페이지와 API 응답 캐싱</p>
                   </div>
                   <Switch
                     checked={settings.performance.enableCache}
@@ -861,7 +861,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>CDN 사용</Label>
-                    <p className="text-sm text-gray-500">정적 자원 CDN 배포</p>
+                    <p className="text-sm text-gray-700">정적 자원 CDN 배포</p>
                   </div>
                   <Switch
                     checked={settings.performance.enableCDN}
@@ -875,7 +875,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>압축 활성화</Label>
-                    <p className="text-sm text-gray-500">Gzip 압축 사용</p>
+                    <p className="text-sm text-gray-700">Gzip 압축 사용</p>
                   </div>
                   <Switch
                     checked={settings.performance.enableCompression}
@@ -889,7 +889,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>코드 최소화</Label>
-                    <p className="text-sm text-gray-500">JS/CSS 최소화</p>
+                    <p className="text-sm text-gray-700">JS/CSS 최소화</p>
                   </div>
                   <Switch
                     checked={settings.performance.enableMinification}
@@ -975,7 +975,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>이메일 알림</Label>
-                    <p className="text-sm text-gray-500">중요 이벤트 이메일 알림</p>
+                    <p className="text-sm text-gray-700">중요 이벤트 이메일 알림</p>
                   </div>
                   <Switch
                     checked={settings.notifications.emailNotifications}
@@ -989,7 +989,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>푸시 알림</Label>
-                    <p className="text-sm text-gray-500">브라우저 푸시 알림</p>
+                    <p className="text-sm text-gray-700">브라우저 푸시 알림</p>
                   </div>
                   <Switch
                     checked={settings.notifications.pushNotifications}
@@ -1003,7 +1003,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>신규 사용자 알림</Label>
-                    <p className="text-sm text-gray-500">새로운 사용자 가입 시 알림</p>
+                    <p className="text-sm text-gray-700">새로운 사용자 가입 시 알림</p>
                   </div>
                   <Switch
                     checked={settings.notifications.newUserNotification}
@@ -1017,7 +1017,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>오류 알림</Label>
-                    <p className="text-sm text-gray-500">시스템 오류 발생 시 알림</p>
+                    <p className="text-sm text-gray-700">시스템 오류 발생 시 알림</p>
                   </div>
                   <Switch
                     checked={settings.notifications.errorNotification}
@@ -1031,7 +1031,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>주간 보고서</Label>
-                    <p className="text-sm text-gray-500">매주 월요일 통계 보고서</p>
+                    <p className="text-sm text-gray-700">매주 월요일 통계 보고서</p>
                   </div>
                   <Switch
                     checked={settings.notifications.weeklyReport}
@@ -1045,7 +1045,7 @@ export default function SettingsPage() {
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>월간 보고서</Label>
-                    <p className="text-sm text-gray-500">매월 1일 종합 보고서</p>
+                    <p className="text-sm text-gray-700">매월 1일 종합 보고서</p>
                   </div>
                   <Switch
                     checked={settings.notifications.monthlyReport}

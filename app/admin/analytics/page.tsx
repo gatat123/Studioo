@@ -186,7 +186,7 @@ export default function AnalyticsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">통계 분석</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-gray-600 dark:text-gray-600 mt-2">
             플랫폼 성능과 사용자 활동을 분석합니다.
           </p>
         </div>
@@ -403,12 +403,12 @@ export default function AnalyticsPage() {
                   </div>
                   <div>
                     <div className="font-medium">{project.name}</div>
-                    <div className="text-sm text-gray-500">{project.collaborators} 협업자</div>
+                    <div className="text-sm text-gray-700">{project.collaborators} 협업자</div>
                   </div>
                 </div>
                 <div className="text-right">
                   <div className="font-medium">{project.views.toLocaleString()} 조회</div>
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-gray-700">
                     {((project.views / analytics.topProjects.reduce((sum, p) => sum + p.views, 0)) * 100).toFixed(1)}%
                   </div>
                 </div>

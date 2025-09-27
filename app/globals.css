@@ -16,7 +16,7 @@
     --secondary: 226 232 240; /* silver-medium */
     --secondary-foreground: 0 0% 9%;
     --muted: 226 232 240; /* silver-medium */
-    --muted-foreground: 100 116 139; /* silver-contrast */
+    --muted-foreground: 71 85 105; /* slate-600 - more visible */
     --accent: 59 130 246; /* blue accent */
     --accent-foreground: 255 255 255;
     --destructive: 239 68 68;
@@ -45,7 +45,7 @@
     --secondary: 0 0% 16%; /* dark-tertiary */
     --secondary-foreground: 248 250 252;
     --muted: 0 0% 16%; /* dark-tertiary */
-    --muted-foreground: 148 163 184; /* silver-dark */
+    --muted-foreground: 156 163 175; /* gray-400 - brighter in dark mode */
     --accent: 59 130 246; /* consistent blue accent */
     --accent-foreground: 255 255 255;
     --destructive: 239 68 68;
@@ -164,7 +164,7 @@
   }
 
   .hover-lift:hover {
-    transform: translateY(-2px);
+    transform: scale(1.02);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
   }
 

@@ -281,7 +281,7 @@ export default function TodoList({ searchQuery, onCommentCreated }: TodoListProp
                                        task.priority === 'medium' ? '보통' : '낮음'}
                                     </span>
                                     {task.comments && (
-                                      <span className="text-xs text-gray-500 flex items-center gap-1">
+                                      <span className="text-xs text-gray-700 flex items-center gap-1">
                                         <MessageSquare className="h-3 w-3" />
                                         {task.comments.length}
                                       </span>
@@ -346,8 +346,8 @@ export default function TodoList({ searchQuery, onCommentCreated }: TodoListProp
                                           </p>
                                           <div className="flex items-center justify-between mt-1">
                                             <div className="flex items-center gap-2">
-                                              <span className="text-xs text-gray-500">{comment.user.nickname}</span>
-                                              <span className="text-xs text-gray-500 flex items-center gap-1">
+                                              <span className="text-xs text-gray-700">{comment.user.nickname}</span>
+                                              <span className="text-xs text-gray-700 flex items-center gap-1">
                                                 <Clock className="h-3 w-3" />
                                                 {formatDate(comment.createdAt)}
                                               </span>
@@ -400,7 +400,7 @@ export default function TodoList({ searchQuery, onCommentCreated }: TodoListProp
 
                   {completedTasks.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-medium text-gray-500 mb-3">
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">
                         완료된 업무 ({completedTasks.length})
                       </h4>
                       <div className="space-y-4 opacity-75">
@@ -420,7 +420,7 @@ export default function TodoList({ searchQuery, onCommentCreated }: TodoListProp
                                   완료
                                 </span>
                                 {task.comments && (
-                                  <span className="text-xs text-gray-500 flex items-center gap-1">
+                                  <span className="text-xs text-gray-700 flex items-center gap-1">
                                     <MessageSquare className="h-3 w-3" />
                                     {task.comments.length}
                                   </span>
@@ -435,7 +435,7 @@ export default function TodoList({ searchQuery, onCommentCreated }: TodoListProp
 
                   {filteredTasks.length === 0 && (
                     <div className="text-center py-12">
-                      <p className="text-gray-500">
+                      <p className="text-gray-700">
                         {activeTab === 'my'
                           ? '내가 생성하거나 참여중인 업무가 없습니다.'
                           : '다른 팀원이 생성한 업무가 없습니다.'}

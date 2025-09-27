@@ -317,7 +317,7 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
                         </Avatar>
                         <div>
                           <h4 className="text-sm font-medium">{member.nickname}</h4>
-                          <p className="text-xs text-gray-500">@{member.username}</p>
+                          <p className="text-xs text-gray-700">@{member.username}</p>
                           <Badge variant="outline" className="text-xs mt-1">
                             {member.role === 'creator' ? '생성자' :
                              member.role === 'assignee' ? '담당자' :
@@ -329,10 +329,10 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
                         <div className="text-sm font-medium">
                           업무: {member.taskCount}개
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-700">
                           완료: {member.completedTaskCount}개
                         </div>
-                        <div className="text-xs text-gray-500 flex items-center gap-1">
+                        <div className="text-xs text-gray-700 flex items-center gap-1">
                           <MessageSquare className="h-3 w-3" />
                           {member.commentCount}
                         </div>
@@ -340,7 +340,7 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
                     </div>
                   ))}
                   {filteredMembers.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-gray-700">
                       팀원이 없습니다.
                     </div>
                   )}
@@ -397,20 +397,20 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
                                task.priority === 'medium' ? '보통' : '낮음'}
                             </Badge>
                             {task.comments && (
-                              <span className="text-xs text-gray-500 flex items-center gap-1">
+                              <span className="text-xs text-gray-700 flex items-center gap-1">
                                 <MessageSquare className="h-3 w-3" />
                                 {task.comments.length}
                               </span>
                             )}
                           </div>
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-700">
                           {safeToLocaleDateString(task.createdAt, 'ko-KR')}
                         </div>
                       </div>
                       {task.participants && task.participants.length > 0 && (
                         <div className="flex items-center gap-1 mt-3">
-                          <span className="text-xs text-gray-500 mr-2">참여자:</span>
+                          <span className="text-xs text-gray-700 mr-2">참여자:</span>
                           <div className="flex -space-x-1">
                             {task.participants.slice(0, 3).map((participant) => (
                               <Avatar key={participant.userId} className="h-6 w-6 border-2 border-white">
@@ -431,7 +431,7 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
                     </div>
                   ))}
                   {filteredTasks.length === 0 && (
-                    <div className="text-center py-8 text-gray-500">
+                    <div className="text-center py-8 text-gray-700">
                       업무가 없습니다.
                     </div>
                   )}

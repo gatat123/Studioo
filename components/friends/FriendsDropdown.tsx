@@ -510,7 +510,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
           {showAddFriend && (
             <div className="mb-3">
               <div className="relative">
-                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-600 h-4 w-4" />
                 <Input
                   ref={searchInputRef}
                   placeholder="닉네임으로 친구 검색..."
@@ -532,7 +532,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                         </Avatar>
                         <div className="flex flex-col">
                           <span className="text-xs font-medium">{user.nickname}</span>
-                          <span className="text-xs text-gray-500">@{user.username}</span>
+                          <span className="text-xs text-gray-700">@{user.username}</span>
                         </div>
                       </div>
                       <div>
@@ -580,7 +580,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
           <TabsContent value="friends" className="mt-0 p-0">
             <ScrollArea className="h-[300px]">
               {friends.length === 0 ? (
-                <div className="text-center text-gray-500 text-sm py-8">
+                <div className="text-center text-gray-700 text-sm py-8">
                   아직 친구가 없습니다
                 </div>
               ) : (
@@ -588,7 +588,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                   {/* 온라인 친구 */}
                   {onlineFriends.length > 0 && (
                     <>
-                      <div className="text-xs text-gray-500 px-2 py-1">
+                      <div className="text-xs text-gray-700 px-2 py-1">
                         온라인 — {onlineFriends.length}
                       </div>
                       {onlineFriends.map((friendship) => (
@@ -603,9 +603,9 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                             </div>
                             <div className="flex flex-col">
                               <span className="text-sm font-medium">{friendship.friend.nickname}</span>
-                              <span className="text-xs text-gray-500">온라인</span>
+                              <span className="text-xs text-gray-700">온라인</span>
                               {friendship.memo && editingMemo !== friendship.friend.id && (
-                                <span className="text-xs text-gray-400 italic mt-0.5">{friendship.memo}</span>
+                                <span className="text-xs text-gray-600 italic mt-0.5">{friendship.memo}</span>
                               )}
                               {editingMemo === friendship.friend.id && (
                                 <div className="flex items-center gap-1 mt-1">
@@ -684,7 +684,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                   {/* 오프라인 친구 */}
                   {offlineFriends.length > 0 && (
                     <>
-                      <div className="text-xs text-gray-500 px-2 py-1 mt-2">
+                      <div className="text-xs text-gray-700 px-2 py-1 mt-2">
                         오프라인 — {offlineFriends.length}
                       </div>
                       {offlineFriends.map((friendship) => (
@@ -695,13 +695,13 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                                 <AvatarImage src={friendship.friend.profile_image_url} />
                                 <AvatarFallback className="text-xs">{getInitials(friendship.friend.nickname)}</AvatarFallback>
                               </Avatar>
-                              <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-gray-400 text-gray-400" />
+                              <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-gray-400 text-gray-600" />
                             </div>
                             <div className="flex flex-col">
                               <span className="text-sm font-medium text-gray-600">{friendship.friend.nickname}</span>
-                              <span className="text-xs text-gray-400">오프라인</span>
+                              <span className="text-xs text-gray-600">오프라인</span>
                               {friendship.memo && editingMemo !== friendship.friend.id && (
-                                <span className="text-xs text-gray-400 italic mt-0.5">{friendship.memo}</span>
+                                <span className="text-xs text-gray-600 italic mt-0.5">{friendship.memo}</span>
                               )}
                               {editingMemo === friendship.friend.id && (
                                 <div className="flex items-center gap-1 mt-1">
@@ -784,12 +784,12 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
           <TabsContent value="requests" className="mt-0 p-0">
             <ScrollArea className="h-[300px]">
               {receivedRequests.length === 0 ? (
-                <div className="text-center text-gray-500 text-sm py-8">
+                <div className="text-center text-gray-700 text-sm py-8">
                   받은 친구 요청이 없습니다
                 </div>
               ) : (
                 <div className="p-2">
-                  <div className="text-xs text-gray-500 px-2 py-1">
+                  <div className="text-xs text-gray-700 px-2 py-1">
                     받은 요청 — {receivedRequests.length}
                   </div>
                   {receivedRequests.map((request) => (
@@ -803,7 +803,7 @@ export default function FriendsDropdown({ isOpen, onOpenChange, friendRequestCou
                         </Avatar>
                         <div className="flex flex-col">
                           <span className="text-sm font-medium">{request.sender?.nickname}</span>
-                          <span className="text-xs text-gray-500">친구 요청</span>
+                          <span className="text-xs text-gray-700">친구 요청</span>
                         </div>
                       </div>
                       <div className="flex gap-1">

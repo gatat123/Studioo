@@ -157,7 +157,7 @@ export default function SystemStats() {
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900">System Statistics</h2>
-        <p className="text-gray-500 mt-1">Overview of system usage and performance</p>
+        <p className="text-gray-700 mt-1">Overview of system usage and performance</p>
       </div>
 
       {/* Stat Cards Grid */}
@@ -185,7 +185,7 @@ export default function SystemStats() {
                       <span className="text-red-600">{stat.change}%</span>
                     </>
                   )}
-                  <span className="text-gray-500 ml-1">from last month</span>
+                  <span className="text-gray-700 ml-1">from last month</span>
                 </div>
               )}
             </CardContent>
@@ -206,7 +206,7 @@ export default function SystemStats() {
         </CardHeader>
         <CardContent>
           <Progress value={storagePercentage} className="w-full h-3" />
-          <div className="flex justify-between text-sm text-gray-500 mt-2">
+          <div className="flex justify-between text-sm text-gray-700 mt-2">
             <span>{storagePercentage.toFixed(1)}% used</span>
             <span>{formatBytes(stats.totalStorage - stats.usedStorage)} available</span>
           </div>
@@ -308,7 +308,7 @@ export default function SystemStats() {
                     minHeight: '4px'
                   }}
                 />
-                <span className="text-xs text-gray-500 mt-2">
+                <span className="text-xs text-gray-700 mt-2">
                   {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'][index]}
                 </span>
               </div>
@@ -331,10 +331,10 @@ export default function SystemStats() {
                 <div className="flex-1">
                   <div className="text-sm">
                     <span className="font-medium">{log.user}</span>
-                    <span className="text-gray-500"> {log.action} </span>
+                    <span className="text-gray-700"> {log.action} </span>
                     <span className="font-medium">{log.target}</span>
                   </div>
-                  <div className="text-xs text-gray-400">
+                  <div className="text-xs text-gray-600">
                     {new Date(log.timestamp).toLocaleString()}
                   </div>
                 </div>

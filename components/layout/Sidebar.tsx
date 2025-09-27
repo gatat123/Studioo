@@ -347,7 +347,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           {!isCollapsed && (
             <div className="px-4 pb-2">
               <div className="relative">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-700" />
                 <Input
                   placeholder="Search..."
                   value={searchQuery}

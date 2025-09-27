@@ -115,7 +115,7 @@ const ProjectCard = memo(function ProjectCard({
             {project.name}
           </h3>
           {project.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-3">
+            <p className="text-sm text-gray-600 dark:text-gray-600 line-clamp-2 mb-3">
               {project.description}
             </p>
           )}
@@ -161,7 +161,7 @@ const ProjectCard = memo(function ProjectCard({
             {project.name}
           </h3>
           {project.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-1 mb-2">
+            <p className="text-sm text-gray-600 dark:text-gray-600 line-clamp-1 mb-2">
               {project.description}
             </p>
           )}
@@ -291,7 +291,7 @@ export function ProjectGrid() {
     const deadlineDate = deadline instanceof Date ? deadline : safeParseDateString(deadline as string);
 
     if (!deadlineDate) {
-      return { text: '날짜 없음', className: 'text-gray-400 bg-gray-50' };
+      return { text: '날짜 없음', className: 'text-gray-600 bg-gray-50' };
     }
 
     const diffTime = deadlineDate.getTime() - now.getTime();
@@ -318,10 +318,10 @@ export function ProjectGrid() {
   const EmptyState = () => (
     <div className="col-span-full flex flex-col items-center justify-center py-12">
       <div className="rounded-full bg-gray-100 p-4 mb-4">
-        <Grid3X3 className="h-8 w-8 text-gray-400" />
+        <Grid3X3 className="h-8 w-8 text-gray-600" />
       </div>
       <h3 className="text-lg font-semibold text-gray-900 mb-2">프로젝트가 없습니다</h3>
-      <p className="text-sm text-gray-500">
+      <p className="text-sm text-gray-700">
         {searchQuery || filterTag !== 'all' || filterStatus !== 'all'
           ? '검색 조건에 맞는 프로젝트가 없습니다.'
           : '첫 프로젝트를 생성해보세요!'}
@@ -335,7 +335,7 @@ export function ProjectGrid() {
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Search */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-600" />
           <Input
             type="text"
             placeholder="프로젝트 검색..."

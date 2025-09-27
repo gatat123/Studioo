@@ -254,7 +254,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
                     </Avatar>
                     <div>
                       <p className="font-medium">{participant.user?.nickname || participant.user?.username || 'Unknown'}</p>
-                      <p className="text-sm text-gray-500">{participant.user?.email || 'No email'}</p>
+                      <p className="text-sm text-gray-700">{participant.user?.email || 'No email'}</p>
                     </div>
                   </div>
                 </TableCell>
@@ -298,7 +298,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
                     </Badge>
                   )}
                 </TableCell>
-                <TableCell className="text-gray-500">
+                <TableCell className="text-gray-700">
                   {formatJoinDate(participant.joined_at)}
                 </TableCell>
                 {canManageMembers && (
@@ -342,7 +342,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
         </Table>
       </div>
 
-      <div className="text-sm text-gray-500">
+      <div className="text-sm text-gray-700">
         <p>
           <strong>Owner:</strong> Full access to all project features and settings
         </p>

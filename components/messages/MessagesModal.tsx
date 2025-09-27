@@ -610,7 +610,7 @@ export function MessagesModal({ initialFriend, onFriendSelect }: MessagesModalPr
                 className="cursor-move p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
                 title="드래그하여 이동"
               >
-                <GripHorizontal className="h-4 w-4 text-gray-400 dark:text-gray-500" />
+                <GripHorizontal className="h-4 w-4 text-gray-600 dark:text-gray-700" />
               </div>
 
               {/* Main Button */}

@@ -26,7 +26,7 @@ const OptimizedCard = memo(function OptimizedCard({
         'will-change-[transform,opacity]',
         enableHover && [
           // 호버 시 단순한 transform과 opacity만 사용 (box-shadow 대신)
-          'hover:translate-y-[-2px]',
+          'hover:scale-[1.02]',
           'hover:border-gray-300 dark:hover:border-gray-600',
           // 포커스 상태 (접근성)
           'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-blue-500'

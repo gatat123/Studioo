@@ -89,7 +89,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white">관리자 대시보드</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
+        <p className="text-gray-700 dark:text-gray-300 mt-2">
           시스템 전체 현황을 모니터링하고 관리합니다.
         </p>
       </div>

@@ -120,14 +120,14 @@ export default function ProjectStats() {
           {projectStats.map((stat) => (
             <div key={stat.tag}>
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-600 dark:text-gray-400">{stat.tag}</span>
+                <span className="text-gray-600 dark:text-gray-600">{stat.tag}</span>
                 <span className="font-medium">{stat.count}개</span>
               </div>
               <Progress value={stat.percentage} className="h-2" />
             </div>
           ))}
         </div>
-        <div className="mt-3 text-sm text-gray-500">
+        <div className="mt-3 text-sm text-gray-700">
           총 {totalProjects}개 프로젝트
         </div>
       </div>
@@ -143,7 +143,7 @@ export default function ProjectStats() {
               <div className={`h-20 ${stat.color} rounded-lg mb-2 flex items-center justify-center`}>
                 <span className="text-2xl font-bold text-white">{stat.count}</span>
               </div>
-              <span className="text-sm text-gray-600 dark:text-gray-400">{stat.status}</span>
+              <span className="text-sm text-gray-600 dark:text-gray-600">{stat.status}</span>
             </div>
           ))}
         </div>
@@ -156,15 +156,15 @@ export default function ProjectStats() {
         </h3>
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">오늘 생성된 프로젝트</span>
+            <span className="text-gray-600 dark:text-gray-600">오늘 생성된 프로젝트</span>
             <span className="font-medium">2개</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">이번 주 완료된 프로젝트</span>
+            <span className="text-gray-600 dark:text-gray-600">이번 주 완료된 프로젝트</span>
             <span className="font-medium">5개</span>
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-600 dark:text-gray-400">평균 프로젝트 기간</span>
+            <span className="text-gray-600 dark:text-gray-600">평균 프로젝트 기간</span>
             <span className="font-medium">14일</span>
           </div>
         </div>

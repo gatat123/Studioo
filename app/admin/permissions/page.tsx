@@ -338,7 +338,7 @@ export default function PermissionsPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">권한 관리</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-gray-600 dark:text-gray-600 mt-2">
             역할과 권한을 관리하고 사용자에게 할당합니다.
           </p>
         </div>
@@ -487,7 +487,7 @@ export default function PermissionsPage() {
                       )}
                     </div>
                   </div>
-                  <div className="mt-2 text-sm text-gray-500">
+                  <div className="mt-2 text-sm text-gray-700">
                     {role.userCount}명의 사용자
                   </div>
                 </CardHeader>
@@ -552,7 +552,7 @@ export default function PermissionsPage() {
                       <TableCell>
                         <div>
                           <div className="font-medium">{perm.name}</div>
-                          <div className="text-sm text-gray-500">{perm.description}</div>
+                          <div className="text-sm text-gray-700">{perm.description}</div>
                         </div>
                       </TableCell>
                       {roles.map((role) => (

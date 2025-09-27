@@ -211,7 +211,7 @@ export default function UsersPage() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white">사용자 관리</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2">
+          <p className="text-gray-600 dark:text-gray-600 mt-2">
             전체 사용자 계정을 관리하고 권한을 설정합니다.
           </p>
         </div>
@@ -275,7 +275,7 @@ export default function UsersPage() {
         <CardHeader>
           <div className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 w-4 h-4" />
               <Input
                 placeholder="사용자명 또는 이메일로 검색..."
                 value={searchTerm}
@@ -377,7 +377,7 @@ export default function UsersPage() {
                   <TableCell>
                     <div>
                       <div className="font-medium">{user.username}</div>
-                      <div className="text-sm text-gray-500 flex items-center gap-1">
+                      <div className="text-sm text-gray-700 flex items-center gap-1">
                         <Mail className="w-3 h-3" />
                         {user.email}
                       </div>
@@ -443,7 +443,7 @@ export default function UsersPage() {
           </Table>
 
           {filteredUsers.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-8 text-gray-700">
               검색 결과가 없습니다.
             </div>
           )}

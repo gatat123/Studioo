@@ -207,7 +207,7 @@ export default function SystemStatus() {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   {metric.icon}
-                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="text-sm text-gray-600 dark:text-gray-600">
                     {metric.name}
                   </span>
                 </div>
@@ -239,12 +239,12 @@ export default function SystemStatus() {
               className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
             >
               <div className="flex items-center gap-3">
-                <Database className="w-4 h-4 text-gray-500" />
+                <Database className="w-4 h-4 text-gray-700" />
                 <span className="text-sm font-medium">{service.name}</span>
               </div>
               <div className="flex items-center gap-4">
                 {service.latency && (
-                  <span className="text-xs text-gray-500">
+                  <span className="text-xs text-gray-700">
                     {service.latency}ms
                   </span>
                 )}
@@ -256,7 +256,7 @@ export default function SystemStatus() {
       </div>
 
       {/* Last Update */}
-      <div className="text-xs text-gray-500 text-right">
+      <div className="text-xs text-gray-700 text-right">
         마지막 업데이트: {new Date().toLocaleTimeString('ko-KR')}
       </div>
     </div>

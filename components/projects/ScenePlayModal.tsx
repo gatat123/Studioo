@@ -400,7 +400,7 @@ export default function ScenePlayModal({ scenes, imageType, onClose }: ScenePlay
                         />
                       ) : (
                         <div className="flex items-center justify-center bg-gray-900 rounded-lg w-full h-full">
-                          <div className="text-center text-gray-500">
+                          <div className="text-center text-gray-700">
                             <p className="text-lg font-medium mb-1">이미지 없음</p>
                             <p className="text-sm">씬 {scene.scene_number || index + 1}</p>
                           </div>

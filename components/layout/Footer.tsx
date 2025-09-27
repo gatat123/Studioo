@@ -81,7 +81,7 @@ const Footer: React.FC = () => {
                   href={link.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-gray-500 hover:text-black transition-colors"
+                  className="text-gray-700 hover:text-black transition-colors"
                   aria-label={link.label}
                 >
                   {link.icon}

@@ -1018,7 +1018,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
   if (!selectedWorkTask) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-500">
+      <div className="flex items-center justify-center h-64 text-gray-700">
         <div className="text-center">
           <p className="text-lg">왼쪽 목록에서 업무를 선택해주세요</p>
           <p className="text-sm mt-2">선택한 업무의 세부 작업이 여기에 표시됩니다</p>
@@ -1145,7 +1145,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                   .map((task) => (
                     <Card
                       key={task.id}
-                      className={`cursor-move hover:shadow-lg transition-all duration-300 ease-in-out hover:scale-[1.02] hover:-translate-y-1 border border-slate-200 bg-white ${
+                      className={`cursor-move hover:shadow-lg transition-all duration-300 ease-in-out hover:scale-[1.02] border border-slate-200 bg-white ${
                         (task as any)._isNew ? 'animate-in fade-in-0 slide-in-from-bottom-2 duration-500' : ''
                       }`}
                       draggable
@@ -1242,7 +1242,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                         )}
                         {/* Creator Info */}
                         {task.createdBy && (
-                          <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+                          <div className="flex items-center gap-1 mt-2 text-xs text-gray-700">
                             <span>생성자:</span>
                             <Avatar className="h-4 w-4">
                               <AvatarImage src={task.createdBy.profileImageUrl} />
@@ -1267,7 +1267,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                           </Badge>
                           {task.assignee && (
                             <div className="flex items-center gap-1">
-                              <span className="text-xs text-gray-500">담당:</span>
+                              <span className="text-xs text-gray-700">담당:</span>
                               <Avatar className="h-5 w-5">
                                 <AvatarImage src={task.assignee.profileImageUrl} />
                                 <AvatarFallback className="text-xs">
@@ -1280,7 +1280,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
                         {/* Participants */}
                         <div className="flex items-center gap-1 mt-1">
-                          <span className="text-xs text-gray-500">참여자:</span>
+                          <span className="text-xs text-gray-700">참여자:</span>
                           <div className="flex items-center gap-1">
                             {(task.participants || []).slice(0, 3).map((participant) => (
                               <div key={participant.id} className="relative group">
@@ -1305,7 +1305,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                               </div>
                             ))}
                             {(task.participants || []).length > 3 && (
-                              <span className="text-xs text-gray-500">
+                              <span className="text-xs text-gray-700">
                                 +{(task.participants || []).length - 3}
                               </span>
                             )}
@@ -1350,7 +1350,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                     workTaskParticipant.userId !== task.assigneeId
                                   ).length === 0) && (
                                   <DropdownMenuItem disabled>
-                                    <span className="text-xs text-gray-500">추가할 수 있는 팀원이 없습니다</span>
+                                    <span className="text-xs text-gray-700">추가할 수 있는 팀원이 없습니다</span>
                                   </DropdownMenuItem>
                                 )}
                               </DropdownMenuContent>
@@ -1360,7 +1360,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
                         {/* Due Date */}
                         {task.dueDate && (
-                          <div className="flex items-center text-xs text-gray-500">
+                          <div className="flex items-center text-xs text-gray-700">
                             <Calendar className="h-3 w-3 mr-1" />
                             {safeToLocaleDateString(task.dueDate)}
                           </div>
@@ -1461,11 +1461,11 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                         <span className="text-xs font-medium text-gray-700">
                                           {comment.user?.nickname || '알 수 없는 사용자'}
                                         </span>
-                                        <span className="text-xs text-gray-500">
+                                        <span className="text-xs text-gray-700">
                                           {safeToLocaleString(comment.createdAt)}
                                         </span>
                                         {comment.isEdited && (
-                                          <span className="text-xs text-gray-400">(편집됨)</span>
+                                          <span className="text-xs text-gray-600">(편집됨)</span>
                                         )}
                                       </div>
                                       {/* Comment Actions */}
@@ -1622,7 +1622,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                           <p className="text-xs font-medium text-gray-800 truncate" title={attachment.originalName}>
                                             {attachment.originalName}
                                           </p>
-                                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                                          <div className="flex items-center gap-2 text-xs text-gray-700">
                                             <span>{formatFileSize(attachment.fileSize)}</span>
                                             <span>•</span>
                                             <span>{attachment.uploadedBy.nickname}</span>
@@ -1655,7 +1655,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                   </div>
                                 ))}
                                 {(subtaskAttachments[task.id] || []).length === 0 && (
-                                  <div className="text-xs text-gray-500 text-center py-2">
+                                  <div className="text-xs text-gray-700 text-center py-2">
                                     첨부파일이 없습니다
                                   </div>
                                 )}

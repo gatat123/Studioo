@@ -236,19 +236,19 @@ export default function ProjectManagement() {
         <div className="flex gap-4">
           <div className="text-center">
             <div className="text-2xl font-bold">{stats.total}</div>
-            <div className="text-sm text-gray-500">Total</div>
+            <div className="text-sm text-gray-700">Total</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-            <div className="text-sm text-gray-500">Active</div>
+            <div className="text-sm text-gray-700">Active</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-blue-600">{stats.completed}</div>
-            <div className="text-sm text-gray-500">Completed</div>
+            <div className="text-sm text-gray-700">Completed</div>
           </div>
           <div className="text-center">
             <div className="text-2xl font-bold text-gray-600">{stats.archived}</div>
-            <div className="text-sm text-gray-500">Archived</div>
+            <div className="text-sm text-gray-700">Archived</div>
           </div>
         </div>
       </div>
@@ -256,7 +256,7 @@ export default function ProjectManagement() {
       {/* Filters and Search */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-600" />
           <Input
             placeholder="Search projects..."
             value={searchQuery}
@@ -319,7 +319,7 @@ export default function ProjectManagement() {
               <TableRow key={project.id}>
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
-                    <Folder className="h-4 w-4 text-gray-400" />
+                    <Folder className="h-4 w-4 text-gray-600" />
                     {project.name}
                   </div>
                 </TableCell>
@@ -329,17 +329,17 @@ export default function ProjectManagement() {
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Progress value={project.progress} className="w-20" />
-                    <span className="text-sm text-gray-500">{project.progress}%</span>
+                    <span className="text-sm text-gray-700">{project.progress}%</span>
                   </div>
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4 text-gray-400" />
+                    <Users className="h-4 w-4 text-gray-600" />
                     {project.participants}
                   </div>
                 </TableCell>
                 <TableCell>{getDeadlineStatus(project.deadline)}</TableCell>
-                <TableCell className="text-sm text-gray-500">
+                <TableCell className="text-sm text-gray-700">
                   {new Date(project.lastActivity).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="text-right">

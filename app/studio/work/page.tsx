@@ -202,7 +202,7 @@ export default function WorkPage() {
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">업무 목록</h2>
             <div className="relative w-64">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-500" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-700" />
               <Input
                 placeholder="검색..."
                 value={searchQuery}
@@ -277,7 +277,7 @@ export default function WorkPage() {
                          workTask.priority === 'medium' ? '보통' : '낮음'}
                       </span>
                       {workTask.dueDate && (
-                        <span className="text-xs text-gray-500">
+                        <span className="text-xs text-gray-700">
                           마감: {new Date(workTask.dueDate).toLocaleDateString('ko-KR')}
                         </span>
                       )}

@@ -11,7 +11,7 @@ export default function PrivacyPage() {
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
             개인정보처리방침
           </h1>
-          <p className="mt-4 text-gray-500">최종 수정일: 2024년 1월 1일</p>
+          <p className="mt-4 text-gray-700">최종 수정일: 2024년 1월 1일</p>
 
           <div className="mt-8 space-y-8 text-gray-600">
             <section>

@@ -160,7 +160,7 @@ export default function UserManagement() {
       {/* Search and Filter */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-600 w-4 h-4" />
           <Input
             type="text"
             placeholder="사용자 검색 (이름, 이메일, 닉네임)"
@@ -202,7 +202,7 @@ export default function UserManagement() {
                 <TableCell>
                   <div>
                     <div className="font-medium">{user.username}</div>
-                    <div className="text-sm text-gray-500">{user.nickname}</div>
+                    <div className="text-sm text-gray-700">{user.nickname}</div>
                   </div>
                 </TableCell>
                 <TableCell>{user.email}</TableCell>
@@ -265,7 +265,7 @@ export default function UserManagement() {
       </div>
 
       {/* Summary */}
-      <div className="text-sm text-gray-500">
+      <div className="text-sm text-gray-700">
         총 {filteredUsers.length}명의 사용자
       </div>
     </div>
