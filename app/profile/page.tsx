@@ -17,9 +17,9 @@ import Link from 'next/link';
 
 export default function ProfilePage() {
   const router = useRouter();
-  const { user, isAuthenticated } = useAuthStore();
+  const { user, isAuthenticated, checkAuth, isLoading: authLoading } = useAuthStore();
   const { toast } = useToast();
-  
+
   const [isLoading, setIsLoading] = useState(false);
   const [profileData, setProfileData] = useState({
     bio: '',
@@ -30,11 +30,17 @@ export default function ProfilePage() {
     profileImageUrl: ''
   });
 
+  // 인증 상태 확인
   useEffect(() => {
-    if (!isAuthenticated) {
+    checkAuth();
+  }, [checkAuth]);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
       router.push('/login');
+      return;
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, authLoading, router]);
 
   useEffect(() => {
     if (user) {
@@ -105,10 +111,10 @@ export default function ProfilePage() {
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
+      if (response.ok) {
         toast({
           title: '성공',
-          description: '프로필이 업데이트되었습니다.'
+          description: data.message || '프로필이 업데이트되었습니다.'
         });
 
         // 전역 상태 업데이트
@@ -126,22 +132,32 @@ export default function ProfilePage() {
           });
         }
 
-        // Clear password fields
-        setProfileData(prev => ({
-          ...prev,
-          currentPassword: '',
-          newPassword: '',
-          confirmPassword: ''
-        }));
+        // 로컬 상태 업데이트
+        if (data.user) {
+          setProfileData(prev => ({
+            ...prev,
+            bio: data.user.bio || '',
+            email: data.user.email || '',
+            profileImageUrl: data.user.profileImageUrl || data.user.profile_image_url || '',
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          }));
+        }
+
+        // 페이지 새로고침
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } else {
         toast({
           title: '오류',
-          description: data.message || '프로필 업데이트에 실패했습니다.',
+          description: data.error || data.message || '프로필 업데이트에 실패했습니다.',
           variant: 'destructive'
         });
       }
-    } catch {
-
+    } catch (error) {
+      console.error('Profile update error:', error);
       toast({
         title: '오류',
         description: '프로필 업데이트 중 오류가 발생했습니다.',
@@ -192,7 +208,7 @@ export default function ProfilePage() {
 
       const data = await response.json();
 
-      if (response.ok && data.success) {
+      if (response.ok) {
         // 프로필 이미지 URL 업데이트
         const newProfileImageUrl = data.user?.profileImageUrl || '';
         setProfileData(prev => ({
@@ -208,20 +224,25 @@ export default function ProfilePage() {
             profile_image_url: newProfileImageUrl
           });
         }
-        
+
         toast({
           title: '성공',
-          description: '프로필 사진이 업데이트되었습니다.'
+          description: data.message || '프로필 사진이 업데이트되었습니다.'
         });
+
+        // 페이지 새로고침
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } else {
         toast({
           title: '오류',
-          description: data.error || '프로필 사진 업로드에 실패했습니다.',
+          description: data.error || data.message || '프로필 사진 업로드에 실패했습니다.',
           variant: 'destructive'
         });
       }
-    } catch {
-
+    } catch (error) {
+      console.error('Profile image upload error:', error);
       toast({
         title: '오류',
         description: '프로필 사진 업로드 중 오류가 발생했습니다.',
@@ -234,8 +255,15 @@ export default function ProfilePage() {
     }
   };
 
-  if (!user) {
-    return <div>Loading...</div>;
+  if (authLoading || !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">프로필 정보를 불러오는 중...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -349,6 +377,7 @@ export default function ProfilePage() {
                     placeholder="간단한 자기소개를 작성해주세요"
                     rows={4}
                     maxLength={500}
+                    disabled={isLoading}
                   />
                   <p className="text-xs text-gray-500">
                     {profileData.bio.length}/500
@@ -367,10 +396,11 @@ export default function ProfilePage() {
                     type="email"
                     value={profileData.email}
                     onChange={handleInputChange}
+                    disabled={isLoading}
                   />
                 </div>
 
-                <Button 
+                <Button
                   onClick={handleProfileUpdate}
                   disabled={isLoading}
                 >
