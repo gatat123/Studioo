@@ -183,11 +183,15 @@ class SocketClient {
 
   // Team Channel Management
   joinChannel(channelId: string) {
-    this.emit('join_channel', { channel_id: channelId });
+    // Try multiple event names for compatibility
+    this.emit('join:channel', { channel_id: channelId });
+    this.emit('channel:join', { channelId: channelId });
   }
 
   leaveChannel(channelId: string) {
-    this.emit('leave_channel', { channel_id: channelId });
+    // Try multiple event names for compatibility
+    this.emit('leave:channel', { channel_id: channelId });
+    this.emit('channel:leave', { channelId: channelId });
   }
 
   sendChannelMessage(channelId: string, content: string, type: 'text' | 'image' | 'file' = 'text', tempId?: string) {
