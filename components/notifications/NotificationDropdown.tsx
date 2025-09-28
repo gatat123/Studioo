@@ -106,7 +106,7 @@ export default function NotificationDropdown() {
     });
 
     // Listen for channel invites - 백엔드와 일치하는 이벤트명 사용
-    socket.on('channel:invite_received', (data: { invite: {
+    socket.on('channel_invite_received', (data: { invite: {
       id: string;
       channelId: string;
       inviterId: string;

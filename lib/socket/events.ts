@@ -59,7 +59,7 @@ export const SOCKET_EVENTS = {
   CHANNEL_MESSAGE_ERROR: 'channel:message:error',
   CHANNEL_MEMBER_JOINED: 'channel:member:joined',
   CHANNEL_MEMBER_LEFT: 'channel:member:left',
-  CHANNEL_INVITE_RECEIVED: 'channel:invite:received',
+  CHANNEL_INVITE_RECEIVED: 'channel_invite_received',  // Match backend event name
   CHANNEL_INVITE_SENT: 'channel:invite:sent',
   CHANNEL_TYPING_START: 'channel:typing:start',
   CHANNEL_TYPING_STOP: 'channel:typing:stop',
