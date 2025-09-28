@@ -28,7 +28,8 @@ import {
   CheckCircle,
   Circle,
   AlertCircle,
-  Loader
+  Loader,
+  User
 } from 'lucide-react'
 import { socketClient } from '@/lib/socket/client'
 import { SOCKET_EVENTS, type ChannelMessagePayload } from '@/lib/socket/events'
@@ -274,6 +275,17 @@ function TeamPageContent() {
       // Load channel data
       loadChannelMembers(selectedChannel.id)
       loadMessages(selectedChannel.id)
+
+      // Auto-show work panel if channel has linked work task
+      if (selectedChannel.workTask) {
+        setSelectedWorkTask(selectedChannel.workTask)
+        setRightPanelVisible(true)
+        loadSubTasks(selectedChannel.workTask.id)
+      } else {
+        setRightPanelVisible(false)
+        setSelectedWorkTask(null)
+        setSubTasks([])
+      }
       
       return () => {
         const socket = socketClient.getSocket()
@@ -632,7 +644,7 @@ function TeamPageContent() {
       console.error('Failed to load subtasks:', error)
       toast({
         title: '오류',
-        description: '하위 작업을 불러오는데 실패했습니다.',
+        description: '업무 보드를 불러오는데 실패했습니다.'
         variant: 'destructive'
       })
     } finally {
@@ -659,14 +671,106 @@ function TeamPageContent() {
     setSelectedWorkTask(null)
     setSubTasks([])
   }
-  
-  // Removed unused getStatusColor function
+
+  const handleLinkWorkTask = async () => {
+    if (!selectedWorkTask || !selectedChannel) return
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/${selectedChannel.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ workTaskId: selectedWorkTask.id })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSelectedChannel(data.channel)
+        setChannels(prev => prev.map(ch =>
+          ch.id === selectedChannel.id ? data.channel : ch
+        ))
+        toast({
+          title: '작업 연결 완료',
+          description: `${selectedWorkTask.title} 작업이 채널에 연결되었습니다.`
+        })
+      } else {
+        throw new Error('Failed to link work task')
+      }
+    } catch (error) {
+      console.error('Error linking work task:', error)
+      toast({
+        title: '오류',
+        description: '작업 연결에 실패했습니다.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  const handleUnlinkWorkTask = async () => {
+    if (!selectedChannel) return
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/${selectedChannel.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ workTaskId: null })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setSelectedChannel(data.channel)
+        setChannels(prev => prev.map(ch =>
+          ch.id === selectedChannel.id ? data.channel : ch
+        ))
+        toast({
+          title: '연결 해제 완료',
+          description: '작업 연결이 해제되었습니다.'
+        })
+        handleCloseRightPanel()
+      } else {
+        throw new Error('Failed to unlink work task')
+      }
+    } catch (error) {
+      console.error('Error unlinking work task:', error)
+      toast({
+        title: '오류',
+        description: '연결 해제에 실패했습니다.',
+        variant: 'destructive'
+      })
+    }
+  }
+
+  // Helper function to calculate days elapsed
+  const getDaysElapsed = (updatedAt: string) => {
+    const updatedDate = new Date(updatedAt)
+    const now = new Date()
+    const diffTime = Math.abs(now.getTime() - updatedDate.getTime())
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+    return diffDays
+  }
+
+  // Helper function to format date in Korean
+  const formatKoreanDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    })
+  }
 
   return (
     <>
       <div className="flex h-full overflow-hidden">
         {/* Left Sidebar - Channels */}
-      <div className="w-64 border-r bg-muted/30 flex flex-col h-full">
+      <div className="w-64 border-r bg-muted/30 flex flex-col h-full flex-shrink-0">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold">채널</h2>
@@ -877,11 +981,14 @@ function TeamPageContent() {
           )
         })()}
       </div>
-      
+
+      {/* Spacer for centering when right panel is hidden */}
+      {!rightPanelVisible && <div className="flex-1 max-w-xs" />}
+
       {/* Main Chat Area - Center when right panel is hidden */}
       <div className={cn(
-        "flex-1 flex flex-col h-full transition-all duration-300",
-        rightPanelVisible ? "max-w-[800px]" : "max-w-none"
+        "flex flex-col h-full transition-all duration-300",
+        rightPanelVisible ? "flex-1" : "max-w-3xl w-full"
       )}>
         {selectedChannel ? (
           <>
@@ -1173,7 +1280,10 @@ function TeamPageContent() {
           </div>
         )}
       </div>
-      
+
+      {/* Right Spacer for centering when right panel is hidden */}
+      {!rightPanelVisible && <div className="flex-1 max-w-xs" />}
+
       {/* Right Sidebar - Work Panel */}
       {rightPanelVisible && selectedWorkTask && (
         <div className="w-96 border-l bg-background h-full overflow-y-auto">
@@ -1242,7 +1352,7 @@ function TeamPageContent() {
               )}
 
               <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">하위 작업</span>
+                <span className="text-muted-foreground">업무 보드</span>
                 <div className="flex items-center gap-1">
                   <span className="text-xs">
                     {subTasks.filter(task => task.status === 'done').length} / {subTasks.length}
@@ -1257,7 +1367,33 @@ function TeamPageContent() {
           <div className="flex-1">
             <div className="p-4">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="font-medium">하위 작업</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium">업무 보드</h3>
+                  {/* Link/Unlink buttons for channel creator */}
+                  {selectedChannel && selectedChannel.creatorId === currentUser?.id && (
+                    <div className="flex items-center gap-2">
+                      {selectedChannel.workTask ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleUnlinkWorkTask()}
+                          className="h-6 text-xs"
+                        >
+                          연결 해제
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleLinkWorkTask()}
+                          className="h-6 text-xs"
+                        >
+                          작업 연결
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
                 {loadingSubTasks && (
                   <Loader className="h-4 w-4 animate-spin" />
                 )}
@@ -1267,7 +1403,7 @@ function TeamPageContent() {
                 <div className="text-center py-8">
                   <div className="text-muted-foreground">
                     <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">하위 작업이 없습니다</p>
+                    <p className="text-sm">업무 보드가 없습니다</p>
                   </div>
                 </div>
               ) : (
@@ -1281,31 +1417,62 @@ function TeamPageContent() {
                       <div className="space-y-2">
                         {subTasks.filter(task => task.status === 'todo').map((task) => (
                           <div key={task.id} className="p-3 border rounded-lg bg-background">
-                            <div className="flex items-start gap-2">
-                              <Circle className="h-4 w-4 mt-0.5 text-muted-foreground" />
-                              <div className="flex-1 min-w-0">
-                                <h5 className="font-medium text-sm">{task.title}</h5>
-                                {task.description && (
-                                  <p className="text-xs text-muted-foreground mt-1 overflow-hidden" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>
-                                    {task.description}
-                                  </p>
-                                )}
-                                <div className="flex items-center gap-2 mt-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    {task.priority === 'low' && '낮음'}
-                                    {task.priority === 'medium' && '보통'}
-                                    {task.priority === 'high' && '높음'}
-                                    {task.priority === 'urgent' && '긴급'}
-                                  </Badge>
-                                  {task.dueDate && (
-                                    <div className="flex items-center gap-1">
-                                      <Clock className="h-3 w-3 text-muted-foreground" />
-                                      <span className="text-xs text-muted-foreground">
-                                        {new Date(task.dueDate).toLocaleDateString()}
-                                      </span>
-                                    </div>
-                                  )}
+                            <div className="space-y-2">
+                              <h5 className="font-medium text-sm">{task.title}</h5>
+                              {task.description && (
+                                <p className="text-xs text-muted-foreground overflow-hidden" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>
+                                  {task.description}
+                                </p>
+                              )}
+
+                              <div className="space-y-1 text-xs text-muted-foreground">
+                                <div className="flex items-center justify-between">
+                                  <span>생성일:</span>
+                                  <span>{formatKoreanDate(task.createdAt)}</span>
                                 </div>
+                                <div className="flex items-center justify-between">
+                                  <span>수정일:</span>
+                                  <span>{formatKoreanDate(task.updatedAt)}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span>경과일:</span>
+                                  <span>{getDaysElapsed(task.updatedAt)}일</span>
+                                </div>
+                                {task.assignee && (
+                                  <div className="flex items-center justify-between">
+                                    <span>담당자:</span>
+                                    <div className="flex items-center gap-1">
+                                      <User className="h-3 w-3" />
+                                      <span>{task.assignee.nickname}</span>
+                                    </div>
+                                  </div>
+                                )}
+                                {task.participants && task.participants.length > 0 && (
+                                  <div className="flex items-center justify-between">
+                                    <span>참여자:</span>
+                                    <div className="flex items-center gap-1">
+                                      <Users className="h-3 w-3" />
+                                      <span>{task.participants.length}명</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {task.priority === 'low' && '낮음'}
+                                  {task.priority === 'medium' && '보통'}
+                                  {task.priority === 'high' && '높음'}
+                                  {task.priority === 'urgent' && '긴급'}
+                                </Badge>
+                                {task.dueDate && (
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatKoreanDate(task.dueDate)}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1323,31 +1490,62 @@ function TeamPageContent() {
                       <div className="space-y-2">
                         {subTasks.filter(task => task.status === 'in_progress').map((task) => (
                           <div key={task.id} className="p-3 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
-                            <div className="flex items-start gap-2">
-                              <Loader className="h-4 w-4 mt-0.5 text-blue-600 animate-spin" />
-                              <div className="flex-1 min-w-0">
-                                <h5 className="font-medium text-sm">{task.title}</h5>
-                                {task.description && (
-                                  <p className="text-xs text-muted-foreground mt-1 overflow-hidden" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>
-                                    {task.description}
-                                  </p>
-                                )}
-                                <div className="flex items-center gap-2 mt-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    {task.priority === 'low' && '낮음'}
-                                    {task.priority === 'medium' && '보통'}
-                                    {task.priority === 'high' && '높음'}
-                                    {task.priority === 'urgent' && '긴급'}
-                                  </Badge>
-                                  {task.dueDate && (
-                                    <div className="flex items-center gap-1">
-                                      <Clock className="h-3 w-3 text-muted-foreground" />
-                                      <span className="text-xs text-muted-foreground">
-                                        {new Date(task.dueDate).toLocaleDateString()}
-                                      </span>
-                                    </div>
-                                  )}
+                            <div className="space-y-2">
+                              <h5 className="font-medium text-sm">{task.title}</h5>
+                              {task.description && (
+                                <p className="text-xs text-muted-foreground overflow-hidden" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>
+                                  {task.description}
+                                </p>
+                              )}
+
+                              <div className="space-y-1 text-xs text-muted-foreground">
+                                <div className="flex items-center justify-between">
+                                  <span>생성일:</span>
+                                  <span>{formatKoreanDate(task.createdAt)}</span>
                                 </div>
+                                <div className="flex items-center justify-between">
+                                  <span>수정일:</span>
+                                  <span>{formatKoreanDate(task.updatedAt)}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span>경과일:</span>
+                                  <span>{getDaysElapsed(task.updatedAt)}일</span>
+                                </div>
+                                {task.assignee && (
+                                  <div className="flex items-center justify-between">
+                                    <span>담당자:</span>
+                                    <div className="flex items-center gap-1">
+                                      <User className="h-3 w-3" />
+                                      <span>{task.assignee.nickname}</span>
+                                    </div>
+                                  </div>
+                                )}
+                                {task.participants && task.participants.length > 0 && (
+                                  <div className="flex items-center justify-between">
+                                    <span>참여자:</span>
+                                    <div className="flex items-center gap-1">
+                                      <Users className="h-3 w-3" />
+                                      <span>{task.participants.length}명</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {task.priority === 'low' && '낮음'}
+                                  {task.priority === 'medium' && '보통'}
+                                  {task.priority === 'high' && '높음'}
+                                  {task.priority === 'urgent' && '긴급'}
+                                </Badge>
+                                {task.dueDate && (
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatKoreanDate(task.dueDate)}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1365,31 +1563,62 @@ function TeamPageContent() {
                       <div className="space-y-2">
                         {subTasks.filter(task => task.status === 'review').map((task) => (
                           <div key={task.id} className="p-3 border rounded-lg bg-yellow-50 dark:bg-yellow-950/20">
-                            <div className="flex items-start gap-2">
-                              <AlertCircle className="h-4 w-4 mt-0.5 text-yellow-600" />
-                              <div className="flex-1 min-w-0">
-                                <h5 className="font-medium text-sm">{task.title}</h5>
-                                {task.description && (
-                                  <p className="text-xs text-muted-foreground mt-1 overflow-hidden" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>
-                                    {task.description}
-                                  </p>
-                                )}
-                                <div className="flex items-center gap-2 mt-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    {task.priority === 'low' && '낮음'}
-                                    {task.priority === 'medium' && '보통'}
-                                    {task.priority === 'high' && '높음'}
-                                    {task.priority === 'urgent' && '긴급'}
-                                  </Badge>
-                                  {task.dueDate && (
-                                    <div className="flex items-center gap-1">
-                                      <Clock className="h-3 w-3 text-muted-foreground" />
-                                      <span className="text-xs text-muted-foreground">
-                                        {new Date(task.dueDate).toLocaleDateString()}
-                                      </span>
-                                    </div>
-                                  )}
+                            <div className="space-y-2">
+                              <h5 className="font-medium text-sm">{task.title}</h5>
+                              {task.description && (
+                                <p className="text-xs text-muted-foreground overflow-hidden" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>
+                                  {task.description}
+                                </p>
+                              )}
+
+                              <div className="space-y-1 text-xs text-muted-foreground">
+                                <div className="flex items-center justify-between">
+                                  <span>생성일:</span>
+                                  <span>{formatKoreanDate(task.createdAt)}</span>
                                 </div>
+                                <div className="flex items-center justify-between">
+                                  <span>수정일:</span>
+                                  <span>{formatKoreanDate(task.updatedAt)}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span>경과일:</span>
+                                  <span>{getDaysElapsed(task.updatedAt)}일</span>
+                                </div>
+                                {task.assignee && (
+                                  <div className="flex items-center justify-between">
+                                    <span>담당자:</span>
+                                    <div className="flex items-center gap-1">
+                                      <User className="h-3 w-3" />
+                                      <span>{task.assignee.nickname}</span>
+                                    </div>
+                                  </div>
+                                )}
+                                {task.participants && task.participants.length > 0 && (
+                                  <div className="flex items-center justify-between">
+                                    <span>참여자:</span>
+                                    <div className="flex items-center gap-1">
+                                      <Users className="h-3 w-3" />
+                                      <span>{task.participants.length}명</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {task.priority === 'low' && '낮음'}
+                                  {task.priority === 'medium' && '보통'}
+                                  {task.priority === 'high' && '높음'}
+                                  {task.priority === 'urgent' && '긴급'}
+                                </Badge>
+                                {task.dueDate && (
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground">
+                                      {formatKoreanDate(task.dueDate)}
+                                    </span>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
@@ -1407,33 +1636,61 @@ function TeamPageContent() {
                       <div className="space-y-2">
                         {subTasks.filter(task => task.status === 'done').map((task) => (
                           <div key={task.id} className="p-3 border rounded-lg bg-green-50 dark:bg-green-950/20">
-                            <div className="flex items-start gap-2">
-                              <CheckCircle className="h-4 w-4 mt-0.5 text-green-600" />
-                              <div className="flex-1 min-w-0">
-                                <h5 className="font-medium text-sm line-through text-muted-foreground">
-                                  {task.title}
-                                </h5>
-                                {task.description && (
-                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2 line-through">
-                                    {task.description}
-                                  </p>
-                                )}
-                                <div className="flex items-center gap-2 mt-2">
-                                  <Badge variant="outline" className="text-xs">
-                                    {task.priority === 'low' && '낮음'}
-                                    {task.priority === 'medium' && '보통'}
-                                    {task.priority === 'high' && '높음'}
-                                    {task.priority === 'urgent' && '긴급'}
-                                  </Badge>
-                                  {task.completedAt && (
-                                    <div className="flex items-center gap-1">
-                                      <CheckCircle className="h-3 w-3 text-green-600" />
-                                      <span className="text-xs text-muted-foreground">
-                                        {new Date(task.completedAt).toLocaleDateString()}
-                                      </span>
-                                    </div>
-                                  )}
+                            <div className="space-y-2">
+                              <h5 className="font-medium text-sm line-through text-muted-foreground">
+                                {task.title}
+                              </h5>
+                              {task.description && (
+                                <p className="text-xs text-muted-foreground line-through overflow-hidden" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>
+                                  {task.description}
+                                </p>
+                              )}
+
+                              <div className="space-y-1 text-xs text-muted-foreground">
+                                <div className="flex items-center justify-between">
+                                  <span>생성일:</span>
+                                  <span>{formatKoreanDate(task.createdAt)}</span>
                                 </div>
+                                <div className="flex items-center justify-between">
+                                  <span>완료일:</span>
+                                  <span>{task.completedAt ? formatKoreanDate(task.completedAt) : '미완료'}</span>
+                                </div>
+                                <div className="flex items-center justify-between">
+                                  <span>소요일:</span>
+                                  <span>
+                                    {task.completedAt
+                                      ? Math.floor((new Date(task.completedAt).getTime() - new Date(task.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+                                      : getDaysElapsed(task.updatedAt)
+                                    }일
+                                  </span>
+                                </div>
+                                {task.assignee && (
+                                  <div className="flex items-center justify-between">
+                                    <span>담당자:</span>
+                                    <div className="flex items-center gap-1">
+                                      <User className="h-3 w-3" />
+                                      <span>{task.assignee.nickname}</span>
+                                    </div>
+                                  </div>
+                                )}
+                                {task.participants && task.participants.length > 0 && (
+                                  <div className="flex items-center justify-between">
+                                    <span>참여자:</span>
+                                    <div className="flex items-center gap-1">
+                                      <Users className="h-3 w-3" />
+                                      <span>{task.participants.length}명</span>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs">
+                                  {task.priority === 'low' && '낮음'}
+                                  {task.priority === 'medium' && '보통'}
+                                  {task.priority === 'high' && '높음'}
+                                  {task.priority === 'urgent' && '긴급'}
+                                </Badge>
                               </div>
                             </div>
                           </div>

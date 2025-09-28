@@ -5,11 +5,22 @@ export interface Channel {
   name: string
   description?: string
   type: 'public' | 'private' | 'direct'
+  creatorId: string
   creator_id: string
   studio_id?: string
+  workTaskId?: string
   is_archived: boolean
   created_at: string
   updated_at: string
+  workTask?: {
+    id: string
+    title: string
+    status: string
+    priority: string
+    dueDate?: string
+    createdAt: string
+    updatedAt: string
+  }
   _count?: {
     members: number
     messages: number
