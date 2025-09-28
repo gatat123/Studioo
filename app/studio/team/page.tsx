@@ -30,6 +30,8 @@ import { useAuthStore } from '@/store/useAuthStore'
 import { CreateChannelModal } from '@/components/team/CreateChannelModal'
 import { InviteMemberModal } from '@/components/team/InviteMemberModal'
 import { DeleteChannelModal } from '@/components/team/DeleteChannelModal'
+import { FileUploadModal } from '@/components/team/FileUploadModal'
+import { MessageAttachment } from '@/components/team/MessageAttachment'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 
@@ -49,6 +51,8 @@ function TeamPageContent() {
   const [createChannelOpen, setCreateChannelOpen] = useState(false)
   const [inviteMemberOpen, setInviteMemberOpen] = useState(false)
   const [deleteChannelOpen, setDeleteChannelOpen] = useState(false)
+  const [fileUploadOpen, setFileUploadOpen] = useState(false)
+  const [uploadingFile, setUploadingFile] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [hasMore, setHasMore] = useState(false)
@@ -414,6 +418,79 @@ function TeamPageContent() {
     }
   }
   
+  const handleFileUpload = async (file: File, caption?: string) => {
+    if (!selectedChannel) return
+
+    setUploadingFile(true)
+    const formData = new FormData()
+    formData.append('file', file)
+    if (caption) {
+      formData.append('caption', caption)
+    }
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/${selectedChannel.id}/files`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+
+        // Send message with file attachment
+        const tempId = `temp-${Date.now()}`
+        const fileMessage = {
+          id: tempId,
+          channelId: selectedChannel.id,
+          senderId: currentUser?.id || '',
+          content: caption || file.name,
+          type: file.type.startsWith('image/') ? 'image' : 'file',
+          created_at: new Date().toISOString(),
+          sender: {
+            id: currentUser?.id || '',
+            username: currentUser?.username || '',
+            nickname: currentUser?.nickname || '',
+            profile_image_url: currentUser?.profile_image_url
+          },
+          files: [data.file]
+        } as ChannelMessage
+
+        // Optimistically add message
+        setMessages(prev => [...prev, fileMessage])
+        scrollToBottom()
+
+        // Send through Socket.io
+        socketClient.sendChannelMessage(
+          selectedChannel.id,
+          caption || file.name,
+          file.type.startsWith('image/') ? 'image' : 'file',
+          tempId
+        )
+
+        toast({
+          title: '파일 업로드 완료',
+          description: `${file.name}이(가) 업로드되었습니다.`
+        })
+      } else {
+        throw new Error('Upload failed')
+      }
+    } catch (error) {
+      console.error('File upload error:', error)
+      toast({
+        title: '업로드 실패',
+        description: '파일 업로드에 실패했습니다.',
+        variant: 'destructive'
+      })
+    } finally {
+      setUploadingFile(false)
+      setFileUploadOpen(false)
+    }
+  }
+
   const handleChannelCreated = () => {
     loadChannels()
   }
@@ -834,12 +911,20 @@ function TeamPageContent() {
                           <span className="font-medium text-sm mb-1">{message.sender.nickname}</span>
                           <div className={cn(
                             "px-3 py-2 rounded-lg inline-block",
-                            isOwnMessage 
-                              ? "bg-primary text-primary-foreground" 
+                            isOwnMessage
+                              ? "bg-primary text-primary-foreground"
                               : "bg-muted"
                           )}>
                             <p className="text-sm">{message.content}</p>
                           </div>
+                          {/* File attachments */}
+                          {message.files && message.files.length > 0 && (
+                            <div className="space-y-2 mt-2">
+                              {message.files.map((file) => (
+                                <MessageAttachment key={file.id} file={file} />
+                              ))}
+                            </div>
+                          )}
                           <span className="text-xs text-muted-foreground mt-1">
                             {safeFormat(message.created_at || message.createdAt, 'HH:mm')}
                           </span>
@@ -862,7 +947,12 @@ function TeamPageContent() {
             {/* Message Input - Moved up from bottom */}
             <div className="p-4 border-t bg-background flex-shrink-0">
               <div className="flex gap-2">
-                <Button size="icon" variant="ghost">
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  onClick={() => setFileUploadOpen(true)}
+                  disabled={uploadingFile}
+                >
                   <Plus className="h-4 w-4" />
                 </Button>
                 <Input
@@ -940,6 +1030,15 @@ function TeamPageContent() {
         channel={selectedChannel}
         onChannelDeleted={handleChannelDeleted}
       />
+
+      {selectedChannel && (
+        <FileUploadModal
+          open={fileUploadOpen}
+          onOpenChange={setFileUploadOpen}
+          onFileSelect={handleFileUpload}
+          maxSize={50} // 50MB max
+        />
+      )}
     </>
   )
 }
