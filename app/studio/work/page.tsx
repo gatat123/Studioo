@@ -215,8 +215,10 @@ export default function WorkPage() {
             {(Array.isArray(workTasks) ? workTasks : []).map((workTask) => (
               <Card
                 key={workTask.id}
-                className={`min-w-[300px] cursor-pointer card-enhanced ${
-                  selectedWorkTask?.id === workTask.id ? 'selected' : ''
+                className={`min-w-[300px] cursor-pointer transition-all duration-300 ${
+                  selectedWorkTask?.id === workTask.id
+                    ? 'glass-subtle ring-2 ring-slate-400 ring-offset-2 ring-offset-background bg-white/95 dark:bg-slate-800/95 backdrop-blur-md'
+                    : 'bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-slate-800/90 hover:shadow-lg border border-slate-200 dark:border-slate-700'
                 }`}
                 onClick={() => handleWorkTaskSelect(workTask)}
               >
