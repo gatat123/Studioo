@@ -148,6 +148,7 @@ export interface ProjectUpdatePayload {
 // Team Channel Event Payloads
 export interface ChannelMessagePayload {
   channel_id: string;
+  tempId?: string;
   message: {
     id: string;
     channelId: string;

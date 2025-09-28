@@ -21,7 +21,7 @@ import {
   Trash2
 } from 'lucide-react'
 import { socketClient } from '@/lib/socket/client'
-import { SOCKET_EVENTS } from '@/lib/socket/events'
+import { SOCKET_EVENTS, type ChannelMessagePayload } from '@/lib/socket/events'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { safeFormat } from '@/lib/utils/date-helpers'
@@ -259,17 +259,17 @@ function TeamPageContent() {
     socketClient.sendChannelMessage(selectedChannel.id, newMessage.trim(), 'text', tempId)
     
     // Listen for confirmation
-    const handleMessageSent = (data: { message: ChannelMessage, tempId: string }) => {
-      if (data.tempId === tempId) {
+    const handleMessageSent = (data: ChannelMessagePayload) => {
+      if (data.tempId === tempId && data.message) {
         setMessages(prev => prev.map(msg =>
-          msg.id === tempId ? data.message : msg
+          msg.id === tempId ? data.message as ChannelMessage : msg
         ))
         socketClient.off(SOCKET_EVENTS.CHANNEL_MESSAGE_SENT, handleMessageSent)
       }
     }
     socketClient.on(SOCKET_EVENTS.CHANNEL_MESSAGE_SENT, handleMessageSent)
-    
-    const handleMessageError = (data: { error: string, tempId: string }) => {
+
+    const handleMessageError = (data: { error: string, tempId?: string, channel_id: string }) => {
       if (data.tempId === tempId) {
         // Remove optimistic message
         setMessages(prev => prev.filter(msg => msg.id !== tempId))
