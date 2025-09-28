@@ -18,7 +18,7 @@ export default function AnnotationModal({ image, onClose, onSave }: AnnotationMo
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isDrawing, setIsDrawing] = useState(false);
   const [tool, setTool] = useState<'pen' | 'eraser' | 'text' | 'circle' | 'rectangle'>('pen');
-  const [color, setColor] = useState('#ff0000');
+  const [color, setColor] = useState('#64748b');
   const [lineWidth, setLineWidth] = useState(2);
   const [annotationText, setAnnotationText] = useState('');
   const [textMode, setTextMode] = useState(false);

@@ -61,7 +61,7 @@ export function AnnotationTools({
   const [shapes, setShapes] = useState<Shape[]>(initialShapes)
   const [isDrawing, setIsDrawing] = useState(false)
   const [currentShapeId, setCurrentShapeId] = useState<string | null>(null)
-  const [strokeColor, setStrokeColor] = useState('#FF0000')
+  const [strokeColor, setStrokeColor] = useState('#64748b')
   const [strokeWidth, setStrokeWidth] = useState(2)
   const [opacity, setOpacity] = useState(1)
   const [showAnnotations, setShowAnnotations] = useState(true)
@@ -387,8 +387,8 @@ export function AnnotationTools({
   ]
 
   const colors = [
-    '#FF0000', '#00FF00', '#0000FF', '#94a3b8',
-    '#FF00FF', '#00FFFF', '#000000', '#FFFFFF'
+    '#64748b', '#10b981', '#3b82f6', '#94a3b8',
+    '#8b5cf6', '#06b6d4', '#000000', '#ffffff'
   ]
 
   return (

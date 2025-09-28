@@ -178,7 +178,7 @@ export default function SystemStatus() {
   //     case 'healthy':
   //       return 'bg-green-500';
   //     case 'warning':
-  //       return 'bg-yellow-500';
+  //       return 'bg-slate-500';
   //     case 'critical':
   //       return 'bg-red-500';
   //     default:
