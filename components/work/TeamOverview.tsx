@@ -435,19 +435,22 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
                       {subTask.participants && subTask.participants.length > 0 && (
                         <div className="flex items-center gap-1 mt-3">
                           <span className="text-xs text-gray-700 mr-2">참여자:</span>
-                          <div className="flex -space-x-1">
+                          <div className="flex items-center gap-2">
                             {subTask.participants.slice(0, 3).map((participant) => (
-                              <Avatar key={participant.userId} className="h-6 w-6 border-2 border-white">
-                                <AvatarImage src={participant.user.profileImageUrl} />
-                                <AvatarFallback className="text-xs">
-                                  {participant.user.nickname.slice(0, 2).toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
+                              <div key={participant.userId} className="flex items-center gap-1">
+                                <Avatar className="h-6 w-6 border-2 border-white">
+                                  <AvatarImage src={participant.user.profileImageUrl} />
+                                  <AvatarFallback className="text-xs">
+                                    {participant.user.nickname.slice(0, 2).toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <span className="text-xs text-gray-700">{participant.user.nickname}</span>
+                              </div>
                             ))}
                             {subTask.participants.length > 3 && (
-                              <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs border-2 border-white">
-                                +{subTask.participants.length - 3}
-                              </div>
+                              <span className="text-xs text-gray-500">
+                                외 {subTask.participants.length - 3}명
+                              </span>
                             )}
                           </div>
                         </div>
