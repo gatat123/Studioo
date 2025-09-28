@@ -201,27 +201,39 @@ class SocketClient {
   }
 
   sendChannelMessage(channelId: string, content: string, type: 'text' | 'image' | 'file' = 'text', tempId?: string) {
-    this.emit('send_channel_message', {
-      channel_id: channelId,
-      content,
-      type,
-      tempId
-    });
+    // Use socket instance directly to avoid type issues
+    if (this.socket) {
+      this.socket.emit('send_channel_message', {
+        channel_id: channelId,
+        content,
+        type,
+        tempId
+      });
+    }
   }
 
   startChannelTyping(channelId: string) {
-    this.emit('typing_start_channel', { channel_id: channelId });
+    // Use socket instance directly to avoid type issues
+    if (this.socket) {
+      this.socket.emit('typing_start_channel', { channel_id: channelId });
+    }
   }
 
   stopChannelTyping(channelId: string) {
-    this.emit('typing_stop_channel', { channel_id: channelId });
+    // Use socket instance directly to avoid type issues
+    if (this.socket) {
+      this.socket.emit('typing_stop_channel', { channel_id: channelId });
+    }
   }
 
   requestPresenceStatus(channelId: string, userIds: string[]) {
-    this.emit('request_presence_status', {
-      channel_id: channelId,
-      user_ids: userIds
-    });
+    // Use socket instance directly to avoid type issues
+    if (this.socket) {
+      this.socket.emit('request_presence_status', {
+        channel_id: channelId,
+        user_ids: userIds
+      });
+    }
   }
 
   // Custom event emitter with type safety
