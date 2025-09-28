@@ -80,6 +80,10 @@ export interface SubTask {
   createdAt: string
   updatedAt: string
 
+  // 추가된 필드들
+  lastModifiedAt?: string
+  timeSinceLastModified?: number
+
   // Relations
   createdBy?: {
     id: string
@@ -93,6 +97,11 @@ export interface SubTask {
   }
   participants?: SubTaskParticipant[]
   comments?: SubTaskComment[]
+  workTask?: {
+    id: string
+    title: string
+    participants?: WorkTaskParticipant[]
+  }
 }
 
 export interface SubTaskParticipant {
@@ -513,5 +522,32 @@ export const workTasksAPI = {
    */
   async removeSubTaskParticipant(workTaskId: string, subtaskId: string, userId: string): Promise<void> {
     return api.delete(`/api/work-tasks/${workTaskId}/subtasks/${subtaskId}/participants?userId=${userId}`)
+  },
+
+  // ===== SubTask 전용 조회 API =====
+
+  /**
+   * Get all subtasks for the authenticated user across all work tasks
+   */
+  async getAllSubTasks(): Promise<SubTask[]> {
+    try {
+      const response = await api.get('/api/subtasks') as any
+
+      // Handle standard backend response format
+      if (response?.success && response.data) {
+        return Array.isArray(response.data) ? response.data : []
+      }
+
+      // Backend returns array directly (legacy support)
+      if (Array.isArray(response)) {
+        return response
+      }
+
+      console.warn('[workTasksAPI] Unexpected getAllSubTasks response structure:', response)
+      return []
+    } catch (error) {
+      console.error('[workTasksAPI] Error fetching all subtasks:', error)
+      return []
+    }
   }
 }

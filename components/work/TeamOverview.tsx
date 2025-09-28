@@ -9,8 +9,9 @@ import { Badge } from '@/components/ui/badge'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
-import { workTasksAPI, WorkTask } from '@/lib/api/work-tasks'
+import { workTasksAPI, WorkTask, SubTask } from '@/lib/api/work-tasks'
 import { safeToLocaleDateString } from '@/lib/utils/date-helpers'
+import { formatDistanceToNow, formatKoreanDate } from '@/lib/utils/time-format'
 
 interface TeamMember {
   id: string
@@ -41,6 +42,7 @@ interface TeamOverviewProps {
 export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
   const { toast } = useToast()
   const [tasks, setTasks] = useState<WorkTask[]>([])
+  const [subTasks, setSubTasks] = useState<SubTask[]>([])
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [workStats, setWorkStats] = useState<WorkStats>({
     totalTasks: 0,
@@ -63,31 +65,13 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
     try {
       setLoading(true)
 
-      // Load work tasks
+      // Load work tasks for compatibility
       const tasks = await workTasksAPI.getWorkTasks()
       setTasks(tasks)
 
-      // Load all subtasks and their comments for each work task
-      const allSubTasks = []
-      const allSubTaskComments = []
-      for (const task of tasks) {
-        try {
-          const subtasks = await workTasksAPI.getSubTasks(task.id)
-          allSubTasks.push(...subtasks)
-
-          // Load comments for each subtask
-          for (const subtask of subtasks) {
-            try {
-              const comments = await workTasksAPI.getSubTaskComments(task.id, subtask.id)
-              allSubTaskComments.push(...comments)
-            } catch (error) {
-              console.error(`Failed to load comments for subtask ${subtask.id}:`, error)
-            }
-          }
-        } catch (error) {
-          console.error(`Failed to load subtasks for task ${task.id}:`, error)
-        }
-      }
+      // Load all subtasks using new API endpoint
+      const allSubTasks = await workTasksAPI.getAllSubTasks()
+      setSubTasks(allSubTasks)
 
       // Calculate statistics including subtasks
       const totalSubTasks = allSubTasks.length
@@ -96,13 +80,17 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
       const reviewSubTasks = allSubTasks.filter(st => st.status === 'review').length
       const pendingSubTasks = allSubTasks.filter(st => st.status === 'todo').length
 
+      // Count total comments
+      const allSubTaskComments = allSubTasks.flatMap(subtask => subtask.comments || [])
+      const workTaskComments = tasks.flatMap(task => task.comments || [])
+
       const stats: WorkStats = {
-        totalTasks: totalSubTasks, // SubTask 개수로 변경
+        totalTasks: totalSubTasks,
         completedTasks: completedSubTasks,
         inProgressTasks: inProgressSubTasks,
         reviewTasks: reviewSubTasks,
         pendingTasks: pendingSubTasks,
-        totalComments: tasks.reduce((sum, task) => sum + (task.comments?.length || 0), 0) + allSubTaskComments.length,
+        totalComments: workTaskComments.length + allSubTaskComments.length,
         activeMembers: 0,
         completionRate: totalSubTasks > 0 ? Math.round((completedSubTasks / totalSubTasks) * 100) : 0
       }
@@ -138,9 +126,7 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
         const userCompletedSubTasks = userSubTasks.filter(subtask => subtask.status === 'done')
 
         // Count comments from both work tasks and subtasks
-        const workTaskCommentCount = tasks.reduce((sum, task) =>
-          sum + (task.comments?.filter(comment => comment.userId === participant.userId).length || 0), 0
-        )
+        const workTaskCommentCount = workTaskComments.filter(comment => comment.userId === participant.userId).length
         const subTaskCommentCount = allSubTaskComments.filter(comment => comment.userId === participant.userId).length
 
         return {
@@ -149,7 +135,7 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
           username: participant.user.username,
           profileImageUrl: participant.user.profileImageUrl,
           role: participant.role,
-          taskCount: userSubTasks.length, // SubTask 개수로 변경
+          taskCount: userSubTasks.length,
           completedTaskCount: userCompletedSubTasks.length,
           commentCount: workTaskCommentCount + subTaskCommentCount
         }
@@ -177,6 +163,13 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
            task.description?.toLowerCase().includes(searchQuery.toLowerCase())
   })
 
+  const filteredSubTasks = subTasks.filter(subTask => {
+    if (!searchQuery) return true
+    return subTask.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           subTask.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+           subTask.workTask?.title.toLowerCase().includes(searchQuery.toLowerCase())
+  })
+
   const filteredMembers = teamMembers.filter(member => {
     if (!searchQuery) return true
     return member.nickname.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -197,7 +190,7 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
         <TabsList className="mb-4">
           <TabsTrigger value="overview">개요</TabsTrigger>
           <TabsTrigger value="members">팀원</TabsTrigger>
-          <TabsTrigger value="tasks">업무 현황</TabsTrigger>
+          <TabsTrigger value="tasks">세부 작업</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="flex-1 overflow-hidden">
@@ -353,66 +346,97 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
         <TabsContent value="tasks" className="flex-1 overflow-hidden">
           <Card className="h-full">
             <CardHeader>
-              <CardTitle>업무 목록</CardTitle>
-              <CardDescription>전체 업무의 상세 현황</CardDescription>
+              <CardTitle>세부 작업 목록</CardTitle>
+              <CardDescription>모든 세부 작업의 상세 현황</CardDescription>
             </CardHeader>
             <CardContent>
               <ScrollArea className="h-[400px]">
                 <div className="space-y-4">
-                  {filteredTasks.map((task) => (
-                    <div key={task.id} className="p-4 border rounded-lg">
+                  {filteredSubTasks.map((subTask) => (
+                    <div key={subTask.id} className="p-4 border rounded-lg">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <h4 className="text-sm font-medium">{task.title}</h4>
-                          {task.description && (
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-sm font-medium">{subTask.title}</h4>
+                            {subTask.workTask && (
+                              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                                {subTask.workTask.title}
+                              </span>
+                            )}
+                          </div>
+                          {subTask.description && (
                             <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                              {task.description}
+                              {subTask.description}
                             </p>
                           )}
                           <div className="flex items-center gap-2 mt-2">
                             <Badge
                               variant="outline"
-                              className={`text-xs ${
-                                task.status === 'pending' ? 'bg-slate-50 text-slate-700' :
-                                task.status === 'in_progress' ? 'bg-slate-100 text-slate-800' :
-                                task.status === 'review' ? 'bg-slate-150 text-slate-800' :
-                                'bg-slate-200 text-slate-900'
+                              className={`text-xs border ${
+                                subTask.status === 'todo' ? 'bg-gray-50 text-gray-600 border-gray-300' :
+                                subTask.status === 'in_progress' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                subTask.status === 'review' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' :
+                                'bg-green-50 text-green-700 border-green-200'
                               }`}
                             >
-                              {task.status === 'pending' ? '대기' :
-                               task.status === 'in_progress' ? '진행중' :
-                               task.status === 'review' ? '검토' : '완료'}
+                              {subTask.status === 'todo' ? 'TODO' :
+                               subTask.status === 'in_progress' ? '진행중' :
+                               subTask.status === 'review' ? '검토' : '완료'}
                             </Badge>
                             <Badge
                               variant="outline"
                               className={`text-xs ${
-                                task.priority === 'urgent' ? 'bg-slate-900 text-white' :
-                                task.priority === 'high' ? 'bg-slate-700 text-white' :
-                                task.priority === 'medium' ? 'bg-slate-500 text-white' :
-                                'bg-slate-300 text-slate-800'
+                                subTask.priority === 'urgent' ? 'bg-red-100 text-red-700 border-red-200' :
+                                subTask.priority === 'high' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                subTask.priority === 'medium' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                                'bg-gray-100 text-gray-600 border-gray-200'
                               }`}
                             >
-                              {task.priority === 'urgent' ? '긴급' :
-                               task.priority === 'high' ? '높음' :
-                               task.priority === 'medium' ? '보통' : '낮음'}
+                              {subTask.priority === 'urgent' ? '긴급' :
+                               subTask.priority === 'high' ? '높음' :
+                               subTask.priority === 'medium' ? '보통' : '낮음'}
                             </Badge>
-                            {task.comments && (
+                            {subTask.comments && subTask.comments.length > 0 && (
                               <span className="text-xs text-gray-700 flex items-center gap-1">
                                 <MessageSquare className="h-3 w-3" />
-                                {task.comments.length}
+                                {subTask.comments.length}
                               </span>
                             )}
                           </div>
+
+                          {/* 담당자 정보 */}
+                          {subTask.assignee && (
+                            <div className="flex items-center gap-2 mt-2">
+                              <span className="text-xs text-gray-500">담당자:</span>
+                              <Avatar className="h-5 w-5">
+                                <AvatarImage src={subTask.assignee.profileImageUrl} />
+                                <AvatarFallback className="text-xs">
+                                  {subTask.assignee.nickname.slice(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="text-xs text-gray-700">{subTask.assignee.nickname}</span>
+                            </div>
+                          )}
                         </div>
-                        <div className="text-xs text-gray-700">
-                          {safeToLocaleDateString(task.createdAt, 'ko-KR')}
+
+                        {/* 날짜 정보 */}
+                        <div className="text-xs text-gray-700 text-right">
+                          <div>생성: {formatKoreanDate(subTask.createdAt)}</div>
+                          {subTask.lastModifiedAt && (
+                            <div className="mt-1">
+                              <span className="text-gray-500">수정:</span>{' '}
+                              {formatDistanceToNow(subTask.lastModifiedAt)}
+                            </div>
+                          )}
                         </div>
                       </div>
-                      {task.participants && task.participants.length > 0 && (
+
+                      {/* 참여자 표시 */}
+                      {subTask.participants && subTask.participants.length > 0 && (
                         <div className="flex items-center gap-1 mt-3">
                           <span className="text-xs text-gray-700 mr-2">참여자:</span>
                           <div className="flex -space-x-1">
-                            {task.participants.slice(0, 3).map((participant) => (
+                            {subTask.participants.slice(0, 3).map((participant) => (
                               <Avatar key={participant.userId} className="h-6 w-6 border-2 border-white">
                                 <AvatarImage src={participant.user.profileImageUrl} />
                                 <AvatarFallback className="text-xs">
@@ -420,9 +444,9 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
                                 </AvatarFallback>
                               </Avatar>
                             ))}
-                            {task.participants.length > 3 && (
+                            {subTask.participants.length > 3 && (
                               <div className="h-6 w-6 rounded-full bg-gray-200 flex items-center justify-center text-xs border-2 border-white">
-                                +{task.participants.length - 3}
+                                +{subTask.participants.length - 3}
                               </div>
                             )}
                           </div>
@@ -430,9 +454,9 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
                       )}
                     </div>
                   ))}
-                  {filteredTasks.length === 0 && (
+                  {filteredSubTasks.length === 0 && (
                     <div className="text-center py-8 text-gray-700">
-                      업무가 없습니다.
+                      세부 작업이 없습니다.
                     </div>
                   )}
                 </div>
