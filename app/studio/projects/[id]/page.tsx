@@ -174,23 +174,24 @@ export default function ProjectDetailPage() {
       })
     })
     
-    socketClient.on('new_image', (data: {uploader?: {nickname?: string}; type?: string}) => {
+    // Standard Socket.io event for image upload
+    socketClient.on(SOCKET_EVENTS.IMAGE_UPLOAD, (data: {image?: {type?: string}; user?: {nickname?: string}}) => {
       // Refetch images for the scene to get the full data
       void fetchProjectDetails() // 전체 프로젝트 데이터를 다시 가져와서 이미지 업데이트
-      
+
       toast({
         title: '새 이미지',
-        description: `${data.uploader?.nickname || 'Someone'}님이 ${data.type === 'lineart' ? '라인아트' : '아트'} 이미지를 업로드했습니다.`
+        description: `${data.user?.nickname || 'Someone'}님이 ${data.image?.type === 'lineart' ? '라인아트' : '아트'} 이미지를 업로드했습니다.`
       })
     })
     
-    // Listen for image version changes
-    socketClient.on('image_version_changed', (data: {user?: {username?: string}; imageType?: string}) => {
+    // Standard Socket.io event for image version changes
+    socketClient.on(SOCKET_EVENTS.IMAGE_VERSION_CHANGE, (data: {imageType?: string; user?: {nickname?: string}}) => {
       void fetchProjectDetails() // 전체 프로젝트 데이터를 다시 가져와서 이미지 업데이트
-      
+
       toast({
         title: '이미지 버전 변경',
-        description: `${data.user?.username || 'Someone'}님이 ${data.imageType === 'lineart' ? '선화' : '아트'} 버전을 변경했습니다.`
+        description: `${data.user?.nickname || 'Someone'}님이 ${data.imageType === 'lineart' ? '선화' : '아트'} 버전을 변경했습니다.`
       })
     })
     
@@ -200,8 +201,8 @@ export default function ProjectDetailPage() {
       socketClient.off(SOCKET_EVENTS.COMMENT_NEW)
       socketClient.off(SOCKET_EVENTS.HISTORY_UPDATE)
       socketClient.off('new_scene')
-      socketClient.off('new_image')
-      socketClient.off('image_version_changed')
+      socketClient.off(SOCKET_EVENTS.IMAGE_UPLOAD)
+      socketClient.off(SOCKET_EVENTS.IMAGE_VERSION_CHANGE)
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])

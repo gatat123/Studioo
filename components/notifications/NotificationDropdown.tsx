@@ -105,8 +105,8 @@ export default function NotificationDropdown() {
       }
     });
 
-    // Listen for channel invites
-    socket.on('channel_invite_received', (data: { invite: {
+    // Listen for channel invites - 백엔드와 일치하는 이벤트명 사용
+    socket.on('channel:invite_received', (data: { invite: {
       id: string;
       channelId: string;
       inviterId: string;
@@ -201,7 +201,7 @@ export default function NotificationDropdown() {
 
     return () => {
       socket.off('new_channel_message');
-      socket.off('channel_invite_received');
+      socket.off('channel:invite_received');
       socket.off('friend_request_received');
     };
   }, [user, router]);

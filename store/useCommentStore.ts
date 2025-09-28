@@ -3,6 +3,8 @@ import { devtools, persist } from 'zustand/middleware';
 import { Comment } from '@/types';
 import { SortOption } from '@/types/comment';
 import { safeGetTime } from '@/lib/utils/date-helpers';
+import { socketClient } from '@/lib/socket/client';
+import { SOCKET_EVENTS } from '@/lib/socket/events';
 
 interface CommentState {
   comments: Comment[];
@@ -296,10 +298,34 @@ const useCommentStore = create<CommentState>()(
 
 export default useCommentStore;
 
-// Initialize with mock data
+// Initialize with mock data and Socket.io listeners
 if (typeof window !== 'undefined') {
   const store = useCommentStore.getState();
   if (store.comments.length === 0) {
     store.setComments(generateMockComments());
   }
+
+  // Socket.io 실시간 댓글 업데이트 리스너
+  const socket = socketClient.connect();
+
+  // 새 댓글 수신
+  socket.on('comment:new', (data: { comment: Comment }) => {
+    if (data.comment) {
+      store.addComment(data.comment);
+    }
+  });
+
+  // 댓글 수정 수신
+  socket.on('comment:update', (data: { comment: Comment }) => {
+    if (data.comment) {
+      store.updateComment(data.comment.id, data.comment.content);
+    }
+  });
+
+  // 댓글 삭제 수신
+  socket.on('comment:delete', (data: { comment_id: string }) => {
+    if (data.comment_id) {
+      store.deleteComment(data.comment_id);
+    }
+  });
 }
