@@ -44,12 +44,14 @@ export interface ChannelMessage {
   metadata?: Record<string, unknown>
   editedAt?: string
   deletedAt?: string
-  created_at: string
+  created_at?: string  // Frontend uses this
+  createdAt?: string   // Backend sends this
   sender: {
     id: string
     username: string
     nickname: string
     profile_image_url?: string
+    profileImageUrl?: string  // Backend might send this
   }
   files?: ChannelFile[]
 }

@@ -81,9 +81,42 @@ function TeamPageContent() {
       ))
     })
 
+    // Listen for channel joined event (after accepting invite)
+    socket.on('channel_joined', (data: { channelId: string; channel?: any; message?: string }) => {
+      console.log('[Team] Channel joined event received:', data)
+      loadChannels() // Reload channel list
+      toast({
+        title: '채널 참가',
+        description: data.message || '채널에 참가했습니다.'
+      })
+      // Auto-select the new channel
+      if (data.channel) {
+        setSelectedChannel(data.channel)
+      }
+    })
+
+    // Listen for channel list update event
+    socket.on('channel_list_updated', () => {
+      console.log('[Team] Channel list update requested')
+      loadChannels() // Reload channel list
+    })
+
+    // Listen for invite accepted notification (for inviter)
+    socket.on('channel_invite_accepted_notification', (data: { acceptedBy: any; channel: any }) => {
+      console.log('[Team] Invite accepted notification:', data)
+      toast({
+        title: '초대 수락',
+        description: `${data.acceptedBy.nickname}님이 ${data.channel.name} 채널 초대를 수락했습니다.`
+      })
+      loadChannelMembers(selectedChannel?.id || data.channel.id)
+    })
+
     return () => {
       socketClient.off(SOCKET_EVENTS.USER_PRESENCE_UPDATE)
       socket.off('presence_update')
+      socket.off('channel_joined')
+      socket.off('channel_list_updated')
+      socket.off('channel_invite_accepted_notification')
       if (selectedChannel) {
         socketClient.leaveChannel(selectedChannel.id)
       }
@@ -188,6 +221,32 @@ function TeamPageContent() {
           description: `${data.invite.inviter.nickname}님이 ${data.invite.channel.name} 채널에 초대했습니다.`
         })
       })
+
+      // 채널 참여 성공 이벤트 (초대 수락 후)
+      socketClient.on('channel_joined', (data) => {
+        if (data.channelId && data.channel) {
+          console.log('[Team] Channel joined successfully:', data.channelId)
+          loadChannels() // 채널 목록 새로고침
+          toast({
+            title: '채널 참여 성공',
+            description: data.message || `${data.channel.name} 채널에 참여했습니다.`
+          })
+        }
+      })
+
+      // 채널 목록 업데이트 이벤트
+      socketClient.on('channel_list_updated', () => {
+        console.log('[Team] Channel list update requested')
+        loadChannels() // 채널 목록 새로고침
+      })
+
+      // 초대 수락 알림 (초대한 사람에게)
+      socketClient.on('channel_invite_accepted_notification', (data) => {
+        toast({
+          title: '초대 수락됨',
+          description: `${data.acceptedBy.nickname}님이 ${data.channel.name} 채널 초대를 수락했습니다.`
+        })
+      })
       
       // Load channel data
       loadChannelMembers(selectedChannel.id)
@@ -205,6 +264,9 @@ function TeamPageContent() {
         socketClient.off(SOCKET_EVENTS.CHANNEL_TYPING_START)
         socketClient.off(SOCKET_EVENTS.CHANNEL_TYPING_STOP)
         socketClient.off(SOCKET_EVENTS.CHANNEL_INVITE_RECEIVED)
+        socketClient.off('channel_joined')
+        socketClient.off('channel_list_updated')
+        socketClient.off('channel_invite_accepted_notification')
       }
     }
   }, [selectedChannel, currentUser, toast]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -490,12 +552,38 @@ function TeamPageContent() {
                                   'Authorization': `Bearer ${token}`
                                 }
                               });
+
                               if (response.ok) {
-                                toast({ title: '채널에 참여했습니다!' });
+                                const result = await response.json();
+
+                                // 즉시 토스트 표시
+                                toast({
+                                  title: '채널 참여 성공!',
+                                  description: result.message || `${invite.channel.name} 채널에 참여했습니다.`
+                                });
+
+                                // 채널 목록 즉시 새로고침
                                 await loadChannels();
+
+                                // 새로 참여한 채널을 선택 (옵션)
+                                if (result.channel) {
+                                  setSelectedChannel(result.channel);
+                                }
+                              } else {
+                                const errorData = await response.json();
+                                toast({
+                                  title: '오류',
+                                  description: errorData.error || '초대 수락에 실패했습니다.',
+                                  variant: 'destructive'
+                                });
                               }
-                            } catch {
-                              toast({ title: '오류', description: '처리 중 오류가 발생했습니다.', variant: 'destructive' });
+                            } catch (error) {
+                              console.error('Channel invite accept error:', error);
+                              toast({
+                                title: '오류',
+                                description: '처리 중 오류가 발생했습니다.',
+                                variant: 'destructive'
+                              });
                             }
                           }}
                         >
@@ -514,12 +602,30 @@ function TeamPageContent() {
                                   'Authorization': `Bearer ${token}`
                                 }
                               });
+
                               if (response.ok) {
-                                toast({ title: '초대를 거절했습니다.' });
+                                toast({
+                                  title: '초대 거절',
+                                  description: '초대를 거절했습니다.'
+                                });
+
+                                // 채널 목록 즉시 새로고침 (초대 목록에서 제거됨)
                                 await loadChannels();
+                              } else {
+                                const errorData = await response.json();
+                                toast({
+                                  title: '오류',
+                                  description: errorData.error || '초대 거절에 실패했습니다.',
+                                  variant: 'destructive'
+                                });
                               }
-                            } catch {
-                              toast({ title: '오류', description: '처리 중 오류가 발생했습니다.', variant: 'destructive' });
+                            } catch (error) {
+                              console.error('Channel invite reject error:', error);
+                              toast({
+                                title: '오류',
+                                description: '처리 중 오류가 발생했습니다.',
+                                variant: 'destructive'
+                              });
                             }
                           }}
                         >
@@ -712,9 +818,9 @@ function TeamPageContent() {
                       isOwnMessage && "flex-row-reverse"
                     )}>
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={message.sender.profile_image_url} />
+                        <AvatarImage src={message.sender.profile_image_url || message.sender.profileImageUrl} />
                         <AvatarFallback className="text-xs">
-                          {message.sender.nickname[0].toUpperCase()}
+                          {message.sender.nickname[0]?.toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
                       <div className={cn(
@@ -735,7 +841,7 @@ function TeamPageContent() {
                             <p className="text-sm">{message.content}</p>
                           </div>
                           <span className="text-xs text-muted-foreground mt-1">
-                            {safeFormat(message.created_at, 'HH:mm')}
+                            {safeFormat(message.created_at || message.createdAt, 'HH:mm')}
                           </span>
                         </div>
                       </div>
