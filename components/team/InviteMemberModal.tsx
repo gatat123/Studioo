@@ -150,44 +150,90 @@ export function InviteMemberModal({ open, onOpenChange, channelId, channelName }
     }
 
     setLoading(true)
+    let successCount = 0
+    let alreadyInvitedCount = 0
+    let failedCount = 0
+
     try {
       // Send invites to all selected users
       const invitePromises = selectedUsers.map(async userId => {
-        const invite = await channelsAPI.inviteMember(channelId, { userId, message })
+        try {
+          const invite = await channelsAPI.inviteMember(channelId, { userId, message })
 
-        // Emit Socket.io event for real-time notification
-        if (socketClient.isConnected()) {
-          socketClient.emit(SOCKET_EVENTS.CHANNEL_INVITE_SENT, {
-            invite: {
-              id: invite.id,
-              channelId: invite.channelId,
-              inviterId: invite.inviterId,
-              inviteeId: invite.inviteeId,
-              channel: invite.channel,
-              inviter: invite.inviter
-            }
-          })
+          // Emit Socket.io event for real-time notification
+          if (socketClient.isConnected()) {
+            socketClient.emit(SOCKET_EVENTS.CHANNEL_INVITE_SENT, {
+              invite: {
+                id: invite.id,
+                channelId: invite.channelId,
+                inviterId: invite.inviterId,
+                inviteeId: invite.inviteeId,
+                channel: invite.channel,
+                inviter: invite.inviter
+              }
+            })
+          }
+
+          successCount++
+          return { success: true, userId }
+        } catch (error: any) {
+          // Handle specific error cases
+          if (error?.message?.includes('already sent') || error?.message?.includes('already member')) {
+            alreadyInvitedCount++
+            return { success: false, userId, reason: 'already_invited' }
+          }
+          failedCount++
+          console.error(`Failed to invite user ${userId}:`, error)
+          return { success: false, userId, reason: 'error' }
         }
-
-        return invite
       })
 
       await Promise.all(invitePromises)
 
-      toast({
-        title: '성공',
-        description: `${selectedUsers.length}명에게 초대를 보냈습니다`
-      })
+      // Show appropriate message based on results
+      if (successCount > 0 && failedCount === 0 && alreadyInvitedCount === 0) {
+        toast({
+          title: '성공',
+          description: `${successCount}명에게 초대를 보냈습니다`
+        })
+      } else if (successCount > 0) {
+        let message = `${successCount}명에게 초대를 보냈습니다.`
+        if (alreadyInvitedCount > 0) {
+          message += ` ${alreadyInvitedCount}명은 이미 초대되었습니다.`
+        }
+        if (failedCount > 0) {
+          message += ` ${failedCount}명은 초대에 실패했습니다.`
+        }
+        toast({
+          title: '부분 성공',
+          description: message
+        })
+      } else if (alreadyInvitedCount > 0) {
+        toast({
+          title: '알림',
+          description: '선택한 사용자들은 이미 초대되었거나 멤버입니다',
+          variant: 'default'
+        })
+      } else {
+        toast({
+          title: '오류',
+          description: '초대 전송에 실패했습니다',
+          variant: 'destructive'
+        })
+      }
 
-      onOpenChange(false)
-      setSelectedUsers([])
-      setMessage('')
-      setSearchQuery('')
+      // Close modal if at least one invite was successful
+      if (successCount > 0) {
+        onOpenChange(false)
+        setSelectedUsers([])
+        setMessage('')
+        setSearchQuery('')
+      }
     } catch (error) {
       console.error('초대 전송 오류:', error)
       toast({
         title: '오류',
-        description: '초대 전송에 실패했습니다',
+        description: '초대 전송 중 문제가 발생했습니다',
         variant: 'destructive'
       })
     } finally {

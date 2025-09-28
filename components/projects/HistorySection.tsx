@@ -57,7 +57,14 @@ export function HistorySection({
 
   // Convert comments to history items
   const convertCommentsToHistory = useCallback((comments: Comment[]): HistoryItem[] => {
-    return comments.map(comment => {
+    // Sort comments by created_at (oldest first)
+    const sortedComments = [...comments].sort((a, b) => {
+      const aTime = new Date(a.created_at || a.createdAt || '').getTime();
+      const bTime = new Date(b.created_at || b.createdAt || '').getTime();
+      return aTime - bTime; // 오래된 것부터 (위에서 아래로)
+    });
+
+    return sortedComments.map(comment => {
       const isAnnotation = comment.content?.startsWith('[ANNOTATION]')
       const displayContent = isAnnotation
         ? comment.content.substring(12) || '주석을 남겼습니다'
@@ -68,7 +75,7 @@ export function HistorySection({
         type: isAnnotation ? 'annotation' : 'comment',
         content: displayContent,
         user: comment.user || comment.author,
-        timestamp: comment.created_at,
+        timestamp: comment.created_at || comment.createdAt,
         metadata: comment.metadata,
         isNew: false
       } as HistoryItem
@@ -106,7 +113,16 @@ export function HistorySection({
         isNew: true
       }
 
-      setHistoryItems(prev => [...prev, newItem])
+      // Insert in sorted order
+      setHistoryItems(prev => {
+        const updated = [...prev, newItem];
+        updated.sort((a, b) => {
+          const aTime = new Date(a.timestamp || '').getTime();
+          const bTime = new Date(b.timestamp || '').getTime();
+          return aTime - bTime; // 오래된 것부터
+        });
+        return updated;
+      })
 
       // Auto-scroll to bottom for new items
       setTimeout(() => {
@@ -144,7 +160,16 @@ export function HistorySection({
             isNew: true
           }
 
-          setHistoryItems(prev => [...prev, historyItem])
+          // Insert in sorted order
+          setHistoryItems(prev => {
+            const updated = [...prev, historyItem];
+            updated.sort((a, b) => {
+              const aTime = new Date(a.timestamp || '').getTime();
+              const bTime = new Date(b.timestamp || '').getTime();
+              return aTime - bTime; // 오래된 것부터
+            });
+            return updated;
+          })
         }
 
         // Show notification if from another user
@@ -313,9 +338,14 @@ export function HistorySection({
         content: newComment
       })
 
-      // Optimistically add to local state
-      setComments(prev => [...prev, comment])
-      onCommentsUpdate([...comments, comment])
+      // Optimistically add to local state (maintain sort order)
+      const updatedComments = [...comments, comment].sort((a, b) => {
+        const aTime = new Date(a.created_at || a.createdAt || '').getTime();
+        const bTime = new Date(b.created_at || b.createdAt || '').getTime();
+        return aTime - bTime; // 오래된 것부터
+      });
+      setComments(updatedComments)
+      onCommentsUpdate(updatedComments)
 
       // Add to history
       const historyItem: HistoryItem = {

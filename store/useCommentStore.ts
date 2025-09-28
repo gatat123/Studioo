@@ -167,9 +167,16 @@ const useCommentStore = create<CommentState>()(
         hasMore: true,
 
         addComment: (comment) => {
-          set((state) => ({
-            comments: [comment, ...state.comments]
-          }));
+          set((state) => {
+            // 오래된 댓글부터 표시 (시간순 정렬)
+            const updatedComments = [...state.comments, comment];
+            updatedComments.sort((a, b) => {
+              const aTime = safeGetTime(a.created_at || a.createdAt || '');
+              const bTime = safeGetTime(b.created_at || b.createdAt || '');
+              return aTime - bTime; // 오래된 것부터
+            });
+            return { comments: updatedComments };
+          });
         },
 
         updateComment: (id, content) => {
@@ -234,19 +241,21 @@ const useCommentStore = create<CommentState>()(
           // Re-sort comments
           const { comments } = get();
           const sorted = [...comments];
-          
+
           switch (sortBy) {
             case 'newest':
-              sorted.sort((a, b) => safeGetTime(b.created_at || b.createdAt || '') - safeGetTime(a.created_at || a.createdAt || ''));
+              // 최신순 - 최신 댓글이 아래로
+              sorted.sort((a, b) => safeGetTime(a.created_at || a.createdAt || '') - safeGetTime(b.created_at || b.createdAt || ''));
               break;
             case 'oldest':
+              // 오래된순 - 오래된 댓글이 위로 (기본값과 동일)
               sorted.sort((a, b) => safeGetTime(a.created_at || a.createdAt || '') - safeGetTime(b.created_at || b.createdAt || ''));
               break;
             case 'mostReplies':
               sorted.sort((a, b) => (b.replies?.length || 0) - (a.replies?.length || 0));
               break;
           }
-          
+
           set({ comments: sorted });
         },
 
