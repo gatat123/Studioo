@@ -64,6 +64,10 @@ export const SOCKET_EVENTS = {
   CHANNEL_TYPING_START: 'channel:typing:start',
   CHANNEL_TYPING_STOP: 'channel:typing:stop',
   USER_PRESENCE_UPDATE: 'user:presence:update',
+
+  // Channel Work Events
+  CHANNEL_WORK_LINKED: 'channel:work-linked',
+  CHANNEL_WORK_UNLINKED: 'channel:work-unlinked',
 } as const;
 
 // Event Payload Types
@@ -212,6 +216,24 @@ export interface UserPresencePayload {
   isOnline?: boolean;
 }
 
+// Channel Work Event Payloads
+export interface ChannelWorkLinkedPayload {
+  channelId: string;
+  workTaskId: string;
+  workTask: {
+    id: string;
+    title: string;
+    description?: string;
+    status: 'pending' | 'in_progress' | 'review' | 'completed' | 'cancelled';
+    priority: 'low' | 'medium' | 'high' | 'urgent';
+    dueDate?: string;
+  };
+}
+
+export interface ChannelWorkUnlinkedPayload {
+  channelId: string;
+}
+
 // Socket Event Emitter Types
 export type SocketEventMap = {
   // History Events
@@ -259,6 +281,10 @@ export type SocketEventMap = {
   [SOCKET_EVENTS.CHANNEL_TYPING_START]: (payload: ChannelTypingPayload) => void;
   [SOCKET_EVENTS.CHANNEL_TYPING_STOP]: (payload: ChannelTypingPayload) => void;
   [SOCKET_EVENTS.USER_PRESENCE_UPDATE]: (payload: UserPresencePayload) => void;
+
+  // Channel Work Events
+  [SOCKET_EVENTS.CHANNEL_WORK_LINKED]: (payload: ChannelWorkLinkedPayload) => void;
+  [SOCKET_EVENTS.CHANNEL_WORK_UNLINKED]: (payload: ChannelWorkUnlinkedPayload) => void;
 };
 
 // Helper function to emit socket events with type safety

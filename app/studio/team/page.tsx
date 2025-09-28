@@ -32,7 +32,7 @@ import {
   User
 } from 'lucide-react'
 import { socketClient } from '@/lib/socket/client'
-import { SOCKET_EVENTS, type ChannelMessagePayload } from '@/lib/socket/events'
+import { SOCKET_EVENTS, type ChannelMessagePayload, type ChannelWorkLinkedPayload, type ChannelWorkUnlinkedPayload } from '@/lib/socket/events'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { safeFormat } from '@/lib/utils/date-helpers'
@@ -147,6 +147,20 @@ function TeamPageContent() {
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   
+  // localStorage 관련 헬퍼 함수들
+  const saveChannelWorkLink = (channelId: string, workTaskId: string) => {
+    localStorage.setItem(`channel_work_${channelId}`, workTaskId)
+  }
+
+  const getChannelWorkLink = (channelId: string) => {
+    return localStorage.getItem(`channel_work_${channelId}`)
+  }
+
+  const removeChannelWorkLink = (channelId: string) => {
+    localStorage.removeItem(`channel_work_${channelId}`)
+  }
+
+  // 채널 선택 시 localStorage에서 연결된 Work 복원
   useEffect(() => {
     if (selectedChannel) {
       const socket = socketClient.getSocket()
@@ -271,6 +285,45 @@ function TeamPageContent() {
           description: `${data.acceptedBy.nickname}님이 ${data.channel.name} 채널 초대를 수락했습니다.`
         })
       })
+
+      // Work 연결 이벤트 리스너
+      socketClient.on(SOCKET_EVENTS.CHANNEL_WORK_LINKED, (data: ChannelWorkLinkedPayload) => {
+        if (data.channelId === selectedChannel.id) {
+          // 현재 채널에 Work가 연결됨
+          // data.workTask은 간략한 정보만 포함하므로 전체 WorkTask로 변환
+          const fullWorkTask: WorkTask = {
+            ...data.workTask,
+            createdById: data.workTask.id, // fallback
+            position: 0,
+            description: data.workTask.description || '',
+            createdAt: new Date().toISOString(), // fallback for missing timestamp
+            updatedAt: new Date().toISOString()  // fallback for missing timestamp
+          }
+          setSelectedWorkTask(fullWorkTask)
+          setRightPanelVisible(true)
+          loadSubTasks(data.workTaskId)
+          saveChannelWorkLink(data.channelId, data.workTaskId)
+          toast({
+            title: 'Work 연결됨',
+            description: `${data.workTask.title} 작업이 채널에 연결되었습니다.`
+          })
+        }
+      })
+
+      // Work 연결 해제 이벤트 리스너
+      socketClient.on(SOCKET_EVENTS.CHANNEL_WORK_UNLINKED, (data: ChannelWorkUnlinkedPayload) => {
+        if (data.channelId === selectedChannel.id) {
+          // 현재 채널의 Work 연결이 해제됨
+          setRightPanelVisible(false)
+          setSelectedWorkTask(null)
+          setSubTasks([])
+          removeChannelWorkLink(data.channelId)
+          toast({
+            title: 'Work 연결 해제',
+            description: '작업 연결이 해제되었습니다.'
+          })
+        }
+      })
       
       // Load channel data
       loadChannelMembers(selectedChannel.id)
@@ -289,10 +342,46 @@ function TeamPageContent() {
         setSelectedWorkTask(fullWorkTask)
         setRightPanelVisible(true)
         loadSubTasks(selectedChannel.workTask.id)
+        // localStorage에 저장
+        saveChannelWorkLink(selectedChannel.id, selectedChannel.workTask.id)
       } else {
-        setRightPanelVisible(false)
-        setSelectedWorkTask(null)
-        setSubTasks([])
+        // localStorage에서 연결된 Work 확인
+        const savedWorkTaskId = getChannelWorkLink(selectedChannel.id)
+        if (savedWorkTaskId) {
+          // 작업 목록이 로드되지 않은 경우 먼저 로드
+          if (workTasks.length === 0) {
+            loadWorkTasks().then(() => {
+              const savedWorkTask = workTasks.find(task => task.id === savedWorkTaskId)
+              if (savedWorkTask) {
+                setSelectedWorkTask(savedWorkTask)
+                setRightPanelVisible(true)
+                loadSubTasks(savedWorkTask.id)
+              } else {
+                removeChannelWorkLink(selectedChannel.id)
+                setRightPanelVisible(false)
+                setSelectedWorkTask(null)
+                setSubTasks([])
+              }
+            })
+          } else {
+            // 이미 로드된 경우 바로 찾기
+            const savedWorkTask = workTasks.find(task => task.id === savedWorkTaskId)
+            if (savedWorkTask) {
+              setSelectedWorkTask(savedWorkTask)
+              setRightPanelVisible(true)
+              loadSubTasks(savedWorkTask.id)
+            } else {
+              removeChannelWorkLink(selectedChannel.id)
+              setRightPanelVisible(false)
+              setSelectedWorkTask(null)
+              setSubTasks([])
+            }
+          }
+        } else {
+          setRightPanelVisible(false)
+          setSelectedWorkTask(null)
+          setSubTasks([])
+        }
       }
       
       return () => {
@@ -310,6 +399,8 @@ function TeamPageContent() {
         socketClient.off('channel_joined')
         socketClient.off('channel_list_updated')
         socketClient.off('channel_invite_accepted_notification')
+        socketClient.off(SOCKET_EVENTS.CHANNEL_WORK_LINKED)
+        socketClient.off(SOCKET_EVENTS.CHANNEL_WORK_UNLINKED)
       }
     }
   }, [selectedChannel, currentUser, toast]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -629,7 +720,7 @@ function TeamPageContent() {
   const loadWorkTasks = async () => {
     try {
       setLoadingWorkTasks(true)
-      const tasks = await workTasksAPI.getWorkTasks()
+      const tasks = await workTasksAPI.getWorkTasks(true) // Only creator's tasks for Team page
       setWorkTasks(tasks)
     } catch (error) {
       console.error('Failed to load work tasks:', error)
@@ -700,6 +791,24 @@ function TeamPageContent() {
         setChannels(prev => prev.map(ch =>
           ch.id === selectedChannel.id ? data.channel : ch
         ))
+
+        // localStorage에 저장
+        saveChannelWorkLink(selectedChannel.id, selectedWorkTask.id)
+
+        // Socket.io 이벤트 발송
+        socketClient.emit(SOCKET_EVENTS.CHANNEL_WORK_LINKED, {
+          channelId: selectedChannel.id,
+          workTaskId: selectedWorkTask.id,
+          workTask: {
+            id: selectedWorkTask.id,
+            title: selectedWorkTask.title,
+            description: selectedWorkTask.description,
+            status: selectedWorkTask.status,
+            priority: selectedWorkTask.priority,
+            dueDate: selectedWorkTask.dueDate
+          }
+        } as ChannelWorkLinkedPayload)
+
         toast({
           title: '작업 연결 완료',
           description: `${selectedWorkTask.title} 작업이 채널에 연결되었습니다.`
@@ -737,6 +846,15 @@ function TeamPageContent() {
         setChannels(prev => prev.map(ch =>
           ch.id === selectedChannel.id ? data.channel : ch
         ))
+
+        // localStorage에서 제거
+        removeChannelWorkLink(selectedChannel.id)
+
+        // Socket.io 이벤트 발송
+        socketClient.emit(SOCKET_EVENTS.CHANNEL_WORK_UNLINKED, {
+          channelId: selectedChannel.id
+        } as ChannelWorkUnlinkedPayload)
+
         toast({
           title: '연결 해제 완료',
           description: '작업 연결이 해제되었습니다.'
@@ -777,6 +895,9 @@ function TeamPageContent() {
   return (
     <>
       <div className="flex h-full overflow-hidden">
+        {/* Left Spacer for centering */}
+        <div className="w-20 flex-shrink-0" />
+
         {/* Left Sidebar - Channels */}
       <div className="w-64 border-r bg-muted/30 flex flex-col h-full flex-shrink-0">
         <div className="p-4 border-b">
@@ -990,13 +1111,10 @@ function TeamPageContent() {
         })()}
       </div>
 
-      {/* Spacer for centering when right panel is hidden */}
-      {!rightPanelVisible && <div className="flex-1 max-w-xs" />}
-
-      {/* Main Chat Area - Center when right panel is hidden */}
+      {/* Main Chat Area - Reduced width */}
       <div className={cn(
         "flex flex-col h-full transition-all duration-300",
-        rightPanelVisible ? "flex-1" : "max-w-3xl w-full"
+        rightPanelVisible ? "flex-1 max-w-2xl" : "max-w-2xl w-full"
       )}>
         {selectedChannel ? (
           <>
@@ -1290,7 +1408,7 @@ function TeamPageContent() {
       </div>
 
       {/* Right Spacer for centering when right panel is hidden */}
-      {!rightPanelVisible && <div className="flex-1 max-w-xs" />}
+      {!rightPanelVisible && <div className="flex-1" />}
 
       {/* Right Sidebar - Work Panel */}
       {rightPanelVisible && selectedWorkTask && (

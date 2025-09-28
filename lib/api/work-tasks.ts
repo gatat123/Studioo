@@ -206,9 +206,10 @@ export const workTasksAPI = {
   /**
    * Get all work tasks for the authenticated user
    */
-  async getWorkTasks(): Promise<WorkTask[]> {
+  async getWorkTasks(creatorOnly: boolean = false): Promise<WorkTask[]> {
     try {
-      const response = await api.get('/api/work-tasks') as APIResponse<WorkTasksResponse>
+      const queryParams = creatorOnly ? '?creatorOnly=true' : ''
+      const response = await api.get(`/api/work-tasks${queryParams}`) as APIResponse<WorkTasksResponse>
 
       // 표준 백엔드 응답 형식 처리
       if (response?.success && response.data?.workTasks) {
