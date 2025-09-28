@@ -134,7 +134,7 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
           nickname: participant.user.nickname,
           username: participant.user.nickname, // Use nickname as username fallback
           profileImageUrl: participant.user.profileImageUrl,
-          role: participant.role,
+          role: (participant.role as 'creator' | 'assignee' | 'member' | 'viewer') || 'member',
           taskCount: userSubTasks.length,
           completedTaskCount: userCompletedSubTasks.length,
           commentCount: workTaskCommentCount + subTaskCommentCount
