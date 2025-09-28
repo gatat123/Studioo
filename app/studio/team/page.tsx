@@ -287,37 +287,40 @@ function TeamPageContent() {
       })
 
       // Work 연결 이벤트 리스너
-      socketClient.on(SOCKET_EVENTS.CHANNEL_WORK_LINKED, (data: ChannelWorkLinkedPayload) => {
+      socketClient.on('channel:work-linked', (data: any) => {
         if (data.channelId === selectedChannel.id) {
           // 현재 채널에 Work가 연결됨
-          // data.workTask은 간략한 정보만 포함하므로 전체 WorkTask로 변환
-          const fullWorkTask: WorkTask = {
-            ...data.workTask,
-            createdById: data.workTask.id, // fallback
-            position: 0,
-            description: data.workTask.description || '',
-            createdAt: new Date().toISOString(), // fallback for missing timestamp
-            updatedAt: new Date().toISOString()  // fallback for missing timestamp
+          if (data.workTask) {
+            const fullWorkTask: WorkTask = {
+              ...data.workTask,
+              createdById: data.workTask.createdById || data.workTask.id,
+              position: data.workTask.position || 0,
+              description: data.workTask.description || '',
+              createdAt: data.workTask.createdAt || new Date().toISOString(),
+              updatedAt: data.workTask.updatedAt || new Date().toISOString()
+            }
+            setSelectedWorkTask(fullWorkTask)
+            setRightPanelVisible(true)
+            loadSubTasks(data.workTaskId)
+            // 채널 정보 업데이트
+            setSelectedChannel(prev => prev ? { ...prev, workTask: data.workTask, workTaskId: data.workTaskId } : null)
+            toast({
+              title: 'Work 연결됨',
+              description: `${data.workTask.title} 작업이 채널에 연결되었습니다.`
+            })
           }
-          setSelectedWorkTask(fullWorkTask)
-          setRightPanelVisible(true)
-          loadSubTasks(data.workTaskId)
-          saveChannelWorkLink(data.channelId, data.workTaskId)
-          toast({
-            title: 'Work 연결됨',
-            description: `${data.workTask.title} 작업이 채널에 연결되었습니다.`
-          })
         }
       })
 
       // Work 연결 해제 이벤트 리스너
-      socketClient.on(SOCKET_EVENTS.CHANNEL_WORK_UNLINKED, (data: ChannelWorkUnlinkedPayload) => {
+      socketClient.on('channel:work-unlinked', (data: any) => {
         if (data.channelId === selectedChannel.id) {
           // 현재 채널의 Work 연결이 해제됨
           setRightPanelVisible(false)
           setSelectedWorkTask(null)
           setSubTasks([])
-          removeChannelWorkLink(data.channelId)
+          // 채널 정보 업데이트
+          setSelectedChannel(prev => prev ? { ...prev, workTask: null, workTaskId: null } : null)
           toast({
             title: 'Work 연결 해제',
             description: '작업 연결이 해제되었습니다.'
@@ -330,58 +333,58 @@ function TeamPageContent() {
       loadMessages(selectedChannel.id)
 
       // Auto-show work panel if channel has linked work task
-      if (selectedChannel.workTask) {
-        // Convert channel workTask to full WorkTask type with safe defaults
-        const fullWorkTask: WorkTask = {
-          ...selectedChannel.workTask,
-          createdById: selectedChannel.workTask.id, // Use workTask id as fallback
-          position: 0, // Default position
-          status: selectedChannel.workTask.status as WorkTask['status'],
-          priority: selectedChannel.workTask.priority as WorkTask['priority']
-        }
-        setSelectedWorkTask(fullWorkTask)
-        setRightPanelVisible(true)
-        loadSubTasks(selectedChannel.workTask.id)
-        // localStorage에 저장
-        saveChannelWorkLink(selectedChannel.id, selectedChannel.workTask.id)
-      } else {
-        // localStorage에서 연결된 Work 확인
-        const savedWorkTaskId = getChannelWorkLink(selectedChannel.id)
-        if (savedWorkTaskId) {
-          // 작업 목록이 로드되지 않은 경우 먼저 로드
-          if (workTasks.length === 0) {
-            loadWorkTasks().then(() => {
-              const savedWorkTask = workTasks.find(task => task.id === savedWorkTaskId)
-              if (savedWorkTask) {
-                setSelectedWorkTask(savedWorkTask)
-                setRightPanelVisible(true)
-                loadSubTasks(savedWorkTask.id)
-              } else {
-                removeChannelWorkLink(selectedChannel.id)
-                setRightPanelVisible(false)
-                setSelectedWorkTask(null)
-                setSubTasks([])
+      if (selectedChannel.workTask || selectedChannel.workTaskId) {
+        // 채널에 Work가 연결되어 있음
+        if (selectedChannel.workTask) {
+          // workTask 정보가 이미 있는 경우
+          const fullWorkTask: WorkTask = {
+            ...selectedChannel.workTask,
+            createdById: selectedChannel.workTask.createdById || selectedChannel.workTask.id,
+            position: selectedChannel.workTask.position || 0,
+            status: selectedChannel.workTask.status as WorkTask['status'],
+            priority: selectedChannel.workTask.priority as WorkTask['priority']
+          }
+          setSelectedWorkTask(fullWorkTask)
+          setRightPanelVisible(true)
+          loadSubTasks(selectedChannel.workTask.id)
+        } else if (selectedChannel.workTaskId) {
+          // workTaskId만 있는 경우 Work 정보 로드
+          const loadAndSetWorkTask = async () => {
+            try {
+              // Work 목록이 비어있으면 먼저 로드
+              if (workTasks.length === 0) {
+                await loadWorkTasks()
               }
-            })
-          } else {
-            // 이미 로드된 경우 바로 찾기
-            const savedWorkTask = workTasks.find(task => task.id === savedWorkTaskId)
-            if (savedWorkTask) {
-              setSelectedWorkTask(savedWorkTask)
-              setRightPanelVisible(true)
-              loadSubTasks(savedWorkTask.id)
-            } else {
-              removeChannelWorkLink(selectedChannel.id)
-              setRightPanelVisible(false)
-              setSelectedWorkTask(null)
-              setSubTasks([])
+
+              // workTasks 상태에서 찾기
+              let linkedTask = workTasks.find(task => task.id === selectedChannel.workTaskId)
+
+              // 여전히 못 찾으면 API에서 직접 가져오기
+              if (!linkedTask) {
+                try {
+                  linkedTask = await workTasksAPI.getWorkTask(selectedChannel.workTaskId)
+                } catch (error) {
+                  console.error('Failed to load linked work task:', error)
+                  return
+                }
+              }
+
+              if (linkedTask) {
+                setSelectedWorkTask(linkedTask)
+                setRightPanelVisible(true)
+                await loadSubTasks(linkedTask.id)
+              }
+            } catch (error) {
+              console.error('Error loading work task:', error)
             }
           }
-        } else {
-          setRightPanelVisible(false)
-          setSelectedWorkTask(null)
-          setSubTasks([])
+
+          loadAndSetWorkTask()
         }
+      } else {
+        setRightPanelVisible(false)
+        setSelectedWorkTask(null)
+        setSubTasks([])
       }
       
       return () => {
@@ -399,8 +402,8 @@ function TeamPageContent() {
         socketClient.off('channel_joined')
         socketClient.off('channel_list_updated')
         socketClient.off('channel_invite_accepted_notification')
-        socketClient.off(SOCKET_EVENTS.CHANNEL_WORK_LINKED)
-        socketClient.off(SOCKET_EVENTS.CHANNEL_WORK_UNLINKED)
+        socketClient.off('channel:work-linked')
+        socketClient.off('channel:work-unlinked')
       }
     }
   }, [selectedChannel, currentUser, toast]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -577,7 +580,7 @@ function TeamPageContent() {
 
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/${selectedChannel.id}/files`, {
+      const response = await fetch(`/api/channels/${selectedChannel.id}/files`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -588,36 +591,8 @@ function TeamPageContent() {
       if (response.ok) {
         const data = await response.json()
 
-        // Send message with file attachment
-        const tempId = `temp-${Date.now()}`
-        const fileMessage = {
-          id: tempId,
-          channelId: selectedChannel.id,
-          senderId: currentUser?.id || '',
-          content: caption || file.name,
-          type: file.type.startsWith('image/') ? 'image' : 'file',
-          created_at: new Date().toISOString(),
-          sender: {
-            id: currentUser?.id || '',
-            username: currentUser?.username || '',
-            nickname: currentUser?.nickname || '',
-            profile_image_url: currentUser?.profile_image_url
-          },
-          files: [data.file]
-        } as ChannelMessage
-
-        // Optimistically add message
-        setMessages(prev => [...prev, fileMessage])
-        scrollToBottom()
-
-        // Send through Socket.io
-        socketClient.sendChannelMessage(
-          selectedChannel.id,
-          caption || file.name,
-          file.type.startsWith('image/') ? 'image' : 'file',
-          tempId
-        )
-
+        // Backend automatically creates message and sends Socket.io event
+        // Just show success toast
         toast({
           title: '파일 업로드 완료',
           description: `${file.name}이(가) 업로드되었습니다.`
@@ -661,7 +636,7 @@ function TeamPageContent() {
     
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/${selectedChannel.id}/leave`, {
+      const response = await fetch(`/api/channels/${selectedChannel.id}/leave`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -759,10 +734,78 @@ function TeamPageContent() {
   }
 
   const handleWorkTaskSelect = async (workTask: WorkTask) => {
-    setSelectedWorkTask(workTask)
-    setRightPanelVisible(true)
-    setWorkDropdownOpen(false)
-    await loadSubTasks(workTask.id)
+    if (!selectedChannel) return
+
+    // Check if user can link work tasks (must be channel creator or admin)
+    const canLinkWork = selectedChannel.creatorId === currentUser?.id ||
+                       channelMembers.find(m => m.userId === currentUser?.id)?.role === 'admin'
+
+    if (!canLinkWork) {
+      // Just view the work task without linking
+      setSelectedWorkTask(workTask)
+      setRightPanelVisible(true)
+      setWorkDropdownOpen(false)
+      await loadSubTasks(workTask.id)
+      return
+    }
+
+    // If already linked to this work task, just open the panel
+    if (selectedChannel.workTaskId === workTask.id) {
+      setSelectedWorkTask(workTask)
+      setRightPanelVisible(true)
+      setWorkDropdownOpen(false)
+      await loadSubTasks(workTask.id)
+      return
+    }
+
+    // Link this work task to the channel
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/channels/${selectedChannel.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ workTaskId: workTask.id })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+
+        // Update channel state
+        setSelectedChannel(data.channel)
+        setChannels(prev => prev.map(ch =>
+          ch.id === selectedChannel.id ? data.channel : ch
+        ))
+
+        // Open work panel
+        setSelectedWorkTask(workTask)
+        setRightPanelVisible(true)
+        setWorkDropdownOpen(false)
+        await loadSubTasks(workTask.id)
+
+        toast({
+          title: '작업 연결 완료',
+          description: `${workTask.title} 작업이 채널에 연결되었습니다.`
+        })
+      } else {
+        throw new Error('Failed to link work task')
+      }
+    } catch (error) {
+      console.error('Error linking work task:', error)
+      toast({
+        title: '오류',
+        description: '작업 연결에 실패했습니다.',
+        variant: 'destructive'
+      })
+
+      // Still show the work task even if linking failed
+      setSelectedWorkTask(workTask)
+      setRightPanelVisible(true)
+      setWorkDropdownOpen(false)
+      await loadSubTasks(workTask.id)
+    }
   }
 
   const handleCloseRightPanel = () => {
@@ -795,19 +838,8 @@ function TeamPageContent() {
         // localStorage에 저장
         saveChannelWorkLink(selectedChannel.id, selectedWorkTask.id)
 
-        // Socket.io 이벤트 발송
-        socketClient.emit(SOCKET_EVENTS.CHANNEL_WORK_LINKED, {
-          channelId: selectedChannel.id,
-          workTaskId: selectedWorkTask.id,
-          workTask: {
-            id: selectedWorkTask.id,
-            title: selectedWorkTask.title,
-            description: selectedWorkTask.description,
-            status: selectedWorkTask.status,
-            priority: selectedWorkTask.priority,
-            dueDate: selectedWorkTask.dueDate
-          }
-        } as ChannelWorkLinkedPayload)
+        // 채널 정보 업데이트
+        setSelectedChannel(prev => prev ? { ...prev, workTask: selectedWorkTask, workTaskId: selectedWorkTask.id } : null)
 
         toast({
           title: '작업 연결 완료',
@@ -831,7 +863,7 @@ function TeamPageContent() {
 
     try {
       const token = localStorage.getItem('token')
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/${selectedChannel.id}`, {
+      const response = await fetch(`/api/channels/${selectedChannel.id}`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -850,10 +882,8 @@ function TeamPageContent() {
         // localStorage에서 제거
         removeChannelWorkLink(selectedChannel.id)
 
-        // Socket.io 이벤트 발송
-        socketClient.emit(SOCKET_EVENTS.CHANNEL_WORK_UNLINKED, {
-          channelId: selectedChannel.id
-        } as ChannelWorkUnlinkedPayload)
+        // 채널 정보 업데이트
+        setSelectedChannel(prev => prev ? { ...prev, workTask: null, workTaskId: null } : null)
 
         toast({
           title: '연결 해제 완료',
@@ -899,7 +929,7 @@ function TeamPageContent() {
         <div className="w-20 flex-shrink-0" />
 
         {/* Left Sidebar - Channels */}
-      <div className="w-64 border-r bg-muted/30 flex flex-col h-full flex-shrink-0">
+      <div className="w-64 border-r bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 flex flex-col h-full flex-shrink-0">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-semibold">채널</h2>
@@ -947,7 +977,7 @@ function TeamPageContent() {
                           onClick={async () => {
                             try {
                               const token = localStorage.getItem('token');
-                              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/invitations/${invite.id}/accept`, {
+                              const response = await fetch(`/api/channels/invitations/${invite.id}/accept`, {
                                 method: 'POST',
                                 headers: {
                                   'Authorization': `Bearer ${token}`
@@ -997,7 +1027,7 @@ function TeamPageContent() {
                           onClick={async () => {
                             try {
                               const token = localStorage.getItem('token');
-                              const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/channels/invitations/${invite.id}/reject`, {
+                              const response = await fetch(`/api/channels/invitations/${invite.id}/reject`, {
                                 method: 'POST',
                                 headers: {
                                   'Authorization': `Bearer ${token}`
@@ -1159,7 +1189,7 @@ function TeamPageContent() {
                       <div className="absolute top-full right-0 mt-2 w-80 bg-background border rounded-lg shadow-lg z-50">
                         <div className="p-3 border-b">
                           <div className="flex items-center justify-between">
-                            <h3 className="font-semibold">작업 선택</h3>
+                            <h3 className="font-semibold">작업 관리</h3>
                             <Button
                               size="icon"
                               variant="ghost"
@@ -1169,6 +1199,34 @@ function TeamPageContent() {
                               <X className="h-4 w-4" />
                             </Button>
                           </div>
+                          {/* 현재 연결된 작업 표시 */}
+                          {selectedChannel?.workTask && (
+                            <div className="mt-3 p-2 bg-muted rounded-lg">
+                              <div className="flex items-center justify-between">
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                                    연결된 작업: {selectedChannel.workTask.title}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {selectedChannel.workTask.description}
+                                  </p>
+                                </div>
+                                {selectedChannel.creatorId === currentUser?.id && (
+                                  <Button
+                                    size="sm"
+                                    variant="destructive"
+                                    onClick={() => {
+                                      handleUnlinkWorkTask()
+                                      setWorkDropdownOpen(false)
+                                    }}
+                                    className="h-6 text-xs ml-2"
+                                  >
+                                    연결 해제
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
                         <div className="max-h-80 overflow-y-auto">
                           {workTasks.length === 0 ? (
@@ -1178,27 +1236,42 @@ function TeamPageContent() {
                             </div>
                           ) : (
                             <div className="space-y-1 p-2">
-                              {workTasks.map((task) => (
-                                <Button
-                                  key={task.id}
-                                  variant="ghost"
-                                  className="w-full justify-start h-auto p-3"
-                                  onClick={() => handleWorkTaskSelect(task)}
-                                >
-                                  <div className="flex-1 text-left">
-                                    <div className="flex items-center gap-2 mb-1">
-                                      <span className="font-medium text-sm">{task.title}</span>
-                                      <Badge
-                                        variant={task.status === 'completed' ? 'default' : 'secondary'}
-                                        className="text-xs"
-                                      >
-                                        {task.status === 'pending' && '대기'}
-                                        {task.status === 'in_progress' && '진행중'}
-                                        {task.status === 'review' && '검토중'}
-                                        {task.status === 'completed' && '완료'}
-                                        {task.status === 'cancelled' && '취소'}
-                                      </Badge>
-                                    </div>
+                              {workTasks.map((task) => {
+                                const isLinked = selectedChannel?.workTaskId === task.id
+                                const canLinkWork = selectedChannel?.creatorId === currentUser?.id ||
+                                                   channelMembers.find(m => m.userId === currentUser?.id)?.role === 'admin'
+
+                                return (
+                                  <Button
+                                    key={task.id}
+                                    variant={isLinked ? "default" : "ghost"}
+                                    className="w-full justify-start h-auto p-3"
+                                    onClick={() => handleWorkTaskSelect(task)}
+                                  >
+                                    <div className="flex-1 text-left">
+                                      <div className="flex items-center gap-2 mb-1">
+                                        <span className="font-medium text-sm">{task.title}</span>
+                                        {isLinked && (
+                                          <Badge variant="outline" className="text-xs bg-green-100 text-green-700 border-green-300">
+                                            연결됨
+                                          </Badge>
+                                        )}
+                                        <Badge
+                                          variant={task.status === 'completed' ? 'default' : 'secondary'}
+                                          className="text-xs"
+                                        >
+                                          {task.status === 'pending' && '대기'}
+                                          {task.status === 'in_progress' && '진행중'}
+                                          {task.status === 'review' && '검토중'}
+                                          {task.status === 'completed' && '완료'}
+                                          {task.status === 'cancelled' && '취소'}
+                                        </Badge>
+                                        {!canLinkWork && (
+                                          <Badge variant="outline" className="text-xs">
+                                            읽기 전용
+                                          </Badge>
+                                        )}
+                                      </div>
                                     {task.description && (
                                       <p className="text-xs text-muted-foreground truncate">
                                         {task.description}
@@ -1214,7 +1287,8 @@ function TeamPageContent() {
                                     )}
                                   </div>
                                 </Button>
-                              ))}
+                                )
+                              })}
                             </div>
                           )}
                         </div>
@@ -1493,33 +1567,7 @@ function TeamPageContent() {
           <div className="flex-1">
             <div className="p-4">
               <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-medium">업무 보드</h3>
-                  {/* Link/Unlink buttons for channel creator */}
-                  {selectedChannel && selectedChannel.creatorId === currentUser?.id && (
-                    <div className="flex items-center gap-2">
-                      {selectedChannel.workTask ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleUnlinkWorkTask()}
-                          className="h-6 text-xs"
-                        >
-                          연결 해제
-                        </Button>
-                      ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleLinkWorkTask()}
-                          className="h-6 text-xs"
-                        >
-                          작업 연결
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <h3 className="font-medium">업무 보드</h3>
                 {loadingSubTasks && (
                   <Loader className="h-4 w-4 animate-spin" />
                 )}
