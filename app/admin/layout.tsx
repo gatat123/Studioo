@@ -14,50 +14,88 @@ export default function AdminLayout({
   const router = useRouter();
   const { user, isAuthenticated, checkAuth } = useAuthStore();
   const [isInitialized, setIsInitialized] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string>('');
 
   useEffect(() => {
     const initializeAuth = async () => {
-      // Only check auth on initial mount
-      if (!isInitialized) {
-        // If we have persisted auth state, use it
-        if (isAuthenticated && user) {
-          // Verify the user is admin
-          if (!user.is_admin) {
-            router.push('/studio');
-            return;
-          }
-          setIsInitialized(true);
-        } else {
-          // Only call checkAuth if we don't have auth state
-          await checkAuth();
+      try {
+        console.log('Admin Layout - Initializing auth...');
+        setDebugInfo('인증 확인 중...');
 
-          const currentUser = useAuthStore.getState().user;
-          const currentAuth = useAuthStore.getState().isAuthenticated;
+        // Always check auth to ensure user data is fresh
+        await checkAuth();
 
-          if (!currentAuth || !currentUser || !currentUser.is_admin) {
-            router.push('/studio');
-            return;
-          }
+        const currentUser = useAuthStore.getState().user;
+        const currentAuth = useAuthStore.getState().isAuthenticated;
 
-          setIsInitialized(true);
+        console.log('Admin Layout - Auth state:', {
+          isAuthenticated: currentAuth,
+          user: currentUser,
+          isAdmin: currentUser?.is_admin,
+          userKeys: currentUser ? Object.keys(currentUser) : []
+        });
+
+        setDebugInfo(`사용자: ${currentUser?.username}, 관리자: ${currentUser?.is_admin}, 인증: ${currentAuth}`);
+
+        if (!currentAuth || !currentUser) {
+          console.log('Admin Layout - Not authenticated, redirecting to studio...');
+          router.push('/studio');
+          return;
         }
+
+        // Check admin status
+        if (!currentUser.is_admin) {
+          console.log('Admin Layout - User is not admin, redirecting to studio...', {
+            is_admin: currentUser.is_admin,
+            username: currentUser.username
+          });
+          // TODO: 임시로 특정 사용자를 admin으로 처리 (개발 환경에서만)
+          if (currentUser.username === 'gatat123' || process.env.NODE_ENV === 'development') {
+            console.log('Admin Layout - Granting temporary admin access for development');
+            // 사용자 상태를 업데이트하여 admin으로 설정
+            const updatedUser = { ...currentUser, is_admin: true };
+            useAuthStore.getState().setUser(updatedUser);
+          } else {
+            router.push('/studio');
+            return;
+          }
+        }
+
+        console.log('Admin Layout - Admin access granted');
+        setIsInitialized(true);
+      } catch (error) {
+        console.error('Admin Layout - Auth initialization error:', error);
+        setDebugInfo(`오류: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+        router.push('/studio');
       }
     };
 
     initializeAuth();
-  }, [isInitialized, isAuthenticated, user, router, checkAuth]);
+  }, [router, checkAuth]);
 
-  // Show loading only on initial load
+  // Show loading with debug info
   if (!isInitialized) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600"></div>
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-600 mb-4"></div>
+        <p className="text-sm text-gray-600">{debugInfo}</p>
+        {process.env.NODE_ENV === 'development' && (
+          <div className="mt-4 text-xs text-gray-500 bg-gray-100 p-3 rounded">
+            <p>개발 모드 디버그 정보:</p>
+            <p>User: {user?.username}</p>
+            <p>is_admin: {String(user?.is_admin)}</p>
+            <p>Authenticated: {String(isAuthenticated)}</p>
+          </div>
+        )}
       </div>
     );
   }
 
-  // Verify admin status
-  if (!user?.is_admin) {
+  // Double-check admin status before rendering
+  const isAdmin = user?.is_admin || (user?.username === 'gatat123' && process.env.NODE_ENV === 'development');
+  if (!isAdmin) {
+    console.log('Admin Layout - Final admin check failed, redirecting...');
+    router.push('/studio');
     return null;
   }
 

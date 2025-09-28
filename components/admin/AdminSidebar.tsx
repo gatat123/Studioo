@@ -13,6 +13,7 @@ import {
   Shield,
   LogOut,
   ChevronRight,
+  Briefcase,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -32,6 +33,11 @@ const menuItems = [
     title: '프로젝트 관리',
     href: '/admin/projects',
     icon: Folder,
+  },
+  {
+    title: 'Work 관리',
+    href: '/admin/work',
+    icon: Briefcase,
   },
   {
     title: '통계 분석',
