@@ -132,7 +132,7 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
         return {
           id: participant.userId,
           nickname: participant.user.nickname,
-          username: participant.user.username,
+          username: participant.user.nickname, // Use nickname as username fallback
           profileImageUrl: participant.user.profileImageUrl,
           role: participant.role,
           taskCount: userSubTasks.length,
