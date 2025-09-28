@@ -72,7 +72,8 @@ function TeamPageContent() {
     })
 
     // Alternative presence update event for backward compatibility
-    socketClient.on('presence_update', (data: { userId: string; isOnline: boolean }) => {
+    const socket = socketClient.connect()
+    socket.on('presence_update', (data: { userId: string; isOnline: boolean }) => {
       setChannelMembers(prev => prev.map(member =>
         member.userId === data.userId
           ? { ...member, user: { ...member.user, isActive: data.isOnline } }
@@ -82,7 +83,7 @@ function TeamPageContent() {
 
     return () => {
       socketClient.off(SOCKET_EVENTS.USER_PRESENCE_UPDATE)
-      socketClient.off('presence_update')
+      socket.off('presence_update')
       if (selectedChannel) {
         socketClient.leaveChannel(selectedChannel.id)
       }
