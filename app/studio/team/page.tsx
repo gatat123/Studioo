@@ -18,7 +18,17 @@ import {
   UserPlus,
   Settings,
   LogOut,
-  Trash2
+  Trash2,
+  Briefcase,
+  ChevronDown,
+  X,
+  Calendar,
+  Clock,
+  Users,
+  CheckCircle,
+  Circle,
+  AlertCircle,
+  Loader
 } from 'lucide-react'
 import { socketClient } from '@/lib/socket/client'
 import { SOCKET_EVENTS, type ChannelMessagePayload } from '@/lib/socket/events'
@@ -26,6 +36,7 @@ import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { safeFormat } from '@/lib/utils/date-helpers'
 import { channelsAPI, type Channel, type ChannelMember, type ChannelMessage, type ChannelInvitation } from '@/lib/api/channels'
+import { workTasksAPI, type WorkTask, type SubTask } from '@/lib/api/work-tasks'
 import { useAuthStore } from '@/store/useAuthStore'
 import { CreateChannelModal } from '@/components/team/CreateChannelModal'
 import { InviteMemberModal } from '@/components/team/InviteMemberModal'
@@ -53,10 +64,18 @@ function TeamPageContent() {
   const [deleteChannelOpen, setDeleteChannelOpen] = useState(false)
   const [fileUploadOpen, setFileUploadOpen] = useState(false)
   const [uploadingFile, setUploadingFile] = useState(false)
+  const [rightPanelVisible, setRightPanelVisible] = useState(false)
+  const [selectedWorkTask, setSelectedWorkTask] = useState<WorkTask | null>(null)
+  const [workTasks, setWorkTasks] = useState<WorkTask[]>([])
+  const [subTasks, setSubTasks] = useState<SubTask[]>([])
+  const [workDropdownOpen, setWorkDropdownOpen] = useState(false)
+  const [loadingWorkTasks, setLoadingWorkTasks] = useState(false)
+  const [loadingSubTasks, setLoadingSubTasks] = useState(false)
   const scrollAreaRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const [hasMore, setHasMore] = useState(false)
   const [nextCursor, setNextCursor] = useState<string | undefined>()
+  const workDropdownRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     // Load initial channels
@@ -274,6 +293,23 @@ function TeamPageContent() {
       }
     }
   }, [selectedChannel, currentUser, toast]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Work dropdown 외부 클릭 처리
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (workDropdownRef.current && !workDropdownRef.current.contains(event.target as Node)) {
+        setWorkDropdownOpen(false)
+      }
+    }
+
+    if (workDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [workDropdownOpen])
   
   const loadChannels = useCallback(async () => {
     try {
@@ -568,6 +604,61 @@ function TeamPageContent() {
       setMessages([])
     }
   }
+
+  // Work 관련 함수들
+  const loadWorkTasks = async () => {
+    try {
+      setLoadingWorkTasks(true)
+      const tasks = await workTasksAPI.getWorkTasks()
+      setWorkTasks(tasks)
+    } catch (error) {
+      console.error('Failed to load work tasks:', error)
+      toast({
+        title: '오류',
+        description: '작업 목록을 불러오는데 실패했습니다.',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoadingWorkTasks(false)
+    }
+  }
+
+  const loadSubTasks = async (workTaskId: string) => {
+    try {
+      setLoadingSubTasks(true)
+      const subtasks = await workTasksAPI.getSubTasks(workTaskId)
+      setSubTasks(subtasks)
+    } catch (error) {
+      console.error('Failed to load subtasks:', error)
+      toast({
+        title: '오류',
+        description: '하위 작업을 불러오는데 실패했습니다.',
+        variant: 'destructive'
+      })
+    } finally {
+      setLoadingSubTasks(false)
+    }
+  }
+
+  const handleWorkIconClick = async () => {
+    if (workTasks.length === 0) {
+      await loadWorkTasks()
+    }
+    setWorkDropdownOpen(!workDropdownOpen)
+  }
+
+  const handleWorkTaskSelect = async (workTask: WorkTask) => {
+    setSelectedWorkTask(workTask)
+    setRightPanelVisible(true)
+    setWorkDropdownOpen(false)
+    await loadSubTasks(workTask.id)
+  }
+
+  const handleCloseRightPanel = () => {
+    setRightPanelVisible(false)
+    setSelectedWorkTask(null)
+    setSubTasks([])
+  }
   
   // Removed unused getStatusColor function
 
@@ -787,8 +878,11 @@ function TeamPageContent() {
         })()}
       </div>
       
-      {/* Main Chat Area - 50% width reduction */}
-      <div className="flex-1 max-w-[800px] flex flex-col h-full">
+      {/* Main Chat Area - Center when right panel is hidden */}
+      <div className={cn(
+        "flex-1 flex flex-col h-full transition-all duration-300",
+        rightPanelVisible ? "max-w-[800px]" : "max-w-none"
+      )}>
         {selectedChannel ? (
           <>
             {/* Chat Header */}
@@ -812,8 +906,91 @@ function TeamPageContent() {
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button 
-                    size="icon" 
+                  {/* Work Icon with Dropdown */}
+                  <div className="relative" ref={workDropdownRef}>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={handleWorkIconClick}
+                      disabled={loadingWorkTasks}
+                    >
+                      {loadingWorkTasks ? (
+                        <Loader className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Briefcase className="h-4 w-4" />
+                      )}
+                    </Button>
+
+                    {/* Work Tasks Dropdown */}
+                    {workDropdownOpen && (
+                      <div className="absolute top-full right-0 mt-2 w-80 bg-background border rounded-lg shadow-lg z-50">
+                        <div className="p-3 border-b">
+                          <div className="flex items-center justify-between">
+                            <h3 className="font-semibold">작업 선택</h3>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setWorkDropdownOpen(false)}
+                              className="h-6 w-6"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="max-h-80 overflow-y-auto">
+                          {workTasks.length === 0 ? (
+                            <div className="p-4 text-center text-muted-foreground">
+                              <Briefcase className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                              <p className="text-sm">작업이 없습니다</p>
+                            </div>
+                          ) : (
+                            <div className="space-y-1 p-2">
+                              {workTasks.map((task) => (
+                                <Button
+                                  key={task.id}
+                                  variant="ghost"
+                                  className="w-full justify-start h-auto p-3"
+                                  onClick={() => handleWorkTaskSelect(task)}
+                                >
+                                  <div className="flex-1 text-left">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <span className="font-medium text-sm">{task.title}</span>
+                                      <Badge
+                                        variant={task.status === 'completed' ? 'default' : 'secondary'}
+                                        className="text-xs"
+                                      >
+                                        {task.status === 'pending' && '대기'}
+                                        {task.status === 'in_progress' && '진행중'}
+                                        {task.status === 'review' && '검토중'}
+                                        {task.status === 'completed' && '완료'}
+                                        {task.status === 'cancelled' && '취소'}
+                                      </Badge>
+                                    </div>
+                                    {task.description && (
+                                      <p className="text-xs text-muted-foreground truncate">
+                                        {task.description}
+                                      </p>
+                                    )}
+                                    {task.dueDate && (
+                                      <div className="flex items-center gap-1 mt-1">
+                                        <Calendar className="h-3 w-3 text-muted-foreground" />
+                                        <span className="text-xs text-muted-foreground">
+                                          {new Date(task.dueDate).toLocaleDateString()}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </Button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  <Button
+                    size="icon"
                     variant="ghost"
                     onClick={() => setInviteMemberOpen(true)}
                   >
@@ -997,15 +1174,279 @@ function TeamPageContent() {
         )}
       </div>
       
-      {/* Right Sidebar - Extra space for future features */}
-      <div className="flex-1 border-l bg-muted/10 h-full overflow-y-auto">
-        {/* Future features area */}
-        <div className="p-8 text-center">
-          <div className="text-muted-foreground">
-            <p className="text-sm">추후 기능이 추가될 예정입니다</p>
+      {/* Right Sidebar - Work Panel */}
+      {rightPanelVisible && selectedWorkTask && (
+        <div className="w-96 border-l bg-background h-full overflow-y-auto">
+          {/* Work Task Header */}
+          <div className="p-4 border-b bg-background/95 backdrop-blur flex-shrink-0">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-semibold">작업 상세</h2>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={handleCloseRightPanel}
+                className="h-6 w-6"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Work Summary */}
+          <div className="p-4 border-b">
+            <h3 className="font-medium text-lg mb-2">{selectedWorkTask.title}</h3>
+            {selectedWorkTask.description && (
+              <p className="text-sm text-muted-foreground mb-3">
+                {selectedWorkTask.description}
+              </p>
+            )}
+
+            <div className="space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">상태</span>
+                <Badge
+                  variant={selectedWorkTask.status === 'completed' ? 'default' : 'secondary'}
+                  className="text-xs"
+                >
+                  {selectedWorkTask.status === 'pending' && '대기'}
+                  {selectedWorkTask.status === 'in_progress' && '진행중'}
+                  {selectedWorkTask.status === 'review' && '검토중'}
+                  {selectedWorkTask.status === 'completed' && '완료'}
+                  {selectedWorkTask.status === 'cancelled' && '취소'}
+                </Badge>
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">우선순위</span>
+                <Badge
+                  variant={selectedWorkTask.priority === 'urgent' ? 'destructive' : 'outline'}
+                  className="text-xs"
+                >
+                  {selectedWorkTask.priority === 'low' && '낮음'}
+                  {selectedWorkTask.priority === 'medium' && '보통'}
+                  {selectedWorkTask.priority === 'high' && '높음'}
+                  {selectedWorkTask.priority === 'urgent' && '긴급'}
+                </Badge>
+              </div>
+
+              {selectedWorkTask.dueDate && (
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">마감일</span>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    <span className="text-xs">
+                      {new Date(selectedWorkTask.dueDate).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">하위 작업</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs">
+                    {subTasks.filter(task => task.status === 'done').length} / {subTasks.length}
+                  </span>
+                  <CheckCircle className="h-3 w-3" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SubTasks */}
+          <div className="flex-1">
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-medium">하위 작업</h3>
+                {loadingSubTasks && (
+                  <Loader className="h-4 w-4 animate-spin" />
+                )}
+              </div>
+
+              {subTasks.length === 0 ? (
+                <div className="text-center py-8">
+                  <div className="text-muted-foreground">
+                    <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">하위 작업이 없습니다</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* TODO */}
+                  {subTasks.filter(task => task.status === 'todo').length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-medium text-muted-foreground mb-2">
+                        할 일 ({subTasks.filter(task => task.status === 'todo').length})
+                      </h4>
+                      <div className="space-y-2">
+                        {subTasks.filter(task => task.status === 'todo').map((task) => (
+                          <div key={task.id} className="p-3 border rounded-lg bg-background">
+                            <div className="flex items-start gap-2">
+                              <Circle className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                              <div className="flex-1 min-w-0">
+                                <h5 className="font-medium text-sm">{task.title}</h5>
+                                {task.description && (
+                                  <p className="text-xs text-muted-foreground mt-1 overflow-hidden" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>
+                                    {task.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Badge variant="outline" className="text-xs">
+                                    {task.priority === 'low' && '낮음'}
+                                    {task.priority === 'medium' && '보통'}
+                                    {task.priority === 'high' && '높음'}
+                                    {task.priority === 'urgent' && '긴급'}
+                                  </Badge>
+                                  {task.dueDate && (
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3 text-muted-foreground" />
+                                      <span className="text-xs text-muted-foreground">
+                                        {new Date(task.dueDate).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* IN_PROGRESS */}
+                  {subTasks.filter(task => task.status === 'in_progress').length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-medium text-muted-foreground mb-2">
+                        진행 중 ({subTasks.filter(task => task.status === 'in_progress').length})
+                      </h4>
+                      <div className="space-y-2">
+                        {subTasks.filter(task => task.status === 'in_progress').map((task) => (
+                          <div key={task.id} className="p-3 border rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                            <div className="flex items-start gap-2">
+                              <Loader className="h-4 w-4 mt-0.5 text-blue-600 animate-spin" />
+                              <div className="flex-1 min-w-0">
+                                <h5 className="font-medium text-sm">{task.title}</h5>
+                                {task.description && (
+                                  <p className="text-xs text-muted-foreground mt-1 overflow-hidden" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>
+                                    {task.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Badge variant="outline" className="text-xs">
+                                    {task.priority === 'low' && '낮음'}
+                                    {task.priority === 'medium' && '보통'}
+                                    {task.priority === 'high' && '높음'}
+                                    {task.priority === 'urgent' && '긴급'}
+                                  </Badge>
+                                  {task.dueDate && (
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3 text-muted-foreground" />
+                                      <span className="text-xs text-muted-foreground">
+                                        {new Date(task.dueDate).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* REVIEW */}
+                  {subTasks.filter(task => task.status === 'review').length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-medium text-muted-foreground mb-2">
+                        검토 중 ({subTasks.filter(task => task.status === 'review').length})
+                      </h4>
+                      <div className="space-y-2">
+                        {subTasks.filter(task => task.status === 'review').map((task) => (
+                          <div key={task.id} className="p-3 border rounded-lg bg-yellow-50 dark:bg-yellow-950/20">
+                            <div className="flex items-start gap-2">
+                              <AlertCircle className="h-4 w-4 mt-0.5 text-yellow-600" />
+                              <div className="flex-1 min-w-0">
+                                <h5 className="font-medium text-sm">{task.title}</h5>
+                                {task.description && (
+                                  <p className="text-xs text-muted-foreground mt-1 overflow-hidden" style={{display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical'}}>
+                                    {task.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Badge variant="outline" className="text-xs">
+                                    {task.priority === 'low' && '낮음'}
+                                    {task.priority === 'medium' && '보통'}
+                                    {task.priority === 'high' && '높음'}
+                                    {task.priority === 'urgent' && '긴급'}
+                                  </Badge>
+                                  {task.dueDate && (
+                                    <div className="flex items-center gap-1">
+                                      <Clock className="h-3 w-3 text-muted-foreground" />
+                                      <span className="text-xs text-muted-foreground">
+                                        {new Date(task.dueDate).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* DONE */}
+                  {subTasks.filter(task => task.status === 'done').length > 0 && (
+                    <div>
+                      <h4 className="text-xs font-medium text-muted-foreground mb-2">
+                        완료 ({subTasks.filter(task => task.status === 'done').length})
+                      </h4>
+                      <div className="space-y-2">
+                        {subTasks.filter(task => task.status === 'done').map((task) => (
+                          <div key={task.id} className="p-3 border rounded-lg bg-green-50 dark:bg-green-950/20">
+                            <div className="flex items-start gap-2">
+                              <CheckCircle className="h-4 w-4 mt-0.5 text-green-600" />
+                              <div className="flex-1 min-w-0">
+                                <h5 className="font-medium text-sm line-through text-muted-foreground">
+                                  {task.title}
+                                </h5>
+                                {task.description && (
+                                  <p className="text-xs text-muted-foreground mt-1 line-clamp-2 line-through">
+                                    {task.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-2 mt-2">
+                                  <Badge variant="outline" className="text-xs">
+                                    {task.priority === 'low' && '낮음'}
+                                    {task.priority === 'medium' && '보통'}
+                                    {task.priority === 'high' && '높음'}
+                                    {task.priority === 'urgent' && '긴급'}
+                                  </Badge>
+                                  {task.completedAt && (
+                                    <div className="flex items-center gap-1">
+                                      <CheckCircle className="h-3 w-3 text-green-600" />
+                                      <span className="text-xs text-muted-foreground">
+                                        {new Date(task.completedAt).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
       </div>
       
       {/* Modals */}
