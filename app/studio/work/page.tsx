@@ -215,10 +215,10 @@ export default function WorkPage() {
             {(Array.isArray(workTasks) ? workTasks : []).map((workTask) => (
               <Card
                 key={workTask.id}
-                className={`min-w-[300px] cursor-pointer transition-all duration-300 ${
+                className={`min-w-[300px] cursor-pointer transition-all duration-300 border-2 ${
                   selectedWorkTask?.id === workTask.id
-                    ? 'glass-subtle ring-2 ring-slate-400 ring-offset-2 ring-offset-background bg-white/95 dark:bg-slate-800/95 backdrop-blur-md'
-                    : 'bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm hover:bg-white/90 dark:hover:bg-slate-800/90 hover:shadow-lg border border-slate-200 dark:border-slate-700'
+                    ? 'border-slate-500 dark:border-slate-400 shadow-xl bg-white dark:bg-slate-800 ring-2 ring-slate-400/50 dark:ring-slate-300/50'
+                    : 'border-slate-300 dark:border-slate-600 bg-white/95 dark:bg-slate-800/95 hover:border-slate-400 dark:hover:border-slate-500 hover:shadow-lg hover:bg-slate-50 dark:hover:bg-slate-700/95'
                 }`}
                 onClick={() => handleWorkTaskSelect(workTask)}
               >
@@ -262,7 +262,7 @@ export default function WorkPage() {
                         </DropdownMenu>
                       )}
                     </div>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
+                    <p className="text-sm text-slate-700 dark:text-slate-300 line-clamp-2">
                       {workTask.description || '설명이 없습니다'}
                     </p>
                     <div className="flex items-center justify-between">
@@ -280,7 +280,7 @@ export default function WorkPage() {
                          workTask.priority === 'medium' ? '보통' : '낮음'}
                       </span>
                       {workTask.dueDate && (
-                        <span className="text-xs text-slate-600 dark:text-slate-400">
+                        <span className="text-xs text-slate-700 dark:text-slate-300 font-medium">
                           마감: {new Date(workTask.dueDate).toLocaleDateString('ko-KR')}
                         </span>
                       )}
