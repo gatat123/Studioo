@@ -278,7 +278,15 @@ function TeamPageContent() {
 
       // Auto-show work panel if channel has linked work task
       if (selectedChannel.workTask) {
-        setSelectedWorkTask(selectedChannel.workTask)
+        // Convert channel workTask to full WorkTask type with safe defaults
+        const fullWorkTask: WorkTask = {
+          ...selectedChannel.workTask,
+          createdById: selectedChannel.workTask.id, // Use workTask id as fallback
+          position: 0, // Default position
+          status: selectedChannel.workTask.status as WorkTask['status'],
+          priority: selectedChannel.workTask.priority as WorkTask['priority']
+        }
+        setSelectedWorkTask(fullWorkTask)
         setRightPanelVisible(true)
         loadSubTasks(selectedChannel.workTask.id)
       } else {
