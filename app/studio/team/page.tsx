@@ -644,7 +644,7 @@ function TeamPageContent() {
       console.error('Failed to load subtasks:', error)
       toast({
         title: '오류',
-        description: '업무 보드를 불러오는데 실패했습니다.'
+        description: '업무 보드를 불러오는데 실패했습니다.',
         variant: 'destructive'
       })
     } finally {
