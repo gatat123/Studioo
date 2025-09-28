@@ -181,6 +181,39 @@ class SocketClient {
     this.socket?.emit('annotation:delete', { imageId, annotationId });
   }
 
+  // Team Channel Management
+  joinChannel(channelId: string) {
+    this.emit('join_channel', { channel_id: channelId });
+  }
+
+  leaveChannel(channelId: string) {
+    this.emit('leave_channel', { channel_id: channelId });
+  }
+
+  sendChannelMessage(channelId: string, content: string, type: 'text' | 'image' | 'file' = 'text', tempId?: string) {
+    this.emit('send_channel_message', {
+      channel_id: channelId,
+      content,
+      type,
+      tempId
+    });
+  }
+
+  startChannelTyping(channelId: string) {
+    this.emit('typing_start_channel', { channel_id: channelId });
+  }
+
+  stopChannelTyping(channelId: string) {
+    this.emit('typing_stop_channel', { channel_id: channelId });
+  }
+
+  requestPresenceStatus(channelId: string, userIds: string[]) {
+    this.emit('request_presence_status', {
+      channel_id: channelId,
+      user_ids: userIds
+    });
+  }
+
   // Custom event emitter with type safety
   emit<K extends keyof SocketEventMap>(event: K | string, data?: K extends keyof SocketEventMap ? Parameters<SocketEventMap[K]>[0] : unknown) {
     this.socket?.emit(event as string, data);

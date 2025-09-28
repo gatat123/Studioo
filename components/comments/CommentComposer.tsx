@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { Comment } from '@/types/comment';
 import useCommentStore from '@/store/useCommentStore';
+import { socketClient } from '@/lib/socket/client';
+import { SOCKET_EVENTS } from '@/lib/socket/events';
 import { cn } from '@/lib/utils';
 
 interface CommentComposerProps {
@@ -50,6 +52,16 @@ export const CommentComposer: React.FC<CommentComposerProps> = ({
       };
       
       addComment(newComment);
+
+      // Emit Socket.io event for real-time comment updates
+      if (socketClient.isConnected() && projectId) {
+        socketClient.emit(SOCKET_EVENTS.COMMENT_NEW, {
+          project_id: projectId,
+          scene_id: sceneId,
+          comment: newComment
+        });
+      }
+
       setContent('');
       setIsExpanded(false);
     }

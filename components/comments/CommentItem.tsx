@@ -23,6 +23,8 @@ import {
   X
 } from 'lucide-react';
 import useCommentStore from '@/store/useCommentStore';
+import { socketClient } from '@/lib/socket/client';
+import { SOCKET_EVENTS } from '@/lib/socket/events';
 import { cn } from '@/lib/utils';
 
 interface CommentItemProps {
@@ -49,6 +51,21 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   const handleSaveEdit = () => {
     if (editContent.trim()) {
       updateComment(comment.id, editContent.trim());
+
+      // Emit Socket.io event for real-time comment updates
+      if (socketClient.isConnected() && comment.projectId) {
+        socketClient.emit(SOCKET_EVENTS.COMMENT_UPDATE, {
+          project_id: comment.projectId,
+          scene_id: comment.sceneId,
+          comment: {
+            ...comment,
+            content: editContent.trim(),
+            isEdited: true,
+            updatedAt: new Date().toISOString()
+          }
+        });
+      }
+
       setIsEditing(false);
     }
   };
@@ -61,6 +78,14 @@ export const CommentItem: React.FC<CommentItemProps> = ({
   const handleDelete = () => {
     if (confirm('정말로 이 댓글을 삭제하시겠습니까?')) {
       deleteComment(comment.id);
+
+      // Emit Socket.io event for real-time comment deletion
+      if (socketClient.isConnected() && comment.projectId) {
+        socketClient.emit(SOCKET_EVENTS.COMMENT_DELETE, {
+          project_id: comment.projectId,
+          comment_id: comment.id
+        });
+      }
     }
   };
 
@@ -80,6 +105,16 @@ export const CommentItem: React.FC<CommentItemProps> = ({
       };
       
       addReply(comment.id, newReply);
+
+      // Emit Socket.io event for real-time reply updates
+      if (socketClient.isConnected() && comment.projectId) {
+        socketClient.emit(SOCKET_EVENTS.COMMENT_NEW, {
+          project_id: comment.projectId,
+          scene_id: comment.sceneId,
+          comment: newReply
+        });
+      }
+
       setReplyContent('');
       setShowReplyForm(false);
     }

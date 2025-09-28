@@ -50,6 +50,20 @@ export const SOCKET_EVENTS = {
   // Collaboration Events
   PROJECT_UPDATE: 'project:update',
   COLLABORATION_UPDATE: 'collaboration:update',
+
+  // Team Channel Events
+  CHANNEL_JOIN: 'channel:join',
+  CHANNEL_LEAVE: 'channel:leave',
+  CHANNEL_MESSAGE_NEW: 'channel:message:new',
+  CHANNEL_MESSAGE_SENT: 'channel:message:sent',
+  CHANNEL_MESSAGE_ERROR: 'channel:message:error',
+  CHANNEL_MEMBER_JOINED: 'channel:member:joined',
+  CHANNEL_MEMBER_LEFT: 'channel:member:left',
+  CHANNEL_INVITE_RECEIVED: 'channel:invite:received',
+  CHANNEL_INVITE_SENT: 'channel:invite:sent',
+  CHANNEL_TYPING_START: 'channel:typing:start',
+  CHANNEL_TYPING_STOP: 'channel:typing:stop',
+  USER_PRESENCE_UPDATE: 'user:presence:update',
 } as const;
 
 // Event Payload Types
@@ -131,6 +145,73 @@ export interface ProjectUpdatePayload {
   user?: Partial<User>;
 }
 
+// Team Channel Event Payloads
+export interface ChannelMessagePayload {
+  channel_id: string;
+  message: {
+    id: string;
+    channelId: string;
+    senderId: string;
+    content: string;
+    type: 'text' | 'image' | 'file' | 'system';
+    created_at: string;
+    sender: {
+      id: string;
+      username: string;
+      nickname: string;
+      profile_image_url?: string;
+    };
+  };
+  tempId?: string;
+}
+
+export interface ChannelMemberPayload {
+  channel_id: string;
+  userId: string;
+  user: {
+    id: string;
+    username: string;
+    nickname: string;
+    profile_image_url?: string;
+  };
+}
+
+export interface ChannelInvitePayload {
+  invite: {
+    id: string;
+    channelId: string;
+    inviterId: string;
+    inviteeId: string;
+    channel: {
+      id: string;
+      name: string;
+      description?: string;
+    };
+    inviter: {
+      id: string;
+      username: string;
+      nickname: string;
+      profile_image_url?: string;
+    };
+  };
+}
+
+export interface ChannelTypingPayload {
+  channel_id: string;
+  userId: string;
+  user: {
+    id: string;
+    username: string;
+    nickname: string;
+  };
+}
+
+export interface UserPresencePayload {
+  userId: string;
+  status: 'online' | 'offline';
+  isOnline?: boolean;
+}
+
 // Socket Event Emitter Types
 export type SocketEventMap = {
   // History Events
@@ -166,6 +247,18 @@ export type SocketEventMap = {
 
   // Project Events
   [SOCKET_EVENTS.PROJECT_UPDATE]: (payload: ProjectUpdatePayload) => void;
+
+  // Team Channel Events
+  [SOCKET_EVENTS.CHANNEL_MESSAGE_NEW]: (payload: ChannelMessagePayload) => void;
+  [SOCKET_EVENTS.CHANNEL_MESSAGE_SENT]: (payload: ChannelMessagePayload) => void;
+  [SOCKET_EVENTS.CHANNEL_MESSAGE_ERROR]: (payload: { error: string; tempId?: string; channel_id: string }) => void;
+  [SOCKET_EVENTS.CHANNEL_MEMBER_JOINED]: (payload: ChannelMemberPayload) => void;
+  [SOCKET_EVENTS.CHANNEL_MEMBER_LEFT]: (payload: ChannelMemberPayload) => void;
+  [SOCKET_EVENTS.CHANNEL_INVITE_RECEIVED]: (payload: ChannelInvitePayload) => void;
+  [SOCKET_EVENTS.CHANNEL_INVITE_SENT]: (payload: ChannelInvitePayload) => void;
+  [SOCKET_EVENTS.CHANNEL_TYPING_START]: (payload: ChannelTypingPayload) => void;
+  [SOCKET_EVENTS.CHANNEL_TYPING_STOP]: (payload: ChannelTypingPayload) => void;
+  [SOCKET_EVENTS.USER_PRESENCE_UPDATE]: (payload: UserPresencePayload) => void;
 };
 
 // Helper function to emit socket events with type safety

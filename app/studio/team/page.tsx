@@ -21,8 +21,10 @@ import {
   Trash2
 } from 'lucide-react'
 import { socketClient } from '@/lib/socket/client'
+import { SOCKET_EVENTS } from '@/lib/socket/events'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { safeFormat } from '@/lib/utils/date-helpers'
 import { channelsAPI, type Channel, type ChannelMember, type ChannelMessage, type ChannelInvitation } from '@/lib/api/channels'
 import { useAuthStore } from '@/store/useAuthStore'
 import { CreateChannelModal } from '@/components/team/CreateChannelModal'
@@ -60,8 +62,7 @@ function TeamPageContent() {
     socketClient.connect()
 
     // Listen for user presence updates globally
-    // @ts-expect-error - Custom event not in typed events
-    socketClient.socket?.on('user_presence_update', (data: { userId: string; status: 'online' | 'offline' }) => {
+    socketClient.on(SOCKET_EVENTS.USER_PRESENCE_UPDATE, (data) => {
       // Update member online status in the member list
       setChannelMembers(prev => prev.map(member =>
         member.userId === data.userId
@@ -70,9 +71,8 @@ function TeamPageContent() {
       ))
     })
 
-    // @ts-expect-error - Custom event not in typed events
-    socketClient.socket?.on('presence_update', (data: { userId: string; isOnline: boolean }) => {
-      // Alternative presence update event
+    // Alternative presence update event for backward compatibility
+    socketClient.on('presence_update', (data: { userId: string; isOnline: boolean }) => {
       setChannelMembers(prev => prev.map(member =>
         member.userId === data.userId
           ? { ...member, user: { ...member.user, isActive: data.isOnline } }
@@ -81,24 +81,21 @@ function TeamPageContent() {
     })
 
     return () => {
-      socketClient.off('user_presence_update')
+      socketClient.off(SOCKET_EVENTS.USER_PRESENCE_UPDATE)
       socketClient.off('presence_update')
       if (selectedChannel) {
-        // @ts-expect-error - Custom event not in typed events
-        socketClient.socket?.emit('leave:channel', { channel_id: selectedChannel.id })
+        socketClient.leaveChannel(selectedChannel.id)
       }
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
   
   useEffect(() => {
     if (selectedChannel) {
-      // Join channel using correct Socket.io event names
-      // @ts-expect-error - Custom event not in typed events
-      socketClient.socket?.emit('join_channel', { channel_id: selectedChannel.id })
-      
+      // Join channel using standardized events
+      socketClient.joinChannel(selectedChannel.id)
+
       // Listen for real-time channel messages
-      // @ts-expect-error - Custom event not in typed events
-      socketClient.socket?.on('new_channel_message', (data: { message: ChannelMessage }) => {
+      socketClient.on(SOCKET_EVENTS.CHANNEL_MESSAGE_NEW, (data) => {
         if (data.message.channelId === selectedChannel.id) {
           setMessages(prev => {
             // Avoid duplicate messages
@@ -111,8 +108,7 @@ function TeamPageContent() {
       })
       
       // Listen for member joined
-      // @ts-expect-error - Custom event not in typed events
-      socketClient.socket?.on('member_joined_channel', (data: { userId: string, user: { nickname: string } }) => {
+      socketClient.on(SOCKET_EVENTS.CHANNEL_MEMBER_JOINED, (data) => {
         if (data.user) {
           loadChannelMembers(selectedChannel.id)
           toast({
@@ -121,30 +117,26 @@ function TeamPageContent() {
           })
         }
       })
-      
+
       // Listen for member left
-      // @ts-expect-error - Custom event not in typed events
-      socketClient.socket?.on('member_left_channel', (data: { userId: string }) => {
+      socketClient.on(SOCKET_EVENTS.CHANNEL_MEMBER_LEFT, (data) => {
         setChannelMembers(prev => prev.filter(m => m.userId !== data.userId))
       })
       
       // Listen for typing indicators
-      // @ts-expect-error - Custom event not in typed events
-      socketClient.socket?.on('user_typing_channel', (data: { userId: string, user: { nickname: string } }) => {
+      socketClient.on(SOCKET_EVENTS.CHANNEL_TYPING_START, (data) => {
         // Handle typing indicator
         if (data.userId !== currentUser?.id) {
           // Show typing indicator for other users
         }
       })
-      
-      // @ts-expect-error - Custom event not in typed events
-      socketClient.socket?.on('user_stopped_typing_channel', () => {
+
+      socketClient.on(SOCKET_EVENTS.CHANNEL_TYPING_STOP, () => {
         // Hide typing indicator
       })
       
       // 초대 수신 이벤트
-      // @ts-expect-error - Custom event not in typed events
-      socketClient.socket?.on('channel_invite_received', (data: { invite: ChannelInvitation }) => {
+      socketClient.on(SOCKET_EVENTS.CHANNEL_INVITE_RECEIVED, (data) => {
         loadChannels() // 채널 목록 새로고침
         toast({
           title: '채널 초대',
@@ -157,14 +149,13 @@ function TeamPageContent() {
       loadMessages(selectedChannel.id)
       
       return () => {
-        // @ts-expect-error - Custom event not in typed events
-        socketClient.socket?.emit('leave_channel', { channel_id: selectedChannel.id })
-        socketClient.off('new_channel_message')
-        socketClient.off('member_joined_channel')
-        socketClient.off('member_left_channel')
-        socketClient.off('user_typing_channel')
-        socketClient.off('user_stopped_typing_channel')
-        socketClient.off('channel_invite_received')
+        socketClient.leaveChannel(selectedChannel.id)
+        socketClient.off(SOCKET_EVENTS.CHANNEL_MESSAGE_NEW)
+        socketClient.off(SOCKET_EVENTS.CHANNEL_MEMBER_JOINED)
+        socketClient.off(SOCKET_EVENTS.CHANNEL_MEMBER_LEFT)
+        socketClient.off(SOCKET_EVENTS.CHANNEL_TYPING_START)
+        socketClient.off(SOCKET_EVENTS.CHANNEL_TYPING_STOP)
+        socketClient.off(SOCKET_EVENTS.CHANNEL_INVITE_RECEIVED)
       }
     }
   }, [selectedChannel, currentUser, toast]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -206,11 +197,7 @@ function TeamPageContent() {
 
       // Request presence status for all members after loading
       if (socketClient.isConnected()) {
-        // Request presence status through public emit method
-        socketClient.emit('request_presence_status' as never, {
-          channel_id,
-          user_ids: members.map(m => m.userId)
-        } as never)
+        socketClient.requestPresenceStatus(channel_id, members.map(m => m.userId))
       }
     } catch {
       // Failed to load channel members
@@ -268,26 +255,18 @@ function TeamPageContent() {
     scrollToBottom()
     
     // Send through Socket.io for real-time delivery
-    // @ts-expect-error - Custom event not in typed events
-    socketClient.socket?.emit('send_channel_message', {
-      channel_id: selectedChannel.id,
-      content: newMessage.trim(),
-      type: 'text',
-      tempId
-    })
+    socketClient.sendChannelMessage(selectedChannel.id, newMessage.trim(), 'text', tempId)
     
     // Listen for confirmation
     const handleMessageSent = (data: { message: ChannelMessage, tempId: string }) => {
       if (data.tempId === tempId) {
-        setMessages(prev => prev.map(msg => 
+        setMessages(prev => prev.map(msg =>
           msg.id === tempId ? data.message : msg
         ))
-        // @ts-expect-error - Custom event not in typed events
-        socketClient.socket?.off('channel_message_sent', handleMessageSent)
+        socketClient.off(SOCKET_EVENTS.CHANNEL_MESSAGE_SENT, handleMessageSent)
       }
     }
-    // @ts-expect-error - Custom event not in typed events
-    socketClient.socket?.on('channel_message_sent', handleMessageSent)
+    socketClient.on(SOCKET_EVENTS.CHANNEL_MESSAGE_SENT, handleMessageSent)
     
     const handleMessageError = (data: { error: string, tempId: string }) => {
       if (data.tempId === tempId) {
@@ -298,12 +277,10 @@ function TeamPageContent() {
           description: data.error || '메시지 전송에 실패했습니다',
           variant: 'destructive'
         })
-        // @ts-expect-error - Custom event not in typed events
-        socketClient.socket?.off('channel_message_error', handleMessageError)
+        socketClient.off(SOCKET_EVENTS.CHANNEL_MESSAGE_ERROR, handleMessageError)
       }
     }
-    // @ts-expect-error - Custom event not in typed events
-    socketClient.socket?.on('channel_message_error', handleMessageError)
+    socketClient.on(SOCKET_EVENTS.CHANNEL_MESSAGE_ERROR, handleMessageError)
   }
   
   const scrollToBottom = () => {
@@ -315,14 +292,12 @@ function TeamPageContent() {
   const handleTyping = () => {
     if (!isTyping && selectedChannel) {
       setIsTyping(true)
-      // @ts-expect-error - Custom event not in typed events
-      socketClient.socket?.emit('typing_start_channel', { channel_id: selectedChannel.id })
-      
+      socketClient.startChannelTyping(selectedChannel.id)
+
       setTimeout(() => {
         setIsTyping(false)
         if (selectedChannel) {
-          // @ts-expect-error - Custom event not in typed events
-        socketClient.socket?.emit('typing_stop_channel', { channel_id: selectedChannel.id })
+          socketClient.stopChannelTyping(selectedChannel.id)
         }
       }, 2000)
     }
@@ -369,8 +344,7 @@ function TeamPageContent() {
         setSelectedChannel(null)
         
         // Emit socket event
-        // @ts-expect-error - Custom event not in typed events
-        socketClient.socket?.emit('leave_channel', { channel_id: selectedChannel.id })
+        socketClient.leaveChannel(selectedChannel.id)
       } else {
         // Failed to leave channel
       }
@@ -712,10 +686,7 @@ function TeamPageContent() {
                             <p className="text-sm">{message.content}</p>
                           </div>
                           <span className="text-xs text-muted-foreground mt-1">
-                            {new Date(message.created_at).toLocaleTimeString('ko-KR', { 
-                              hour: '2-digit', 
-                              minute: '2-digit'
-                            })}
+                            {safeFormat(message.created_at, 'HH:mm')}
                           </span>
                         </div>
                       </div>

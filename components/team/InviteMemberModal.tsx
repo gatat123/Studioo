@@ -11,6 +11,8 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { channelsAPI } from '@/lib/api/channels'
 import { friendsAPI } from '@/lib/api/friends'
+import { socketClient } from '@/lib/socket/client'
+import { SOCKET_EVENTS } from '@/lib/socket/events'
 import { useToast } from '@/hooks/use-toast'
 import { Search, Check } from 'lucide-react'
 
@@ -150,22 +152,39 @@ export function InviteMemberModal({ open, onOpenChange, channelId, channelName }
     setLoading(true)
     try {
       // Send invites to all selected users
-      const invitePromises = selectedUsers.map(userId => 
-        channelsAPI.inviteMember(channelId, { userId, message })
-      )
-      
+      const invitePromises = selectedUsers.map(async userId => {
+        const invite = await channelsAPI.inviteMember(channelId, { userId, message })
+
+        // Emit Socket.io event for real-time notification
+        if (socketClient.isConnected()) {
+          socketClient.emit(SOCKET_EVENTS.CHANNEL_INVITE_SENT, {
+            invite: {
+              id: invite.id,
+              channelId: invite.channelId,
+              inviterId: invite.inviterId,
+              inviteeId: invite.inviteeId,
+              channel: invite.channel,
+              inviter: invite.inviter
+            }
+          })
+        }
+
+        return invite
+      })
+
       await Promise.all(invitePromises)
-      
+
       toast({
         title: '성공',
         description: `${selectedUsers.length}명에게 초대를 보냈습니다`
       })
-      
+
       onOpenChange(false)
       setSelectedUsers([])
       setMessage('')
       setSearchQuery('')
-    } catch {
+    } catch (error) {
+      console.error('초대 전송 오류:', error)
       toast({
         title: '오류',
         description: '초대 전송에 실패했습니다',

@@ -97,6 +97,7 @@ const useCommentStore = create<CommentState>()(
         },
 
         updateComment: (id, content) => {
+          const now = new Date().toISOString();
           set((state) => ({
             comments: state.comments.map(comment => {
               if (comment.id === id) {
@@ -104,7 +105,7 @@ const useCommentStore = create<CommentState>()(
                   ...comment,
                   content,
                   isEdited: true,
-                  updatedAt: new Date().toISOString()
+                  updatedAt: now
                 };
               }
               // Check replies
@@ -113,7 +114,7 @@ const useCommentStore = create<CommentState>()(
                   ...comment,
                   replies: comment.replies.map(reply =>
                     reply.id === id
-                      ? { ...reply, content, isEdited: true, updatedAt: new Date().toISOString() }
+                      ? { ...reply, content, isEdited: true, updatedAt: now }
                       : reply
                   )
                 };
