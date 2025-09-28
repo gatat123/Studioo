@@ -183,15 +183,21 @@ class SocketClient {
 
   // Team Channel Management
   joinChannel(channelId: string) {
-    // Try multiple event names for compatibility
-    this.emit('join:channel', { channel_id: channelId });
-    this.emit('channel:join', { channelId: channelId });
+    // Use socket instance directly for compatibility
+    if (this.socket) {
+      this.socket.emit('join:channel', { channel_id: channelId });
+      this.socket.emit('channel:join', { channelId: channelId });
+      this.socket.emit('join_channel', { channel_id: channelId });
+    }
   }
 
   leaveChannel(channelId: string) {
-    // Try multiple event names for compatibility
-    this.emit('leave:channel', { channel_id: channelId });
-    this.emit('channel:leave', { channelId: channelId });
+    // Use socket instance directly for compatibility
+    if (this.socket) {
+      this.socket.emit('leave:channel', { channel_id: channelId });
+      this.socket.emit('channel:leave', { channelId: channelId });
+      this.socket.emit('leave_channel', { channel_id: channelId });
+    }
   }
 
   sendChannelMessage(channelId: string, content: string, type: 'text' | 'image' | 'file' = 'text', tempId?: string) {
