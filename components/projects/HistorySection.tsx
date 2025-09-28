@@ -265,6 +265,10 @@ export function HistorySection({
     socketClient.on(SOCKET_EVENTS.TYPING_START, handleTypingStart)
     socketClient.on(SOCKET_EVENTS.TYPING_STOP, handleTypingStop)
 
+    // Also listen to legacy backend events for backward compatibility
+    socketClient.on('new_comment', handleNewComment)
+    socketClient.on('comment_updated', handleCommentUpdate)
+
     // Cleanup
     return () => {
       socketClient.off(SOCKET_EVENTS.HISTORY_UPDATE, handleHistoryUpdate)
@@ -273,6 +277,10 @@ export function HistorySection({
       socketClient.off(SOCKET_EVENTS.COMMENT_DELETE, handleCommentDelete)
       socketClient.off(SOCKET_EVENTS.TYPING_START, handleTypingStart)
       socketClient.off(SOCKET_EVENTS.TYPING_STOP, handleTypingStop)
+
+      // Remove legacy event listeners
+      socketClient.off('new_comment', handleNewComment)
+      socketClient.off('comment_updated', handleCommentUpdate)
 
       // Clear all typing timeouts
       typingUsers.forEach(user => {

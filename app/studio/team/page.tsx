@@ -92,6 +92,38 @@ function TeamPageContent() {
   
   useEffect(() => {
     if (selectedChannel) {
+      const socket = socketClient.getSocket()
+
+      // Handle channel join errors
+      const handleChannelError = (data: { type: string; message: string }) => {
+        if (data.type === 'channel_access_denied' || data.type === 'join_channel_failed') {
+          console.error('[Team] Channel join error:', data.message)
+          toast({
+            title: '채널 참가 실패',
+            description: data.message || '채널 참가 중 오류가 발생했습니다.',
+            variant: 'destructive'
+          })
+          // Reset selected channel on error
+          setSelectedChannel(null)
+          setChannels(prev => prev.filter(ch => ch.id !== selectedChannel.id))
+        }
+      }
+
+      // Handle channel join success
+      const handleChannelJoined = (data: { channelId: string; activeUsers?: any[]; timestamp?: Date }) => {
+        if (data.channelId === selectedChannel.id) {
+          console.log('[Team] Successfully joined channel:', data.channelId)
+          toast({
+            title: '채널 참가 성공',
+            description: `${selectedChannel.name} 채널에 참가했습니다.`
+          })
+        }
+      }
+
+      // Listen for join success/error events FIRST
+      socket?.on('error', handleChannelError)
+      socket?.on('channel_joined', handleChannelJoined)
+
       // Join channel using standardized events
       socketClient.joinChannel(selectedChannel.id)
 
@@ -100,6 +132,18 @@ function TeamPageContent() {
         if (data.message.channelId === selectedChannel.id) {
           setMessages(prev => {
             // Avoid duplicate messages
+            const exists = prev.some(m => m.id === data.message.id)
+            if (exists) return prev
+            return [...prev, data.message]
+          })
+          scrollToBottom()
+        }
+      })
+
+      // Also listen to backend event for compatibility
+      socketClient.on('new_channel_message', (data: { message: any }) => {
+        if (data.message.channelId === selectedChannel.id) {
+          setMessages(prev => {
             const exists = prev.some(m => m.id === data.message.id)
             if (exists) return prev
             return [...prev, data.message]
@@ -150,8 +194,12 @@ function TeamPageContent() {
       loadMessages(selectedChannel.id)
       
       return () => {
+        const socket = socketClient.getSocket()
+        socket?.off('error', handleChannelError)
+        socket?.off('channel_joined', handleChannelJoined)
         socketClient.leaveChannel(selectedChannel.id)
         socketClient.off(SOCKET_EVENTS.CHANNEL_MESSAGE_NEW)
+        socketClient.off('new_channel_message') // Remove backend event listener
         socketClient.off(SOCKET_EVENTS.CHANNEL_MEMBER_JOINED)
         socketClient.off(SOCKET_EVENTS.CHANNEL_MEMBER_LEFT)
         socketClient.off(SOCKET_EVENTS.CHANNEL_TYPING_START)
@@ -258,18 +306,18 @@ function TeamPageContent() {
     // Send through Socket.io for real-time delivery
     socketClient.sendChannelMessage(selectedChannel.id, newMessage.trim(), 'text', tempId)
     
-    // Listen for confirmation
-    const handleMessageSent = (data: ChannelMessagePayload) => {
+    // Listen for confirmation (backend sends 'channel_message_sent')
+    const handleMessageSent = (data: { message?: any; tempId?: string }) => {
       if (data.tempId === tempId && data.message) {
         setMessages(prev => prev.map(msg =>
           msg.id === tempId ? data.message as ChannelMessage : msg
         ))
-        socketClient.off(SOCKET_EVENTS.CHANNEL_MESSAGE_SENT, handleMessageSent)
+        socketClient.off('channel_message_sent', handleMessageSent)
       }
     }
-    socketClient.on(SOCKET_EVENTS.CHANNEL_MESSAGE_SENT, handleMessageSent)
+    socketClient.on('channel_message_sent', handleMessageSent)
 
-    const handleMessageError = (data: { error: string, tempId?: string, channel_id: string }) => {
+    const handleMessageError = (data: { error: string, tempId?: string }) => {
       if (data.tempId === tempId) {
         // Remove optimistic message
         setMessages(prev => prev.filter(msg => msg.id !== tempId))
@@ -278,10 +326,10 @@ function TeamPageContent() {
           description: data.error || '메시지 전송에 실패했습니다',
           variant: 'destructive'
         })
-        socketClient.off(SOCKET_EVENTS.CHANNEL_MESSAGE_ERROR, handleMessageError)
+        socketClient.off('channel_message_error', handleMessageError)
       }
     }
-    socketClient.on(SOCKET_EVENTS.CHANNEL_MESSAGE_ERROR, handleMessageError)
+    socketClient.on('channel_message_error', handleMessageError)
   }
   
   const scrollToBottom = () => {

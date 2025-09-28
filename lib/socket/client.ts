@@ -183,20 +183,16 @@ class SocketClient {
 
   // Team Channel Management
   joinChannel(channelId: string) {
-    // Use socket instance directly for compatibility
+    // Use socket instance directly for compatibility - use only the backend-supported event
     if (this.socket) {
-      this.socket.emit('join:channel', { channel_id: channelId });
-      this.socket.emit('channel:join', { channelId: channelId });
-      this.socket.emit('join_channel', { channel_id: channelId });
+      this.socket.emit('join_channel', { channelId: channelId });
     }
   }
 
   leaveChannel(channelId: string) {
-    // Use socket instance directly for compatibility
+    // Use socket instance directly for compatibility - use only the backend-supported event
     if (this.socket) {
-      this.socket.emit('leave:channel', { channel_id: channelId });
-      this.socket.emit('channel:leave', { channelId: channelId });
-      this.socket.emit('leave_channel', { channel_id: channelId });
+      this.socket.emit('leave_channel', { channelId: channelId });
     }
   }
 
@@ -204,7 +200,7 @@ class SocketClient {
     // Use socket instance directly to avoid type issues
     if (this.socket) {
       this.socket.emit('send_channel_message', {
-        channel_id: channelId,
+        channelId: channelId,  // Fixed: Use channelId instead of channel_id
         content,
         type,
         tempId

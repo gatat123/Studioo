@@ -153,6 +153,11 @@ export default function ProjectDetailPage() {
       // Toast is now handled by HistorySection
     })
 
+    // Also listen to legacy backend event for backward compatibility
+    socketClient.on('new_comment', () => {
+      void fetchComments()
+    })
+
     socketClient.on(SOCKET_EVENTS.HISTORY_UPDATE, (data: { project_id: string; type: string; action: string }) => {
       // Handle history updates
       if (data.project_id === projectId) {
@@ -199,6 +204,7 @@ export default function ProjectDetailPage() {
     return () => {
       socketClient.leaveProject(projectId)
       socketClient.off(SOCKET_EVENTS.COMMENT_NEW)
+      socketClient.off('new_comment') // Remove legacy event listener
       socketClient.off(SOCKET_EVENTS.HISTORY_UPDATE)
       socketClient.off('new_scene')
       socketClient.off(SOCKET_EVENTS.IMAGE_UPLOAD)
