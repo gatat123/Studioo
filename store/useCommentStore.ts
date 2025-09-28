@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { Comment, SortOption } from '@/types/comment';
+import { Comment } from '@/types';
+import { SortOption } from '@/types/comment';
 import { safeGetTime } from '@/lib/utils/date-helpers';
 
 interface CommentState {
@@ -26,25 +27,80 @@ interface CommentState {
 
 // Mock data generator
 const generateMockComments = (): Comment[] => {
+  const now = Date.now();
   const users = [
-    { id: '1', username: 'john_doe', nickname: 'John', profileImage: '/avatars/user1.jpg' },
-    { id: '2', username: 'jane_smith', nickname: 'Jane', profileImage: '/avatars/user2.jpg' },
-    { id: '3', username: 'bob_wilson', nickname: 'Bob', profileImage: '/avatars/user3.jpg' },
+    {
+      id: '1',
+      username: 'john_doe',
+      email: 'john@example.com',
+      nickname: 'John',
+      profile_image_url: '/avatars/user1.jpg',
+      is_admin: false,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      // Legacy property
+      profileImage: '/avatars/user1.jpg'
+    },
+    {
+      id: '2',
+      username: 'jane_smith',
+      email: 'jane@example.com',
+      nickname: 'Jane',
+      profile_image_url: '/avatars/user2.jpg',
+      is_admin: false,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      // Legacy property
+      profileImage: '/avatars/user2.jpg'
+    },
+    {
+      id: '3',
+      username: 'bob_wilson',
+      email: 'bob@example.com',
+      nickname: 'Bob',
+      profile_image_url: '/avatars/user3.jpg',
+      is_admin: false,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      // Legacy property
+      profileImage: '/avatars/user3.jpg'
+    },
   ];
 
   return [
     {
       id: '1',
+      project_id: null,
+      scene_id: null,
+      parent_comment_id: null,
+      user_id: '1',
       content: '이 씬의 구도가 정말 좋네요! 캐릭터의 표정이 잘 살아있습니다.',
+      created_at: new Date(now - 3600000).toISOString(),
+      updated_at: new Date(now - 3600000).toISOString(),
+      is_edited: false,
+      is_deleted: false,
       user: users[0],
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
+      // Legacy properties
+      createdAt: new Date(now - 3600000).toISOString(),
       isEdited: false,
       replies: [
         {
           id: '2',
+          project_id: null,
+          scene_id: null,
+          parent_comment_id: '1',
+          user_id: '2',
           content: '감사합니다! 표정 표현에 많은 신경을 썼어요.',
+          created_at: new Date(now - 1800000).toISOString(),
+          updated_at: new Date(now - 1800000).toISOString(),
+          is_edited: false,
+          is_deleted: false,
           user: users[1],
-          createdAt: new Date(Date.now() - 1800000).toISOString(),
+          // Legacy properties
+          createdAt: new Date(now - 1800000).toISOString(),
           isEdited: false,
           parentId: '1',
         }
@@ -52,18 +108,36 @@ const generateMockComments = (): Comment[] => {
     },
     {
       id: '3',
+      project_id: null,
+      scene_id: null,
+      parent_comment_id: null,
+      user_id: '3',
       content: '배경 색상을 조금 더 밝게 하면 어떨까요? 전체적인 분위기가 너무 어두운 것 같아요.',
+      created_at: new Date(now - 7200000).toISOString(),
+      updated_at: new Date(now - 6000000).toISOString(),
+      is_edited: true,
+      is_deleted: false,
       user: users[2],
-      createdAt: new Date(Date.now() - 7200000).toISOString(),
+      // Legacy properties
+      createdAt: new Date(now - 7200000).toISOString(),
       isEdited: true,
-      updatedAt: new Date(Date.now() - 6000000).toISOString(),
+      updatedAt: new Date(now - 6000000).toISOString(),
       replies: []
     },
     {
       id: '4',
+      project_id: null,
+      scene_id: null,
+      parent_comment_id: null,
+      user_id: '2',
       content: '라인아트 버전도 확인해주세요. 몇 가지 수정사항이 있습니다.',
+      created_at: new Date(now - 10800000).toISOString(),
+      updated_at: new Date(now - 10800000).toISOString(),
+      is_edited: false,
+      is_deleted: false,
       user: users[1],
-      createdAt: new Date(Date.now() - 10800000).toISOString(),
+      // Legacy properties
+      createdAt: new Date(now - 10800000).toISOString(),
       isEdited: false,
       attachments: [
         {
@@ -161,10 +235,10 @@ const useCommentStore = create<CommentState>()(
           
           switch (sortBy) {
             case 'newest':
-              sorted.sort((a, b) => safeGetTime(b.createdAt) - safeGetTime(a.createdAt));
+              sorted.sort((a, b) => safeGetTime(b.created_at || b.createdAt || '') - safeGetTime(a.created_at || a.createdAt || ''));
               break;
             case 'oldest':
-              sorted.sort((a, b) => safeGetTime(a.createdAt) - safeGetTime(b.createdAt));
+              sorted.sort((a, b) => safeGetTime(a.created_at || a.createdAt || '') - safeGetTime(b.created_at || b.createdAt || ''));
               break;
             case 'mostReplies':
               sorted.sort((a, b) => (b.replies?.length || 0) - (a.replies?.length || 0));

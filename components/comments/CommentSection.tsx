@@ -38,8 +38,8 @@ export const CommentSection: React.FC<CommentSectionProps> = ({
   // Filter comments based on active tab
   const filteredComments = comments.filter(comment => {
     if (activeTab === 'all') return true;
-    if (activeTab === 'scene') return comment.sceneId === sceneId;
-    if (activeTab === 'project') return comment.projectId === projectId && !comment.sceneId;
+    if (activeTab === 'scene') return (comment.scene_id || comment.sceneId) === sceneId;
+    if (activeTab === 'project') return (comment.project_id || comment.projectId) === projectId && !(comment.scene_id || comment.sceneId);
     return false;
   });
 

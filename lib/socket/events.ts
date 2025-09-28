@@ -163,7 +163,6 @@ export interface ChannelMessagePayload {
       profile_image_url?: string;
     };
   };
-  tempId?: string;
 }
 
 export interface ChannelMemberPayload {

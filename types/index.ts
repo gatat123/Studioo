@@ -17,6 +17,8 @@ export interface User {
   updated_at: string;
   last_login_at?: string | null;
   studio?: Studio;
+  // Legacy properties for backward compatibility
+  profileImage?: string;
 }
 
 // Studio types
@@ -157,6 +159,20 @@ export interface Comment {
     original_image_id?: string;
     image_type?: string;
   };
+  // Legacy properties for backward compatibility
+  createdAt?: string;
+  updatedAt?: string;
+  isEdited?: boolean;
+  parentId?: string;
+  projectId?: string;
+  sceneId?: string;
+  attachments?: {
+    id: string;
+    url: string;
+    type: 'image' | 'file';
+    name: string;
+    size: number;
+  }[];
 }
 
 // Annotation types

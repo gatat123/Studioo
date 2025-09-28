@@ -11,7 +11,7 @@ import {
   Paperclip,
   Send
 } from 'lucide-react';
-import { Comment } from '@/types/comment';
+import { Comment } from '@/types';
 import useCommentStore from '@/store/useCommentStore';
 import { socketClient } from '@/lib/socket/client';
 import { SOCKET_EVENTS } from '@/lib/socket/events';
@@ -37,15 +37,30 @@ export const CommentComposer: React.FC<CommentComposerProps> = ({
 
   const handleSubmit = () => {
     if (content.trim()) {
+      const currentTime = new Date().toISOString();
       const newComment: Comment = {
         id: `comment_${Date.now()}`,
+        project_id: projectId || null,
+        scene_id: sceneId || null,
+        parent_comment_id: null,
+        user_id: 'current_user',
         content: content.trim(),
+        created_at: currentTime,
+        updated_at: currentTime,
+        is_edited: false,
+        is_deleted: false,
         user: {
           id: 'current_user',
           username: 'current_user',
-          nickname: '현재 사용자'
+          email: 'current_user@example.com',
+          nickname: '현재 사용자',
+          is_admin: false,
+          is_active: true,
+          created_at: currentTime,
+          updated_at: currentTime
         },
-        createdAt: new Date().toISOString(),
+        // Legacy properties for backward compatibility
+        createdAt: currentTime,
         isEdited: false,
         projectId,
         sceneId
@@ -58,7 +73,12 @@ export const CommentComposer: React.FC<CommentComposerProps> = ({
         socketClient.emit(SOCKET_EVENTS.COMMENT_NEW, {
           project_id: projectId,
           scene_id: sceneId,
-          comment: newComment
+          comment: newComment,
+          user: {
+            id: 'current_user',
+            username: 'current_user',
+            nickname: '현재 사용자'
+          }
         });
       }
 

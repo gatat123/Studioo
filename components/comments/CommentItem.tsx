@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { safeFormatDistanceToNow } from '@/lib/utils/date-helpers';
-import { Comment } from '@/types/comment';
+import { Comment } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -53,15 +53,15 @@ export const CommentItem: React.FC<CommentItemProps> = ({
       updateComment(comment.id, editContent.trim());
 
       // Emit Socket.io event for real-time comment updates
-      if (socketClient.isConnected() && comment.projectId) {
+      if (socketClient.isConnected() && (comment.project_id || comment.projectId)) {
         socketClient.emit(SOCKET_EVENTS.COMMENT_UPDATE, {
-          project_id: comment.projectId,
-          scene_id: comment.sceneId,
+          project_id: comment.project_id || comment.projectId,
+          scene_id: comment.scene_id || comment.sceneId,
           comment: {
             ...comment,
             content: editContent.trim(),
-            isEdited: true,
-            updatedAt: new Date().toISOString()
+            is_edited: true,
+            updated_at: new Date().toISOString()
           }
         });
       }
@@ -80,9 +80,9 @@ export const CommentItem: React.FC<CommentItemProps> = ({
       deleteComment(comment.id);
 
       // Emit Socket.io event for real-time comment deletion
-      if (socketClient.isConnected() && comment.projectId) {
+      if (socketClient.isConnected() && (comment.project_id || comment.projectId)) {
         socketClient.emit(SOCKET_EVENTS.COMMENT_DELETE, {
-          project_id: comment.projectId,
+          project_id: comment.project_id || comment.projectId,
           comment_id: comment.id
         });
       }
@@ -91,15 +91,30 @@ export const CommentItem: React.FC<CommentItemProps> = ({
 
   const handleReply = () => {
     if (replyContent.trim()) {
+      const currentTime = new Date().toISOString();
       const newReply: Comment = {
         id: `reply_${Date.now()}`,
+        project_id: comment.project_id,
+        scene_id: comment.scene_id,
+        parent_comment_id: comment.id,
+        user_id: 'current_user',
         content: replyContent.trim(),
+        created_at: currentTime,
+        updated_at: currentTime,
+        is_edited: false,
+        is_deleted: false,
         user: {
           id: 'current_user',
           username: 'current_user',
-          nickname: '현재 사용자'
+          email: 'current_user@example.com',
+          nickname: '현재 사용자',
+          is_admin: false,
+          is_active: true,
+          created_at: currentTime,
+          updated_at: currentTime
         },
-        createdAt: new Date().toISOString(),
+        // Legacy properties for backward compatibility
+        createdAt: currentTime,
         isEdited: false,
         parentId: comment.id
       };
@@ -107,10 +122,10 @@ export const CommentItem: React.FC<CommentItemProps> = ({
       addReply(comment.id, newReply);
 
       // Emit Socket.io event for real-time reply updates
-      if (socketClient.isConnected() && comment.projectId) {
+      if (socketClient.isConnected() && (comment.project_id || comment.projectId)) {
         socketClient.emit(SOCKET_EVENTS.COMMENT_NEW, {
-          project_id: comment.projectId,
-          scene_id: comment.sceneId,
+          project_id: comment.project_id || comment.projectId,
+          scene_id: comment.scene_id || comment.sceneId,
           comment: newReply
         });
       }
@@ -136,7 +151,7 @@ export const CommentItem: React.FC<CommentItemProps> = ({
     )}>
       <div className="flex gap-3">
         <Avatar className="h-8 w-8 flex-shrink-0">
-          <AvatarImage src={comment.user.profileImage} />
+          <AvatarImage src={comment.user?.profile_image_url || comment.user?.profileImage} />
           <AvatarFallback className="text-xs">
             {getInitials(comment.user.nickname)}
           </AvatarFallback>
@@ -149,9 +164,9 @@ export const CommentItem: React.FC<CommentItemProps> = ({
                 {comment.user.nickname}
               </span>
               <span className="text-xs text-muted-foreground">
-                {safeFormatDistanceToNow(comment.createdAt)}
+                {safeFormatDistanceToNow(comment.created_at || comment.createdAt)}
               </span>
-              {comment.isEdited && (
+              {(comment.is_edited || comment.isEdited) && (
                 <span className="text-xs text-muted-foreground">(수정됨)</span>
               )}
             </div>
