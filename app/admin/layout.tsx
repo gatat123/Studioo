@@ -92,10 +92,14 @@ export default function AdminLayout({
   }
 
   // Double-check admin status before rendering
-  const isAdmin = user?.is_admin || (user?.username === 'gatat123' && process.env.NODE_ENV === 'development');
+  const isAdmin = user?.is_admin || user?.username === 'gatat123';
   if (!isAdmin) {
     console.log('Admin Layout - Final admin check failed, redirecting...');
-    router.push('/studio');
+    console.log('User data:', user);
+    // Don't redirect immediately, give time for auth to complete
+    setTimeout(() => {
+      router.push('/studio');
+    }, 100);
     return null;
   }
 
