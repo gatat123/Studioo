@@ -7,10 +7,13 @@ export interface Announcement {
   id: string
   content: string
   updatedAt: string
-  updatedBy: {
+  createdAt: string
+  userId: string
+  user: {
     id: string
     nickname: string
     profileImageUrl?: string
+    is_admin?: boolean
   }
 }
 
