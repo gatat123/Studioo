@@ -1100,7 +1100,7 @@ function TeamPageContent() {
         {/* Channel Members */}
         {selectedChannel && (() => {
           // Check if admin is viewing as admin (from admin dashboard)
-          const isAdminMode = searchParams.get('channel') === selectedChannel.id && currentUser?.is_admin
+          const isAdminMode = searchParams.get('channel') === selectedChannel.id && currentUser?.isAdmin
           // Filter out admin from members if in admin mode
           const displayMembers = isAdminMode
             ? channelMembers.filter(m => m.userId !== currentUser?.id)
@@ -1156,7 +1156,7 @@ function TeamPageContent() {
                   <h2 className="font-semibold">{selectedChannel.name}</h2>
                   <Badge variant="outline">
                     {(() => {
-                      const isAdminMode = searchParams.get('channel') === selectedChannel.id && currentUser?.is_admin
+                      const isAdminMode = searchParams.get('channel') === selectedChannel.id && currentUser?.isAdmin
                       const onlineMembers = channelMembers.filter(m => {
                         // If admin mode, exclude admin from count
                         if (isAdminMode && m.userId === currentUser?.id) return false

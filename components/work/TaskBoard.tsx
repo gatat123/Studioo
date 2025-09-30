@@ -34,6 +34,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 
 interface TaskBoardProps {
   searchQuery?: string
@@ -74,8 +80,6 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
   const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({})
   const [fileInputRefs, setFileInputRefs] = useState<Record<string, HTMLInputElement | null>>({})
 
-  // Socket 연결 상태
-  const [isSocketConnected, setIsSocketConnected] = useState(false)
 
   useEffect(() => {
     if (selectedWorkTask) {
@@ -435,12 +439,10 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
     // Handle socket connection events
     const handleSocketConnected = () => {
       console.log(`[TaskBoard] ✅ Socket connected, ID:`, socket.id)
-      setIsSocketConnected(true)
     }
 
     const handleSocketDisconnected = (reason: string) => {
       console.log(`[TaskBoard] ❌ Socket disconnected, reason:`, reason)
-      setIsSocketConnected(false)
     }
 
     const handleJoinedWorkTask = (data: { workTaskId: string, roomId: string, clientCount?: number }) => {
@@ -1039,10 +1041,72 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={isSocketConnected ? "default" : "destructive"} className="flex items-center gap-1">
-              <span className={`h-2 w-2 rounded-full ${isSocketConnected ? 'bg-green-500' : 'bg-red-500'} animate-pulse`} />
-              {isSocketConnected ? '실시간 연결됨' : '연결 끊김'}
-            </Badge>
+            {/* 참여자 목록 표시 */}
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-600">참여자:</span>
+              <div className="flex items-center gap-1">
+                {/* 생성자 표시 */}
+                {selectedWorkTask.createdBy && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger>
+                        <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded-full">
+                          <Avatar className="h-5 w-5">
+                            <AvatarImage src={selectedWorkTask.createdBy.profileImageUrl} />
+                            <AvatarFallback className="text-[10px]">
+                              {selectedWorkTask.createdBy.nickname[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="text-xs font-medium text-blue-700">
+                            {selectedWorkTask.createdBy.nickname}
+                          </span>
+                          <span className="text-[10px] text-blue-600">(생성자)</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{selectedWorkTask.createdBy.nickname} (생성자)</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+
+                {/* 참여자들 표시 */}
+                {selectedWorkTask.participants && selectedWorkTask.participants
+                  .filter(p => p.userId !== selectedWorkTask.createdById) // 생성자 제외
+                  .slice(0, 3) // 최대 3명까지 표시
+                  .map((participant) => (
+                    <TooltipProvider key={participant.id}>
+                      <Tooltip>
+                        <TooltipTrigger>
+                          <div className="flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-full">
+                            <Avatar className="h-5 w-5">
+                              <AvatarImage src={participant.user.profileImageUrl} />
+                              <AvatarFallback className="text-[10px]">
+                                {participant.user.nickname[0]}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-xs font-medium text-gray-700">
+                              {participant.user.nickname}
+                            </span>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{participant.user.nickname} ({participant.role === 'member' ? '멤버' : participant.role})</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  ))}
+
+                {/* 추가 참여자 수 표시 */}
+                {selectedWorkTask.participants &&
+                 selectedWorkTask.participants.filter(p => p.userId !== selectedWorkTask.createdById).length > 3 && (
+                  <span className="text-xs text-gray-600 px-2 py-1 bg-gray-50 rounded-full">
+                    +{selectedWorkTask.participants.filter(p => p.userId !== selectedWorkTask.createdById).length - 3}명
+                  </span>
+                )}
+              </div>
+            </div>
+
             <Badge variant="outline">
               세부 작업 {subtasks.length}개
             </Badge>
@@ -1268,12 +1332,21 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                           {task.assignee && (
                             <div className="flex items-center gap-1">
                               <span className="text-xs text-gray-700">담당:</span>
-                              <Avatar className="h-5 w-5">
-                                <AvatarImage src={task.assignee.profileImageUrl} />
-                                <AvatarFallback className="text-xs">
-                                  {task.assignee.nickname[0]}
-                                </AvatarFallback>
-                              </Avatar>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Avatar className="h-5 w-5 cursor-pointer">
+                                      <AvatarImage src={task.assignee.profileImageUrl} />
+                                      <AvatarFallback className="text-xs">
+                                        {task.assignee.nickname[0]}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">{task.assignee.nickname}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </div>
                           )}
                         </div>
@@ -1282,28 +1355,37 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                         <div className="flex items-center gap-1 mt-1">
                           <span className="text-xs text-gray-700">참여자:</span>
                           <div className="flex items-center gap-1">
-                            {(task.participants || []).slice(0, 3).map((participant) => (
-                              <div key={participant.id} className="relative group">
-                                <Avatar className="h-4 w-4">
-                                  <AvatarImage src={participant.user.profileImageUrl} />
-                                  <AvatarFallback className="text-[10px]">
-                                    {participant.user.nickname[0]}
-                                  </AvatarFallback>
-                                </Avatar>
-                                {/* 참여자 제거 버튼 (호버 시 표시) */}
-                                <Button
-                                  size="icon"
-                                  variant="destructive"
-                                  className="absolute -top-1 -right-1 h-3 w-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleRemoveParticipant(task.id, participant.userId)
-                                  }}
-                                >
-                                  <X className="h-2 w-2" />
-                                </Button>
-                              </div>
-                            ))}
+                            <TooltipProvider>
+                              {(task.participants || []).slice(0, 3).map((participant) => (
+                                <Tooltip key={participant.id}>
+                                  <TooltipTrigger asChild>
+                                    <div className="relative group">
+                                      <Avatar className="h-4 w-4 cursor-pointer">
+                                        <AvatarImage src={participant.user.profileImageUrl} />
+                                        <AvatarFallback className="text-[10px]">
+                                          {participant.user.nickname[0]}
+                                        </AvatarFallback>
+                                      </Avatar>
+                                      {/* 참여자 제거 버튼 (호버 시 표시) */}
+                                      <Button
+                                        size="icon"
+                                        variant="destructive"
+                                        className="absolute -top-1 -right-1 h-3 w-3 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          handleRemoveParticipant(task.id, participant.userId)
+                                        }}
+                                      >
+                                        <X className="h-2 w-2" />
+                                      </Button>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">{participant.user.nickname}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              ))}
+                            </TooltipProvider>
                             {(task.participants || []).length > 3 && (
                               <span className="text-xs text-gray-700">
                                 +{(task.participants || []).length - 3}
@@ -1673,38 +1755,6 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
         ))}
       </div>
 
-      {/* Announcement Section - 공지사항 섹션 */}
-      <div className="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200 shadow-sm">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-semibold text-slate-800 flex items-center gap-2">
-            📢 공지사항
-          </h3>
-          {user?.is_admin && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="h-7 text-xs"
-              onClick={() => {
-                const newAnnouncement = prompt('공지사항을 입력하세요:')
-                if (newAnnouncement?.trim()) {
-                  // TODO: API 호출로 공지사항 저장
-                  toast({
-                    title: '공지사항 업데이트',
-                    description: '공지사항이 업데이트되었습니다.',
-                  })
-                }
-              }}
-            >
-              편집
-            </Button>
-          )}
-        </div>
-        <div className="text-sm text-slate-700">
-          {/* TODO: 실제 공지사항 데이터로 교체 */}
-          <p>업무 진행 시 실시간 소통을 위해 댓글과 첨부파일을 적극 활용해주세요.</p>
-          <p className="mt-1 text-xs text-slate-600">마지막 업데이트: {new Date().toLocaleDateString('ko-KR')}</p>
-        </div>
-      </div>
 
       {/* Create SubTask Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>

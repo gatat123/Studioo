@@ -213,7 +213,7 @@ function ParticipantsListContent({ projectId }: ParticipantsListProps) {
   }
 
   // Filter out admin from participants list when in admin mode
-  const displayParticipants = isAdminMode && currentUser?.is_admin
+  const displayParticipants = isAdminMode && currentUser?.isAdmin
     ? (Array.isArray(participants) ? participants.filter(p => p.user_id !== currentUser.id) : [])
     : (Array.isArray(participants) ? participants : [])
 

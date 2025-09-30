@@ -26,7 +26,7 @@ export const useAuth = () => {
   };
 
   const requireAdmin = (redirectTo: string = '/') => {
-    if (!isLoading && (!isAuthenticated || !user?.is_admin)) {
+    if (!isLoading && (!isAuthenticated || !user?.isAdmin)) {
       router.push(redirectTo);
     }
   };

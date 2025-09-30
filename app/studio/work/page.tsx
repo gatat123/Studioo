@@ -29,6 +29,7 @@ import TodoList from '@/components/work/TodoList'
 import TeamOverview from '@/components/work/TeamOverview'
 import { CreateWorkTaskModal } from '@/components/work/CreateWorkTaskModal'
 import JoinWorkTaskModal from '@/components/work/JoinWorkTaskModal'
+import AnnouncementEditor from '@/components/work/AnnouncementEditor'
 
 export default function WorkPage() {
   const { toast } = useToast()
@@ -303,9 +304,9 @@ export default function WorkPage() {
             </TabsList>
 
             <TabsContent value="tasks" className="flex-1 overflow-hidden px-4">
-              <div className="h-full flex gap-4">
+              <div className="h-full flex flex-col gap-4">
                 {/* Main Task Board */}
-                <div className="flex-1">
+                <div className="flex-1 min-h-0">
                   <TaskBoard
                     searchQuery={searchQuery}
                     selectedWorkTask={selectedWorkTask}
@@ -313,16 +314,10 @@ export default function WorkPage() {
                   />
                 </div>
 
-                {/* Personal Todo Sidebar - Hidden as per user request */}
-                {/*
-                <div className="w-80 border-l pl-4">
-                  <h3 className="text-lg font-semibold mb-4">업무 댓글</h3>
-                  <TodoList
-                    searchQuery={searchQuery}
-                    onCommentCreated={loadWorkTasks}
-                  />
+                {/* Announcement Section */}
+                <div className="flex-shrink-0">
+                  <AnnouncementEditor />
                 </div>
-                */}
               </div>
             </TabsContent>
 

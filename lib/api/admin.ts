@@ -44,6 +44,21 @@ export const adminAPI = {
 
   // Get admin statistics
   getStatistics: async () => {
-    return api.get('/api/admin/statistics');
+    return api.get('/api/admin/stats');
+  },
+
+  // Get system status
+  getSystemStatus: async () => {
+    return api.get('/api/admin/system/status');
+  },
+
+  // Get projects stats
+  getProjectsStats: async () => {
+    return api.get('/api/admin/projects/stats');
+  },
+
+  // Get system logs
+  getSystemLogs: async () => {
+    return api.get('/api/admin/system/logs');
   },
 };

@@ -509,7 +509,7 @@ export default function ProfilePage() {
                       권한
                     </p>
                     <p className="text-sm">
-                      {user.is_admin ? '관리자' : '일반 사용자'}
+                      {user.isAdmin ? '관리자' : '일반 사용자'}
                     </p>
                   </div>
                 </div>

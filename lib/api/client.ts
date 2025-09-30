@@ -9,12 +9,32 @@ import { getAuthToken } from '@/lib/utils/cookies';
 
 // API Base URL from environment
 const getAPIBaseURL = () => {
-  // Production 환경에서는 NEXT_PUBLIC_BACKEND_URL 우선 사용
-  if (process.env.NODE_ENV === 'production') {
-    return process.env.NEXT_PUBLIC_BACKEND_URL || 'https://courageous-spirit-production.up.railway.app';
+  // Always prefer environment variable first
+  const envApiUrl = process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  if (envApiUrl) {
+    console.log('Using API URL from environment:', envApiUrl);
+    return envApiUrl;
   }
-  // Development 환경에서는 로컬 API URL 사용
-  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+  // For development and current setup, always use local backend on port 3001
+  // The backend and frontend are running in the same project
+  if (typeof window !== 'undefined') {
+    // Client-side: use current hostname with port 3001
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      console.log('Using localhost backend on port 3001');
+      return 'http://localhost:3001';
+    }
+    // For production deployments, use same domain with different port or path
+    const prodUrl = `${protocol}//${hostname}:3001`;
+    console.log('Using production URL:', prodUrl);
+    return prodUrl;
+  }
+  // Server-side fallback
+  console.log('Using fallback localhost backend');
+  return 'http://localhost:3001';
 };
 
 const API_BASE_URL = getAPIBaseURL();
