@@ -340,7 +340,7 @@ export default function AnnouncementEditor({ className = '' }: AnnouncementEdito
                 <span>업데이트: {formatDate(announcement.updatedAt)}</span>
               </div>
               <div className="text-xs text-amber-700">
-                작성자: <span className="font-medium">{announcement.updatedBy.nickname}</span>
+                작성자: <span className="font-medium">{announcement.updatedBy?.nickname || '알 수 없음'}</span>
               </div>
             </div>
           </div>

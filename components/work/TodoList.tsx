@@ -298,9 +298,9 @@ export default function TodoList({ searchQuery, onCommentCreated }: TodoListProp
                                   {task.comments.map((comment) => (
                                     <div key={comment.id} className="flex items-start gap-2 p-2 bg-gray-50 rounded">
                                       <Avatar className="h-6 w-6">
-                                        <AvatarImage src={comment.user.profileImageUrl} />
+                                        <AvatarImage src={comment.user?.profileImageUrl} />
                                         <AvatarFallback>
-                                          {comment.user.nickname.slice(0, 2).toUpperCase()}
+                                          {comment.user?.nickname?.slice(0, 2).toUpperCase() || '??'}
                                         </AvatarFallback>
                                       </Avatar>
                                       {editingId === comment.id ? (
@@ -346,7 +346,7 @@ export default function TodoList({ searchQuery, onCommentCreated }: TodoListProp
                                           </p>
                                           <div className="flex items-center justify-between mt-1">
                                             <div className="flex items-center gap-2">
-                                              <span className="text-xs text-gray-700">{comment.user.nickname}</span>
+                                              <span className="text-xs text-gray-700">{comment.user?.nickname || '알 수 없음'}</span>
                                               <span className="text-xs text-gray-700 flex items-center gap-1">
                                                 <Clock className="h-3 w-3" />
                                                 {formatDate(comment.createdAt)}

@@ -406,7 +406,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
       toast({
         title: '참여자 추가 완료',
-        description: `${data.participant.user.nickname}님이 참여자로 추가되었습니다.`,
+        description: `${data.participant.user?.nickname || '사용자'}님이 참여자로 추가되었습니다.`,
       })
     }
 
@@ -431,7 +431,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
       if (removedParticipant) {
         toast({
           title: '참여자 제거 완료',
-          description: `${removedParticipant.user.nickname}님이 참여자에서 제거되었습니다.`,
+          description: `${removedParticipant.user?.nickname || '사용자'}님이 참여자에서 제거되었습니다.`,
         })
       }
     }
@@ -1052,19 +1052,19 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                       <TooltipTrigger>
                         <div className="flex items-center gap-1 px-2 py-1 bg-blue-50 rounded-full">
                           <Avatar className="h-5 w-5">
-                            <AvatarImage src={selectedWorkTask.createdBy.profileImageUrl} />
+                            <AvatarImage src={selectedWorkTask.createdBy?.profileImageUrl} />
                             <AvatarFallback className="text-[10px]">
-                              {selectedWorkTask.createdBy.nickname[0]}
+                              {selectedWorkTask.createdBy?.nickname?.[0] || '?'}
                             </AvatarFallback>
                           </Avatar>
                           <span className="text-xs font-medium text-blue-700">
-                            {selectedWorkTask.createdBy.nickname}
+                            {selectedWorkTask.createdBy?.nickname}
                           </span>
                           <span className="text-[10px] text-blue-600">(생성자)</span>
                         </div>
                       </TooltipTrigger>
                       <TooltipContent>
-                        <p>{selectedWorkTask.createdBy.nickname} (생성자)</p>
+                        <p>{selectedWorkTask.createdBy?.nickname} (생성자)</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -1309,12 +1309,12 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                           <div className="flex items-center gap-1 mt-2 text-xs text-gray-700">
                             <span>생성자:</span>
                             <Avatar className="h-4 w-4">
-                              <AvatarImage src={task.createdBy.profileImageUrl} />
+                              <AvatarImage src={task.createdBy?.profileImageUrl} />
                               <AvatarFallback className="text-[10px]">
-                                {task.createdBy.nickname[0]}
+                                {task.createdBy?.nickname?.[0] || '?'}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="font-medium">{task.createdBy.nickname}</span>
+                            <span className="font-medium">{task.createdBy?.nickname || '알 수 없음'}</span>
                           </div>
                         )}
                       </CardHeader>
@@ -1336,14 +1336,14 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Avatar className="h-5 w-5 cursor-pointer">
-                                      <AvatarImage src={task.assignee.profileImageUrl} />
+                                      <AvatarImage src={task.assignee?.profileImageUrl} />
                                       <AvatarFallback className="text-xs">
-                                        {task.assignee.nickname[0]}
+                                        {task.assignee?.nickname?.[0] || '?'}
                                       </AvatarFallback>
                                     </Avatar>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p className="text-xs">{task.assignee.nickname}</p>
+                                    <p className="text-xs">{task.assignee?.nickname || '알 수 없음'}</p>
                                   </TooltipContent>
                                 </Tooltip>
                               </TooltipProvider>
@@ -1361,9 +1361,9 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                   <TooltipTrigger asChild>
                                     <div className="relative group">
                                       <Avatar className="h-4 w-4 cursor-pointer">
-                                        <AvatarImage src={participant.user.profileImageUrl} />
+                                        <AvatarImage src={participant.user?.profileImageUrl} />
                                         <AvatarFallback className="text-[10px]">
-                                          {participant.user.nickname[0]}
+                                          {participant.user?.nickname?.[0] || '?'}
                                         </AvatarFallback>
                                       </Avatar>
                                       {/* 참여자 제거 버튼 (호버 시 표시) */}
@@ -1381,7 +1381,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                     </div>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                    <p className="text-xs">{participant.user.nickname}</p>
+                                    <p className="text-xs">{participant.user?.nickname || '알 수 없음'}</p>
                                   </TooltipContent>
                                 </Tooltip>
                               ))}
@@ -1416,12 +1416,12 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                     >
                                       <div className="flex items-center gap-2">
                                         <Avatar className="h-4 w-4">
-                                          <AvatarImage src={workTaskParticipant.user.profileImageUrl} />
+                                          <AvatarImage src={workTaskParticipant.user?.profileImageUrl} />
                                           <AvatarFallback className="text-[8px]">
-                                            {workTaskParticipant.user.nickname[0]}
+                                            {workTaskParticipant.user?.nickname?.[0] || '?'}
                                           </AvatarFallback>
                                         </Avatar>
-                                        <span className="text-xs">{workTaskParticipant.user.nickname}</span>
+                                        <span className="text-xs">{workTaskParticipant.user?.nickname || '알 수 없음'}</span>
                                       </div>
                                     </DropdownMenuItem>
                                   ))}
@@ -1707,7 +1707,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                           <div className="flex items-center gap-2 text-xs text-gray-700">
                                             <span>{formatFileSize(attachment.fileSize)}</span>
                                             <span>•</span>
-                                            <span>{attachment.uploadedBy.nickname}</span>
+                                            <span>{attachment.uploadedBy?.nickname || '알 수 없음'}</span>
                                             <span>•</span>
                                             <span>{safeToLocaleString(attachment.createdAt)}</span>
                                           </div>

@@ -131,9 +131,9 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
 
         return {
           id: participant.userId,
-          nickname: participant.user.nickname,
-          username: participant.user.nickname, // Use nickname as username fallback
-          profileImageUrl: participant.user.profileImageUrl,
+          nickname: participant.user?.nickname || '알 수 없음',
+          username: participant.user?.nickname || '알 수 없음', // Use nickname as username fallback
+          profileImageUrl: participant.user?.profileImageUrl,
           role: (participant.role as 'creator' | 'assignee' | 'member' | 'viewer') || 'member',
           taskCount: userSubTasks.length,
           completedTaskCount: userCompletedSubTasks.length,
@@ -309,8 +309,8 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
                           </AvatarFallback>
                         </Avatar>
                         <div>
-                          <h4 className="text-sm font-medium">{member.nickname}</h4>
-                          <p className="text-xs text-gray-700">@{member.username}</p>
+                          <h4 className="text-sm font-medium">{member.nickname || '알 수 없음'}</h4>
+                          <p className="text-xs text-gray-700">@{member.username || '알 수 없음'}</p>
                           <Badge variant="outline" className="text-xs mt-1">
                             {member.role === 'creator' ? '생성자' :
                              member.role === 'assignee' ? '담당자' :
@@ -409,12 +409,12 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
                             <div className="flex items-center gap-2 mt-2">
                               <span className="text-xs text-gray-500">담당자:</span>
                               <Avatar className="h-5 w-5">
-                                <AvatarImage src={subTask.assignee.profileImageUrl} />
+                                <AvatarImage src={subTask.assignee?.profileImageUrl} />
                                 <AvatarFallback className="text-xs">
-                                  {subTask.assignee.nickname.slice(0, 2).toUpperCase()}
+                                  {subTask.assignee?.nickname?.slice(0, 2).toUpperCase() || '??'}
                                 </AvatarFallback>
                               </Avatar>
-                              <span className="text-xs text-gray-700">{subTask.assignee.nickname}</span>
+                              <span className="text-xs text-gray-700">{subTask.assignee?.nickname || '알 수 없음'}</span>
                             </div>
                           )}
                         </div>
@@ -439,12 +439,12 @@ export default function TeamOverview({ searchQuery }: TeamOverviewProps) {
                             {subTask.participants.slice(0, 3).map((participant) => (
                               <div key={participant.userId} className="flex items-center gap-1">
                                 <Avatar className="h-6 w-6 border-2 border-white">
-                                  <AvatarImage src={participant.user.profileImageUrl} />
+                                  <AvatarImage src={participant.user?.profileImageUrl} />
                                   <AvatarFallback className="text-xs">
-                                    {participant.user.nickname.slice(0, 2).toUpperCase()}
+                                    {participant.user?.nickname?.slice(0, 2).toUpperCase() || '??'}
                                   </AvatarFallback>
                                 </Avatar>
-                                <span className="text-xs text-gray-700">{participant.user.nickname}</span>
+                                <span className="text-xs text-gray-700">{participant.user?.nickname || '알 수 없음'}</span>
                               </div>
                             ))}
                             {subTask.participants.length > 3 && (
