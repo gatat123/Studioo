@@ -37,7 +37,13 @@ export const commentsAPI = {
    * Get scene comments
    */
   async getSceneComments(sceneId: string): Promise<Comment[]> {
-    return api.get(`/api/scenes/${sceneId}/comments`);
+    try {
+      const response = await api.get(`/api/comments?sceneId=${sceneId}`);
+      // Backend returns { success: true, data: { comments: [...] } }
+      return response.data?.comments || response.comments || [];
+    } catch {
+      return [];
+    }
   },
 
   /**
