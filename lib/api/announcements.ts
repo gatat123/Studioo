@@ -28,8 +28,8 @@ class AnnouncementsAPI {
    */
   async getAnnouncement(): Promise<Announcement | null> {
     try {
-      const response = await api.get('/api/announcements') as Announcement
-      return response
+      const response = await api.get('/api/announcements') as { success: boolean; data: Announcement }
+      return response.data
     } catch (error) {
       if (error instanceof APIError && error.status === 404) {
         return null // 공지사항이 없는 경우
@@ -43,8 +43,8 @@ class AnnouncementsAPI {
    */
   async createAnnouncement(data: CreateAnnouncementData): Promise<Announcement> {
     try {
-      const response = await api.post('/api/announcements', data) as Announcement
-      return response
+      const response = await api.post('/api/announcements', data) as { success: boolean; data: { announcement: Announcement } }
+      return response.data.announcement
     } catch (error) {
       console.error('[AnnouncementsAPI] Error creating announcement:', error)
       throw error
@@ -56,8 +56,8 @@ class AnnouncementsAPI {
    */
   async updateAnnouncement(data: UpdateAnnouncementData): Promise<Announcement> {
     try {
-      const response = await api.put('/api/announcements', data) as Announcement
-      return response
+      const response = await api.put('/api/announcements', data) as { success: boolean; data: Announcement }
+      return response.data
     } catch (error) {
       console.error('[AnnouncementsAPI] Error updating announcement:', error)
       throw error
