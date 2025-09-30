@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
 import * as z from 'zod'
-import { CalendarIcon, Copy, Trash2, Users, Settings, Bell, Archive } from 'lucide-react'
+import { CalendarIcon, Copy, Trash2, Users, Settings, Bell, AlertTriangle } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -115,6 +115,7 @@ export default function ProjectSettingsPage() {
         setInviteCode(data.inviteCode || '')
 
         // Check user permissions
+        // 백엔드가 creator_id를 반환하므로 이를 체크
         const userIsOwner = data.creator_id === currentUser?.id
         const participant = data.participants?.find(p => p.user_id === currentUser?.id)
         const userCanEdit = userIsOwner || participant?.role === 'owner' || participant?.role === 'editor'
@@ -244,22 +245,6 @@ export default function ProjectSettingsPage() {
     }
   }
 
-  const handleArchiveProject = async () => {
-    try {
-      await projectsAPI.updateProject(projectId, { status: 'archived' })
-      toast({
-        title: '프로젝트 보관',
-        description: '프로젝트가 보관되었습니다.',
-      })
-    } catch {
-      // 프로젝트 보관 실패
-      toast({
-        title: '오류',
-        description: '프로젝트 보관에 실패했습니다.',
-        variant: 'destructive',
-      })
-    }
-  }
 
   if (loading) {
     return (
@@ -295,7 +280,7 @@ export default function ProjectSettingsPage() {
             Notifications
           </TabsTrigger>
           <TabsTrigger value="advanced" className="flex items-center gap-2">
-            <Archive className="h-4 w-4" />
+            <AlertTriangle className="h-4 w-4" />
             Advanced
           </TabsTrigger>
         </TabsList>
@@ -485,27 +470,6 @@ export default function ProjectSettingsPage() {
         </TabsContent>
 
         <TabsContent value="advanced" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Archive Project</CardTitle>
-              <CardDescription>
-                Archive this project to remove it from your active projects list
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button
-                variant="outline"
-                onClick={handleArchiveProject}
-                className="w-full sm:w-auto"
-                disabled={!isOwner}
-                title={!isOwner ? 'Only project owner can archive' : ''}
-              >
-                <Archive className="mr-2 h-4 w-4" />
-                {isOwner ? 'Archive Project' : 'Owner Only'}
-              </Button>
-            </CardContent>
-          </Card>
-
           <Card className="border-red-200">
             <CardHeader>
               <CardTitle className="text-red-600">Danger Zone</CardTitle>

@@ -107,7 +107,9 @@ export const projectsAPI = {
    * Get project participants
    */
   async getParticipants(id: string): Promise<ProjectParticipant[]> {
-    return api.get(`/api/projects/${id}/participants`);
+    const response = await api.get(`/api/projects/${id}/participants`);
+    // 백엔드가 { participants: [...] } 구조로 반환하므로 배열 추출
+    return response.participants || response || [];
   },
 
   /**

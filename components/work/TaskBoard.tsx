@@ -30,6 +30,13 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
@@ -63,6 +70,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
   const [selectedAssignee, setSelectedAssignee] = useState<string | null>(null)
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [createDialogStatus, setCreateDialogStatus] = useState<string>('todo')
+  const [createDialogPriority, setCreateDialogPriority] = useState<'low' | 'medium' | 'high' | 'urgent'>('medium')
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskDescription, setNewTaskDescription] = useState('')
   const [subtaskComments, setSubtaskComments] = useState<Record<string, SubTaskComment[]>>({})
@@ -641,7 +649,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
         title: newTaskTitle,
         description: newTaskDescription,
         status: createDialogStatus as 'todo' | 'in_progress' | 'review' | 'done',
-        priority: 'medium',
+        priority: createDialogPriority,
         assigneeId: userId // Set the creator as the assignee
       })
 
@@ -1790,6 +1798,25 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                 placeholder="세부 작업 설명을 입력하세요"
                 rows={3}
               />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="priority" className="text-right">
+                우선순위
+              </Label>
+              <Select
+                value={createDialogPriority}
+                onValueChange={(value) => setCreateDialogPriority(value as 'low' | 'medium' | 'high' | 'urgent')}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="우선순위 선택" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">낮음</SelectItem>
+                  <SelectItem value="medium">보통</SelectItem>
+                  <SelectItem value="high">높음</SelectItem>
+                  <SelectItem value="urgent">긴급</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <DialogFooter>
