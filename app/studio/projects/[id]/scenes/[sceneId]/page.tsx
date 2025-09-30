@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { socketClient } from '@/lib/socket/client'
 import { useToast } from '@/hooks/use-toast'
+import { scenesAPI } from '@/lib/api/scenes'
 
 interface Scene {
   id: string
@@ -39,30 +40,52 @@ export default function SceneEditorPage() {
   
 
   useEffect(() => {
-    // 씬 데이터 로드 시뮬레이션
+    // 씬 데이터 로드
     const loadSceneData = async () => {
       setIsLoading(true)
       try {
-        // TODO: API 호출로 실제 씬 데이터 로드
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // API 호출로 실제 씬 데이터 로드
+        const sceneData = await scenesAPI.getScene(projectId, sceneId)
+
+        // 현재 활성화된 이미지 찾기
+        const lineartImage = sceneData.images?.find(
+          (img: any) => img.type === 'lineart' && img.isCurrent
+        )
+        const artImage = sceneData.images?.find(
+          (img: any) => img.type === 'art' && img.isCurrent
+        )
+
         setCurrentScene({
-          id: sceneId,
-          name: `Scene ${sceneId}`,
-          description: 'Scene description here',
+          id: sceneData.id,
+          name: sceneData.name || `Scene ${sceneData.sceneNumber || sceneId}`,
+          description: sceneData.description || '',
           images: {
-            lineart: null,
-            art: null
+            lineart: lineartImage?.fileUrl || null,
+            art: artImage?.fileUrl || null
           }
         })
-      } catch {
-        // Error loading scene data
+
+        console.log('[SceneEditor] Scene data loaded:', {
+          sceneId,
+          name: sceneData.name,
+          imagesCount: sceneData.images?.length || 0,
+          lineartUrl: lineartImage?.fileUrl,
+          artUrl: artImage?.fileUrl,
+        })
+      } catch (error) {
+        console.error('[SceneEditor] Error loading scene data:', error)
+        toast({
+          title: '씬 로드 실패',
+          description: '씬 데이터를 불러올 수 없습니다.',
+          variant: 'destructive'
+        })
       } finally {
         setIsLoading(false)
       }
     }
-    
+
     void loadSceneData()
-  }, [sceneId])
+  }, [sceneId, projectId, toast])
 
   // Socket.io 실시간 연결 및 이벤트 리스너
   useEffect(() => {
