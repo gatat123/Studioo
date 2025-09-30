@@ -213,6 +213,35 @@ export default function ProjectDetailPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId])
 
+  // Scene room 참가 - selectedScene이 변경될 때
+  useEffect(() => {
+    if (!selectedScene?.id) return
+
+    const socket = socketClient.connect()
+
+    console.log('[ProjectPage] 🚪 Joining scene room:', selectedScene.id)
+    socket.emit('join_scene', { projectId, sceneId: selectedScene.id })
+
+    // Scene별 댓글 로드
+    const fetchSceneComments = async () => {
+      try {
+        const sceneComments = await commentsAPI.getSceneComments(selectedScene.id)
+        setComments(sceneComments || [])
+        console.log('[ProjectPage] 📝 Loaded scene comments:', sceneComments?.length || 0)
+      } catch (error) {
+        console.error('[ProjectPage] Error loading scene comments:', error)
+      }
+    }
+
+    void fetchSceneComments()
+
+    // Cleanup: scene room 떠나기
+    return () => {
+      console.log('[ProjectPage] 🚪 Leaving scene room:', selectedScene.id)
+      socket.emit('leave_room', { roomId: `scene:${selectedScene.id}` })
+    }
+  }, [selectedScene?.id, projectId])
+
   const fetchComments = async () => {
     try {
       const commentsData = await commentsAPI.getProjectComments(projectId)
