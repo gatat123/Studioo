@@ -1220,14 +1220,14 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                         element.style.transform = ''
                       }}
                     >
-                      <CardHeader className="p-2.5 pb-0">
+                      <CardHeader className="p-2 pb-0">
                         <div className="flex items-start justify-between gap-1">
                           {editingTask === task.id ? (
                             <div className="flex-1 animate-in fade-in-0 duration-200">
                               <Input
                                 value={editingTaskTitle}
                                 onChange={(e) => setEditingTaskTitle(e.target.value)}
-                                className="text-xs font-medium mb-1.5 h-7"
+                                className="text-sm font-medium mb-1 h-8"
                                 placeholder="제목을 입력하세요"
                                 onKeyDown={(e) => {
                                   if (e.key === 'Enter') {
@@ -1241,7 +1241,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                               <Textarea
                                 value={editingTaskDescription}
                                 onChange={(e) => setEditingTaskDescription(e.target.value)}
-                                className="text-xs min-h-[50px]"
+                                className="text-sm min-h-[50px]"
                                 placeholder="설명을 입력하세요"
                                 rows={2}
                                 onKeyDown={(e) => {
@@ -1256,36 +1256,36 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                               <div className="flex gap-1 mt-1">
                                 <Button
                                   size="icon"
-                                  className="h-5 w-5"
+                                  className="h-6 w-6"
                                   onClick={handleSaveTaskEdit}
                                   disabled={!editingTaskTitle.trim()}
                                 >
-                                  <Check className="h-2.5 w-2.5" />
+                                  <Check className="h-3 w-3" />
                                 </Button>
                                 <Button
                                   size="icon"
                                   variant="outline"
-                                  className="h-5 w-5"
+                                  className="h-6 w-6"
                                   onClick={handleCancelTaskEdit}
                                 >
-                                  <X className="h-2.5 w-2.5" />
+                                  <X className="h-3 w-3" />
                                 </Button>
                               </div>
                             </div>
                           ) : (
                             <>
-                              <CardTitle className="text-xs font-medium line-clamp-2 flex-1">
+                              <CardTitle className="text-sm font-medium line-clamp-2 flex-1">
                                 {task.title}
                               </CardTitle>
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-5 w-5 flex-shrink-0">
-                                    <MoreVertical className="h-2.5 w-2.5" />
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0">
+                                    <MoreVertical className="h-3 w-3" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                   <DropdownMenuItem onClick={() => handleEditTask(task)}>
-                                    <Edit className="h-2.5 w-2.5 mr-1" />
+                                    <Edit className="h-3 w-3 mr-1" />
                                     편집
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
@@ -1300,114 +1300,109 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                           )}
                         </div>
                         {editingTask !== task.id && task.description && (
-                          <CardDescription className="text-[11px] mt-1 line-clamp-2">
+                          <CardDescription className="text-xs mt-0.5 line-clamp-2">
                             {task.description}
                           </CardDescription>
                         )}
-                        {/* Creator Info - 더 컴팩트하게 */}
+                        {/* Creator Info */}
                         {task.createdBy && (
-                          <div className="flex items-center gap-0.5 mt-1 text-[10px] text-gray-600">
+                          <div className="flex items-center gap-1 mt-1 text-xs text-gray-600">
                             <span>생성:</span>
-                            <Avatar className="h-3 w-3">
+                            <Avatar className="h-4 w-4">
                               <AvatarImage src={task.createdBy?.profileImageUrl} />
-                              <AvatarFallback className="text-[8px]">
+                              <AvatarFallback className="text-[9px]">
                                 {task.createdBy?.nickname?.[0] || '?'}
                               </AvatarFallback>
                             </Avatar>
-                            <span className="font-medium truncate max-w-[80px]">{task.createdBy?.nickname || '알 수 없음'}</span>
+                            <span className="font-medium truncate max-w-[100px]">{task.createdBy?.nickname || '알 수 없음'}</span>
                           </div>
                         )}
                       </CardHeader>
 
-                      <CardFooter className="p-2.5 pt-1.5 flex flex-col gap-1.5">
+                      <CardFooter className="p-2 pt-1 flex flex-col gap-1">
                         <div className="flex items-center justify-between w-full">
                           <Badge
                             variant="outline"
-                            className={`text-[10px] h-4 px-1.5 ${getPriorityColor(task.priority)}`}
+                            className={`text-xs h-5 px-2 ${getPriorityColor(task.priority)}`}
                           >
                             {task.priority === 'urgent' ? '긴급' :
                              task.priority === 'high' ? '높음' :
                              task.priority === 'medium' ? '보통' : '낮음'}
                           </Badge>
-                          {task.assignee && (
-                            <div className="flex items-center gap-0.5">
-                              <span className="text-[10px] text-gray-600">담당:</span>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Avatar className="h-4 w-4 cursor-pointer">
-                                      <AvatarImage src={task.assignee?.profileImageUrl} />
-                                      <AvatarFallback className="text-[8px]">
-                                        {task.assignee?.nickname?.[0] || '?'}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="text-xs">{task.assignee?.nickname || '알 수 없음'}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          )}
                         </div>
 
-                        {/* Participants */}
-                        <div className="flex items-center gap-0.5">
-                          <span className="text-[10px] text-gray-600">참여:</span>
-                          <div className="flex items-center gap-0.5">
-                            <TooltipProvider>
-                              {(task.participants || []).slice(0, 3).map((participant) => (
-                                <Tooltip key={participant.id}>
-                                  <TooltipTrigger asChild>
-                                    <div className="relative group">
-                                      <Avatar className="h-3.5 w-3.5 cursor-pointer">
-                                        <AvatarImage src={participant.user?.profileImageUrl} />
-                                        <AvatarFallback className="text-[8px]">
-                                          {participant.user?.nickname?.[0] || '?'}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      {/* 참여자 제거 버튼 (호버 시 표시) */}
-                                      <Button
-                                        size="icon"
-                                        variant="destructive"
-                                        className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity p-0"
-                                        onClick={(e) => {
-                                          e.stopPropagation()
-                                          handleRemoveParticipant(task.id, participant.userId)
-                                        }}
-                                      >
-                                        <X className="h-1.5 w-1.5" />
-                                      </Button>
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p className="text-xs">{participant.user?.nickname || '알 수 없음'}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              ))}
-                            </TooltipProvider>
-                            {(task.participants || []).length > 3 && (
-                              <span className="text-[10px] text-gray-600">
-                                +{(task.participants || []).length - 3}
-                              </span>
+                        {/* Participants with names */}
+                        <div className="flex items-start gap-1">
+                          <span className="text-xs text-gray-600 whitespace-nowrap">참여:</span>
+                          <div className="flex flex-col gap-0.5 flex-1 min-w-0">
+                            {(task.participants || []).length === 0 ? (
+                              <span className="text-xs text-gray-400">참여자 없음</span>
+                            ) : (
+                              <>
+                                {(task.participants || []).slice(0, 2).map((participant) => (
+                                  <div key={participant.id} className="flex items-center gap-1 group">
+                                    <Avatar className="h-4 w-4 flex-shrink-0">
+                                      <AvatarImage src={participant.user?.profileImageUrl} />
+                                      <AvatarFallback className="text-[9px]">
+                                        {participant.user?.nickname?.[0] || '?'}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-xs text-gray-700 truncate flex-1">
+                                      {participant.user?.nickname || '알 수 없음'}
+                                    </span>
+                                    {/* 참여자 제거 버튼 (호버 시 표시) */}
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity p-0 hover:bg-red-50"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleRemoveParticipant(task.id, participant.userId)
+                                      }}
+                                    >
+                                      <X className="h-2.5 w-2.5 text-red-600" />
+                                    </Button>
+                                  </div>
+                                ))}
+                                {(task.participants || []).length > 2 && (
+                                  <TooltipProvider>
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <span className="text-xs text-gray-600 cursor-help">
+                                          +{(task.participants || []).length - 2}명 더 보기
+                                        </span>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <div className="space-y-1">
+                                          {(task.participants || []).slice(2).map((participant) => (
+                                            <p key={participant.id} className="text-xs">
+                                              {participant.user?.nickname || '알 수 없음'}
+                                            </p>
+                                          ))}
+                                        </div>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  </TooltipProvider>
+                                )}
+                              </>
                             )}
                             {/* 참여자 추가 버튼 */}
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
                                 <Button
-                                  size="icon"
+                                  size="sm"
                                   variant="ghost"
-                                  className="h-3.5 w-3.5 rounded-full border border-dashed border-gray-300 hover:border-gray-400 p-0"
+                                  className="h-5 w-full justify-start px-1 text-xs text-gray-600 hover:text-gray-800"
                                 >
-                                  <Plus className="h-2 w-2" />
+                                  <Plus className="h-3 w-3 mr-1" />
+                                  참여자 추가
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="start">
                                 {/* 현재 업무의 참여자 중 이 SubTask에 참여하지 않은 사람들 */}
                                 {selectedWorkTask?.participants
                                   ?.filter(workTaskParticipant =>
-                                    !(task.participants || []).some(p => p.userId === workTaskParticipant.userId) &&
-                                    workTaskParticipant.userId !== task.assigneeId // 담당자는 제외
+                                    !(task.participants || []).some(p => p.userId === workTaskParticipant.userId)
                                   )
                                   .map((workTaskParticipant) => (
                                     <DropdownMenuItem
@@ -1415,24 +1410,23 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                       onClick={() => handleAddParticipant(task.id, workTaskParticipant.userId)}
                                     >
                                       <div className="flex items-center gap-2">
-                                        <Avatar className="h-4 w-4">
+                                        <Avatar className="h-5 w-5">
                                           <AvatarImage src={workTaskParticipant.user?.profileImageUrl} />
-                                          <AvatarFallback className="text-[8px]">
+                                          <AvatarFallback className="text-[9px]">
                                             {workTaskParticipant.user?.nickname?.[0] || '?'}
                                           </AvatarFallback>
                                         </Avatar>
-                                        <span className="text-xs">{workTaskParticipant.user?.nickname || '알 수 없음'}</span>
+                                        <span className="text-sm">{workTaskParticipant.user?.nickname || '알 수 없음'}</span>
                                       </div>
                                     </DropdownMenuItem>
                                   ))}
                                 {/* 추가할 수 있는 사람이 없는 경우 */}
                                 {(!selectedWorkTask?.participants ||
                                   selectedWorkTask.participants.filter(workTaskParticipant =>
-                                    !(task.participants || []).some(p => p.userId === workTaskParticipant.userId) &&
-                                    workTaskParticipant.userId !== task.assigneeId
+                                    !(task.participants || []).some(p => p.userId === workTaskParticipant.userId)
                                   ).length === 0) && (
                                   <DropdownMenuItem disabled>
-                                    <span className="text-xs text-gray-700">추가할 수 있는 팀원이 없습니다</span>
+                                    <span className="text-sm text-gray-500">추가할 수 있는 팀원이 없습니다</span>
                                   </DropdownMenuItem>
                                 )}
                               </DropdownMenuContent>
@@ -1442,8 +1436,8 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
                         {/* Due Date */}
                         {task.dueDate && (
-                          <div className="flex items-center text-[10px] text-gray-600">
-                            <Calendar className="h-2.5 w-2.5 mr-0.5" />
+                          <div className="flex items-center text-xs text-gray-600">
+                            <Calendar className="h-3 w-3 mr-1" />
                             {safeToLocaleDateString(task.dueDate)}
                           </div>
                         )}
@@ -1452,7 +1446,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                         {task.status === 'todo' && (
                           <Button
                             size="sm"
-                            className="w-full mt-1 h-6 text-[10px]"
+                            className="w-full mt-0.5 h-7 text-xs"
                             variant="outline"
                             onClick={(e) => {
                               e.stopPropagation()
@@ -1465,14 +1459,14 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                               handleUpdateSubTaskStatus(task.id, 'in_progress', newPosition)
                             }}
                           >
-                            <ChevronRight className="h-3 w-3 mr-0.5" />
+                            <ChevronRight className="h-4 w-4 mr-1" />
                             진행
                           </Button>
                         )}
                         {task.status === 'in_progress' && (
                           <Button
                             size="sm"
-                            className="w-full mt-1 h-6 text-[10px]"
+                            className="w-full mt-0.5 h-7 text-xs"
                             variant="outline"
                             onClick={(e) => {
                               e.stopPropagation()
@@ -1485,14 +1479,14 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                               handleUpdateSubTaskStatus(task.id, 'review', newPosition)
                             }}
                           >
-                            <ChevronRight className="h-3 w-3 mr-0.5" />
+                            <ChevronRight className="h-4 w-4 mr-1" />
                             검토
                           </Button>
                         )}
                         {task.status === 'review' && (
                           <Button
                             size="sm"
-                            className="w-full mt-1 h-6 text-[10px]"
+                            className="w-full mt-0.5 h-7 text-xs"
                             variant="outline"
                             onClick={(e) => {
                               e.stopPropagation()
@@ -1505,13 +1499,13 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                               handleUpdateSubTaskStatus(task.id, 'done', newPosition)
                             }}
                           >
-                            <ChevronRight className="h-3 w-3 mr-0.5" />
+                            <ChevronRight className="h-4 w-4 mr-1" />
                             완료
                           </Button>
                         )}
 
                         {/* Comments Section */}
-                        <div className="mt-1.5 pt-1.5 border-t border-gray-200">
+                        <div className="mt-1 pt-1 border-t border-gray-200">
                           <Collapsible
                             open={expandedComments[task.id] || false}
                             onOpenChange={(open) => setExpandedComments(prev => ({ ...prev, [task.id]: open }))}
@@ -1520,9 +1514,9 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="w-full justify-start p-0 h-auto text-[10px] text-gray-600 hover:text-gray-800"
+                                className="w-full justify-start p-0 h-auto text-xs text-gray-600 hover:text-gray-800"
                               >
-                                <MessageCircle className="h-2.5 w-2.5 mr-0.5" />
+                                <MessageCircle className="h-3 w-3 mr-1" />
                                 댓글 {(subtaskComments[task.id] || []).length}개
                                 {expandedComments[task.id] ? ' 숨기기' : ' 보기'}
                               </Button>
@@ -1533,29 +1527,29 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                 {(subtaskComments[task.id] || []).map((comment) => (
                                   <div key={comment.id} className="bg-gray-50 rounded-md p-1.5">
                                     <div className="flex items-center justify-between mb-0.5">
-                                      <div className="flex items-center gap-0.5">
-                                        <Avatar className="h-3 w-3">
+                                      <div className="flex items-center gap-1">
+                                        <Avatar className="h-4 w-4">
                                           <AvatarImage src={comment.user?.profileImageUrl} />
-                                          <AvatarFallback className="text-[7px]">
+                                          <AvatarFallback className="text-[9px]">
                                             {comment.user?.nickname?.[0] || 'U'}
                                           </AvatarFallback>
                                         </Avatar>
-                                        <span className="text-[10px] font-medium text-gray-700">
+                                        <span className="text-xs font-medium text-gray-700">
                                           {comment.user?.nickname || '알 수 없는 사용자'}
                                         </span>
-                                        <span className="text-[9px] text-gray-600">
+                                        <span className="text-[10px] text-gray-600">
                                           {safeToLocaleString(comment.createdAt)}
                                         </span>
                                         {comment.isEdited && (
-                                          <span className="text-[9px] text-gray-500">(편집됨)</span>
+                                          <span className="text-[10px] text-gray-500">(편집됨)</span>
                                         )}
                                       </div>
                                       {/* Comment Actions */}
                                       {comment.userId === user?.id && (
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-3.5 w-3.5 p-0">
-                                              <MoreVertical className="h-2 w-2" />
+                                            <Button variant="ghost" size="icon" className="h-4 w-4 p-0">
+                                              <MoreVertical className="h-2.5 w-2.5" />
                                             </Button>
                                           </DropdownMenuTrigger>
                                           <DropdownMenuContent align="end">
@@ -1578,11 +1572,11 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                       )}
                                     </div>
                                     {editingComment === comment.id ? (
-                                      <div className="flex gap-0.5">
+                                      <div className="flex gap-1">
                                         <Input
                                           value={editingCommentContent}
                                           onChange={(e) => setEditingCommentContent(e.target.value)}
-                                          className="text-[10px] h-5"
+                                          className="text-xs h-6"
                                           placeholder="댓글 수정..."
                                           onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
@@ -1596,32 +1590,32 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                         />
                                         <Button
                                           size="icon"
-                                          className="h-5 w-5 p-0"
+                                          className="h-6 w-6 p-0"
                                           onClick={() => handleUpdateComment(task.id, comment.id)}
                                         >
-                                          <Send className="h-2.5 w-2.5" />
+                                          <Send className="h-3 w-3" />
                                         </Button>
                                         <Button
                                           size="icon"
                                           variant="outline"
-                                          className="h-5 w-5 p-0"
+                                          className="h-6 w-6 p-0"
                                           onClick={() => {
                                             setEditingComment(null)
                                             setEditingCommentContent('')
                                           }}
                                         >
-                                          <X className="h-2.5 w-2.5" />
+                                          <X className="h-3 w-3" />
                                         </Button>
                                       </div>
                                     ) : (
-                                      <p className="text-[10px] text-gray-800">{comment.content}</p>
+                                      <p className="text-xs text-gray-800">{comment.content}</p>
                                     )}
                                   </div>
                                 ))}
                               </div>
 
                               {/* Add Comment */}
-                              <div className="flex gap-0.5">
+                              <div className="flex gap-1">
                                 <Input
                                   value={newComment[task.id] || ''}
                                   onChange={(e) => setNewComment(prev => ({
@@ -1629,7 +1623,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                     [task.id]: e.target.value
                                   }))}
                                   placeholder="댓글 추가..."
-                                  className="text-[10px] h-5"
+                                  className="text-xs h-6"
                                   onKeyDown={(e) => {
                                     if (e.key === 'Enter') {
                                       handleAddComment(task.id)
@@ -1638,11 +1632,11 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                 />
                                 <Button
                                   size="icon"
-                                  className="h-5 w-5 p-0"
+                                  className="h-6 w-6 p-0"
                                   onClick={() => handleAddComment(task.id)}
                                   disabled={!newComment[task.id]?.trim()}
                                 >
-                                  <Send className="h-2.5 w-2.5" />
+                                  <Send className="h-3 w-3" />
                                 </Button>
                               </div>
                             </CollapsibleContent>
@@ -1650,7 +1644,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                         </div>
 
                         {/* File Attachments Section */}
-                        <div className="mt-1.5 pt-1.5 border-t border-gray-200">
+                        <div className="mt-1 pt-1 border-t border-gray-200">
                           <Collapsible
                             open={expandedAttachments[task.id] || false}
                             onOpenChange={(open) => setExpandedAttachments(prev => ({ ...prev, [task.id]: open }))}
@@ -1660,9 +1654,9 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="w-full justify-start p-0 h-auto text-[10px] text-gray-600 hover:text-gray-800"
+                                  className="w-full justify-start p-0 h-auto text-xs text-gray-600 hover:text-gray-800"
                                 >
-                                  <Paperclip className="h-2.5 w-2.5 mr-0.5" />
+                                  <Paperclip className="h-3 w-3 mr-1" />
                                   첨부파일 {(subtaskAttachments[task.id] || []).length}개
                                   {expandedAttachments[task.id] ? ' 숨기기' : ' 보기'}
                                 </Button>
@@ -1670,7 +1664,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-4 w-4 p-0"
+                                className="h-5 w-5 p-0"
                                 onClick={() => {
                                   const input = document.createElement('input')
                                   input.type = 'file'
@@ -1685,51 +1679,51 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                 disabled={uploadingFiles[task.id]}
                               >
                                 {uploadingFiles[task.id] ? (
-                                  <div className="animate-spin rounded-full h-2.5 w-2.5 border-b border-slate-600"></div>
+                                  <div className="animate-spin rounded-full h-3 w-3 border-b border-slate-600"></div>
                                 ) : (
-                                  <Upload className="h-2.5 w-2.5" />
+                                  <Upload className="h-3 w-3" />
                                 )}
                               </Button>
                             </div>
 
                             <CollapsibleContent className="space-y-1 mt-1">
                               {/* Attachment List */}
-                              <div className="space-y-0.5">
+                              <div className="space-y-1">
                                 {(subtaskAttachments[task.id] || []).map((attachment) => (
                                   <div key={attachment.id} className="bg-gray-50 rounded-md p-1.5">
                                     <div className="flex items-center justify-between">
                                       <div className="flex items-center gap-1 flex-1 min-w-0">
-                                        <span className="text-[10px]">{getFileIcon(attachment.mimeType)}</span>
+                                        <span className="text-xs">{getFileIcon(attachment.mimeType)}</span>
                                         <div className="flex-1 min-w-0">
-                                          <p className="text-[10px] font-medium text-gray-800 truncate" title={attachment.originalName}>
+                                          <p className="text-xs font-medium text-gray-800 truncate" title={attachment.originalName}>
                                             {attachment.originalName}
                                           </p>
-                                          <div className="flex items-center gap-1 text-[9px] text-gray-600">
+                                          <div className="flex items-center gap-1 text-[10px] text-gray-600">
                                             <span>{formatFileSize(attachment.fileSize)}</span>
                                             <span>•</span>
-                                            <span className="truncate max-w-[60px]">{attachment.uploadedBy?.nickname || '알 수 없음'}</span>
+                                            <span className="truncate max-w-[70px]">{attachment.uploadedBy?.nickname || '알 수 없음'}</span>
                                             <span>•</span>
                                             <span>{safeToLocaleString(attachment.createdAt)}</span>
                                           </div>
                                         </div>
                                       </div>
-                                      <div className="flex items-center gap-0.5 ml-1">
+                                      <div className="flex items-center gap-1 ml-1">
                                         <Button
                                           variant="ghost"
                                           size="icon"
-                                          className="h-4 w-4 p-0"
+                                          className="h-5 w-5 p-0"
                                           onClick={() => handleFileDownload(task.id, attachment)}
                                         >
-                                          <Download className="h-2.5 w-2.5" />
+                                          <Download className="h-3 w-3" />
                                         </Button>
                                         {(attachment.uploadedById === user?.id) && (
                                           <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-4 w-4 p-0 text-red-600 hover:text-red-700"
+                                            className="h-5 w-5 p-0 text-red-600 hover:text-red-700"
                                             onClick={() => handleDeleteAttachment(task.id, attachment.id)}
                                           >
-                                            <Trash2 className="h-2.5 w-2.5" />
+                                            <Trash2 className="h-3 w-3" />
                                           </Button>
                                         )}
                                       </div>
@@ -1737,7 +1731,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                                   </div>
                                 ))}
                                 {(subtaskAttachments[task.id] || []).length === 0 && (
-                                  <div className="text-[10px] text-gray-600 text-center py-1">
+                                  <div className="text-xs text-gray-600 text-center py-1">
                                     첨부파일이 없습니다
                                   </div>
                                 )}
