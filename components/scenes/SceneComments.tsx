@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -9,6 +9,7 @@ import { safeFormatDistanceToNow } from '@/lib/utils/date-helpers'
 import { Send } from 'lucide-react'
 import { socketClient } from '@/lib/socket/client'
 import { useToast } from '@/hooks/use-toast'
+import { commentsAPI } from '@/lib/api/comments'
 
 interface Comment {
   id: string
@@ -29,26 +30,39 @@ export default function SceneComments({ sceneId }: SceneCommentsProps) {
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
-  useEffect(() => {
-    // TODO: API 호출로 댓글 로드
-    const mockComments: Comment[] = [
-      {
-        id: '1',
-        userId: 'user1',
-        userName: '김디자이너',
-        content: '선화 작업 잘 진행되고 있네요!',
-        createdAt: new Date(Date.now() - 1000 * 60 * 30)
-      },
-      {
-        id: '2',
-        userId: 'user2',
-        userName: '박작가',
-        content: '캐릭터 표정이 좀 더 밝았으면 좋겠어요.',
-        createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2)
-      }
-    ]
-    setComments(mockComments)
+  // 댓글 목록 로드 함수
+  const loadComments = useCallback(async () => {
+    try {
+      const data = await commentsAPI.getSceneComments(sceneId)
+      const formattedComments = data.map((c: any) => ({
+        id: c.id,
+        userId: c.userId || c.user_id,
+        userName: c.user?.nickname || c.user?.username || '알 수 없는 사용자',
+        userAvatar: c.user?.profileImageUrl || c.user?.profile_image_url,
+        content: c.content,
+        createdAt: c.createdAt || c.created_at
+      }))
+      setComments(formattedComments)
+    } catch (error) {
+      console.error('[SceneComments] Error loading comments:', error)
+    }
   }, [sceneId])
+
+  // 초기 댓글 로드
+  useEffect(() => {
+    void loadComments()
+  }, [loadComments])
+
+  // 커스텀 이벤트 리스너 (comment:refresh)
+  useEffect(() => {
+    const handleRefresh = () => {
+      console.log('[SceneComments] Refresh event received, reloading comments')
+      void loadComments()
+    }
+
+    window.addEventListener('comment:refresh', handleRefresh)
+    return () => window.removeEventListener('comment:refresh', handleRefresh)
+  }, [loadComments])
 
   // Socket.io 실시간 댓글 업데이트
   useEffect(() => {
@@ -98,12 +112,14 @@ export default function SceneComments({ sceneId }: SceneCommentsProps) {
 
     // 이벤트 리스너 등록
     socket.on('comment:created', handleCommentCreated)
+    socket.on('comment:new', handleCommentCreated) // 백엔드 호환성
     socket.on('comment:updated', handleCommentUpdated)
     socket.on('comment:deleted', handleCommentDeleted)
 
     return () => {
       // 이벤트 리스너 제거
       socket.off('comment:created', handleCommentCreated)
+      socket.off('comment:new', handleCommentCreated)
       socket.off('comment:updated', handleCommentUpdated)
       socket.off('comment:deleted', handleCommentDeleted)
     }
@@ -114,17 +130,35 @@ export default function SceneComments({ sceneId }: SceneCommentsProps) {
 
     setIsLoading(true)
     try {
-      // TODO: API 호출로 댓글 저장
-      const comment: Comment = {
-        id: Date.now().toString(),
-        userId: 'current-user',
-        userName: '현재 사용자',
-        content: newComment,
-        createdAt: new Date()
+      // API 호출로 댓글 저장
+      const createdComment = await commentsAPI.createComment({
+        sceneId,
+        content: newComment
+      })
+
+      // 로컬 상태 업데이트 (낙관적 업데이트)
+      const newCommentData: Comment = {
+        id: createdComment.id,
+        userId: createdComment.userId || createdComment.user_id,
+        userName: createdComment.user?.nickname || '알 수 없는 사용자',
+        userAvatar: createdComment.user?.profileImageUrl,
+        content: createdComment.content,
+        createdAt: createdComment.createdAt || new Date()
       }
-      setComments([comment, ...comments])
+      setComments([newCommentData, ...comments])
       setNewComment('')
-    } catch {
+
+      toast({
+        title: '댓글 작성',
+        description: '댓글이 성공적으로 작성되었습니다.',
+      })
+    } catch (error) {
+      console.error('[SceneComments] Error creating comment:', error)
+      toast({
+        title: '오류',
+        description: '댓글 작성에 실패했습니다.',
+        variant: 'destructive'
+      })
     } finally {
       setIsLoading(false)
     }

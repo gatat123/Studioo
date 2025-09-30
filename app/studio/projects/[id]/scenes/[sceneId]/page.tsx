@@ -49,19 +49,19 @@ export default function SceneEditorPage() {
 
         // 현재 활성화된 이미지 찾기
         const lineartImage = sceneData.images?.find(
-          (img: any) => img.type === 'lineart' && img.is_current
+          (img: any) => img.type === 'lineart' && (img.isCurrent || img.is_current)
         )
         const artImage = sceneData.images?.find(
-          (img: any) => img.type === 'art' && img.is_current
+          (img: any) => img.type === 'art' && (img.isCurrent || img.is_current)
         )
 
         setCurrentScene({
           id: sceneData.id,
-          name: sceneData.title || `Scene ${sceneData.scene_number || sceneId}`,
+          name: sceneData.title || `Scene ${sceneData.sceneNumber || sceneData.scene_number || sceneId}`,
           description: sceneData.description || '',
           images: {
-            lineart: lineartImage?.file_url || null,
-            art: artImage?.file_url || null
+            lineart: lineartImage?.fileUrl || lineartImage?.file_url || null,
+            art: artImage?.fileUrl || artImage?.file_url || null
           }
         })
 
@@ -107,8 +107,8 @@ export default function SceneEditorPage() {
       // 씬과 프로젝트 룸에 참가
       console.log(`[SceneEditor] Joining scene room: ${sceneId}`)
       console.log(`[SceneEditor] Joining project room: ${projectId}`)
-      socket.emit('join:scene', sceneId)
-      socket.emit('join:project', projectId)
+      socket.emit('join_scene', { projectId, sceneId })
+      socket.emit('join_project', { projectId })
     }
 
     // 연결 에러 핸들러
@@ -131,6 +131,20 @@ export default function SceneEditorPage() {
     // 프로젝트 룸 참가 성공 핸들러
     const handleJoinedProject = (data: any) => {
       console.log(`[SceneEditor] ✅ Successfully joined project room:`, data)
+    }
+
+    // 댓글 생성 이벤트 핸들러 (새로운 이벤트 추가)
+    const handleCommentNew = (data: { comment: any, targetType: string, targetId: string, timestamp: Date }) => {
+      console.log(`[SceneEditor] ✅ New comment event received:`, data)
+
+      if (data.targetType === 'scene' && data.targetId === sceneId) {
+        toast({
+          title: '새 댓글',
+          description: `${data.comment.user?.nickname || '사용자'}님이 댓글을 작성했습니다.`,
+        })
+        // SceneComments 컴포넌트에서 자동으로 새로고침하도록 커스텀 이벤트 발송
+        window.dispatchEvent(new CustomEvent('comment:refresh'))
+      }
     }
 
     // 이미지 업로드 이벤트 핸들러
@@ -247,11 +261,13 @@ export default function SceneEditorPage() {
     // 이벤트 리스너 등록
     socket.on('connect_error', handleConnectError)
     socket.on('disconnect', handleDisconnect)
-    socket.on('joined:scene', handleJoinedScene)
-    socket.on('joined:project', handleJoinedProject)
+    socket.on('scene_joined', handleJoinedScene)
+    socket.on('project_joined', handleJoinedProject)
     socket.on('scene:image-uploaded', handleImageUploaded)
+    socket.on('image:upload', handleImageUploaded)
     socket.on('scene:image-updated', handleImageUpdated)
     socket.on('comment:created', handleCommentCreated)
+    socket.on('comment:new', handleCommentNew)
     socket.on('comment:updated', handleCommentUpdated)
     socket.on('comment:deleted', handleCommentDeleted)
     socket.on('scene:updated', handleSceneUpdated)
@@ -265,18 +281,20 @@ export default function SceneEditorPage() {
       socket.off('connect', handleConnect)
       socket.off('connect_error', handleConnectError)
       socket.off('disconnect', handleDisconnect)
-      socket.off('joined:scene', handleJoinedScene)
-      socket.off('joined:project', handleJoinedProject)
+      socket.off('scene_joined', handleJoinedScene)
+      socket.off('project_joined', handleJoinedProject)
       socket.off('scene:image-uploaded', handleImageUploaded)
+      socket.off('image:upload', handleImageUploaded)
       socket.off('scene:image-updated', handleImageUpdated)
       socket.off('comment:created', handleCommentCreated)
+      socket.off('comment:new', handleCommentNew)
       socket.off('comment:updated', handleCommentUpdated)
       socket.off('comment:deleted', handleCommentDeleted)
       socket.off('scene:updated', handleSceneUpdated)
 
       // 룸 떠나기
-      socket.emit('leave:scene', sceneId)
-      socket.emit('leave:project', projectId)
+      socket.emit('leave_room', { roomId: `scene:${sceneId}` })
+      socket.emit('leave_room', { roomId: `project:${projectId}` })
 
       console.log(`[SceneEditor] 📡 Event listeners removed and rooms left`)
     }
