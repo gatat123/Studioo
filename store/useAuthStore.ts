@@ -39,7 +39,7 @@ export const useAuthStore = create<AuthState>()(
           if (response.user) {
             const user: User = {
               ...response.user,
-              profile_image_url: response.user.profile_image_url || undefined,
+              profile_image_url: response.user.profileImageUrl || response.user.profile_image_url || undefined,
               created_at: response.user.created_at || new Date().toISOString(),
               updated_at: response.user.updated_at || new Date().toISOString(),
               is_active: response.user.is_active !== undefined ? response.user.is_active : true,
