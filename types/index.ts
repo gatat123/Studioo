@@ -19,6 +19,7 @@ export interface User {
   studio?: Studio;
   // Legacy properties for backward compatibility
   profileImage?: string;
+  profileImageUrl?: string; // Backend API returns this (camelCase)
 }
 
 // Studio types
