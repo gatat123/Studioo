@@ -57,7 +57,7 @@ export default function SceneEditorPage() {
 
         setCurrentScene({
           id: sceneData.id,
-          name: sceneData.name || `Scene ${sceneData.sceneNumber || sceneId}`,
+          name: sceneData.title || `Scene ${sceneData.scene_number || sceneId}`,
           description: sceneData.description || '',
           images: {
             lineart: lineartImage?.fileUrl || null,
@@ -67,7 +67,8 @@ export default function SceneEditorPage() {
 
         console.log('[SceneEditor] Scene data loaded:', {
           sceneId,
-          name: sceneData.name,
+          title: sceneData.title,
+          sceneNumber: sceneData.scene_number,
           imagesCount: sceneData.images?.length || 0,
           lineartUrl: lineartImage?.fileUrl,
           artUrl: artImage?.fileUrl,
