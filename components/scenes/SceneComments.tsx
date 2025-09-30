@@ -11,7 +11,7 @@ import { socketClient } from '@/lib/socket/client'
 import { useToast } from '@/hooks/use-toast'
 import { commentsAPI } from '@/lib/api/comments'
 
-interface Comment {
+interface CommentDisplay {
   id: string
   userId: string
   userName: string
@@ -25,7 +25,7 @@ interface SceneCommentsProps {
 }
 
 export default function SceneComments({ sceneId }: SceneCommentsProps) {
-  const [comments, setComments] = useState<Comment[]>([])
+  const [comments, setComments] = useState<CommentDisplay[]>([])
   const [newComment, setNewComment] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
@@ -36,11 +36,11 @@ export default function SceneComments({ sceneId }: SceneCommentsProps) {
       const data = await commentsAPI.getSceneComments(sceneId)
       const formattedComments = data.map((c: any) => ({
         id: c.id,
-        userId: c.userId || c.user_id,
+        userId: c.user_id,
         userName: c.user?.nickname || c.user?.username || '알 수 없는 사용자',
-        userAvatar: c.user?.profileImageUrl || c.user?.profile_image_url,
+        userAvatar: c.user?.profile_image_url,
         content: c.content,
-        createdAt: c.createdAt || c.created_at
+        createdAt: c.created_at
       }))
       setComments(formattedComments)
     } catch (error) {
@@ -75,7 +75,7 @@ export default function SceneComments({ sceneId }: SceneCommentsProps) {
       console.log(`[SceneComments] Comment created event received:`, data)
 
       if (data.targetType === 'scene' && data.targetId === sceneId) {
-        const newComment: Comment = {
+        const newComment: CommentDisplay = {
           id: data.comment.id,
           userId: data.comment.userId,
           userName: data.comment.user?.nickname || '알 수 없는 사용자',
@@ -137,13 +137,13 @@ export default function SceneComments({ sceneId }: SceneCommentsProps) {
       })
 
       // 로컬 상태 업데이트 (낙관적 업데이트)
-      const newCommentData: Comment = {
+      const newCommentData: CommentDisplay = {
         id: createdComment.id,
-        userId: createdComment.userId || createdComment.user_id,
+        userId: createdComment.user_id,
         userName: createdComment.user?.nickname || '알 수 없는 사용자',
-        userAvatar: createdComment.user?.profileImageUrl,
+        userAvatar: createdComment.user?.profile_image_url,
         content: createdComment.content,
-        createdAt: createdComment.createdAt || new Date()
+        createdAt: createdComment.created_at || new Date()
       }
       setComments([newCommentData, ...comments])
       setNewComment('')
