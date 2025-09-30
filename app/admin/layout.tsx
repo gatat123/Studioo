@@ -31,11 +31,11 @@ export default function AdminLayout({
         console.log('Admin Layout - Auth state:', {
           isAuthenticated: currentAuth,
           user: currentUser,
-          isAdmin: currentUser?.isAdmin,
+          isAdmin: currentUser?.is_admin,
           userKeys: currentUser ? Object.keys(currentUser) : []
         });
 
-        setDebugInfo(`사용자: ${currentUser?.username}, 관리자: ${currentUser?.isAdmin}, 인증: ${currentAuth}`);
+        setDebugInfo(`사용자: ${currentUser?.username}, 관리자: ${currentUser?.is_admin}, 인증: ${currentAuth}`);
 
         if (!currentAuth || !currentUser) {
           console.log('Admin Layout - Not authenticated, redirecting to studio...');
@@ -44,16 +44,16 @@ export default function AdminLayout({
         }
 
         // Check admin status
-        if (!currentUser.isAdmin) {
+        if (!currentUser.is_admin) {
           console.log('Admin Layout - User is not admin, redirecting to studio...', {
-            isAdmin: currentUser.isAdmin,
+            isAdmin: currentUser.is_admin,
             username: currentUser.username
           });
           // TODO: 임시로 특정 사용자를 admin으로 처리 (개발 환경에서만)
           if (currentUser.username === 'gatat123' || process.env.NODE_ENV === 'development') {
             console.log('Admin Layout - Granting temporary admin access for development');
             // 사용자 상태를 업데이트하여 admin으로 설정
-            const updatedUser = { ...currentUser, isAdmin: true };
+            const updatedUser = { ...currentUser, is_admin: true };
             useAuthStore.getState().setUser(updatedUser);
           } else {
             router.push('/studio');
@@ -83,7 +83,7 @@ export default function AdminLayout({
           <div className="mt-4 text-xs text-gray-500 bg-gray-100 p-3 rounded">
             <p>개발 모드 디버그 정보:</p>
             <p>User: {user?.username}</p>
-            <p>isAdmin: {String(user?.isAdmin)}</p>
+            <p>isAdmin: {String(user?.is_admin)}</p>
             <p>Authenticated: {String(isAuthenticated)}</p>
           </div>
         )}
@@ -92,11 +92,11 @@ export default function AdminLayout({
   }
 
   // Double-check admin status before rendering
-  const isAdmin = user?.isAdmin || user?.username === 'gatat123';
+  const isAdmin = user?.is_admin || user?.username === 'gatat123';
   if (!isAdmin) {
     console.log('Admin Layout - Final admin check failed, user not admin:', {
       username: user?.username,
-      isAdmin: user?.isAdmin,
+      isAdmin: user?.is_admin,
       isAuthenticated
     });
 

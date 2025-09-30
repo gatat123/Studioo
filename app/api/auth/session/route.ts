@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
         username: string;
         email: string;
         role?: string;
-        isAdmin?: boolean;
+        is_admin?: boolean;
+        isAdmin?: boolean; // Legacy support
       };
 
       // Return user session data
@@ -30,7 +31,7 @@ export async function GET(request: NextRequest) {
         id: decoded.userId || decoded.id,
         username: decoded.username,
         email: decoded.email,
-        role: decoded.role || (decoded.isAdmin ? 'admin' : 'user'),
+        role: decoded.role || ((decoded.is_admin || decoded.isAdmin) ? 'admin' : 'user'),
         isActive: true
       };
 

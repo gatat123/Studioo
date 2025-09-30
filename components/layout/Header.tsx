@@ -189,7 +189,7 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
                   Settings
                 </Link>
               </DropdownMenuItem>
-              {currentUser?.isAdmin && (
+              {currentUser?.is_admin && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>

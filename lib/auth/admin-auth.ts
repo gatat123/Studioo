@@ -99,16 +99,17 @@ export async function verifyAdminAuth() {
       id: decoded.userId || decoded.id || decoded.sub || 'unknown',
       username: decoded.username || decoded.name || 'unknown',
       email: decoded.email || '',
-      role: decoded.role || (decoded.isAdmin ? 'admin' : 'user'),
+      role: decoded.role || ((decoded.is_admin || decoded.isAdmin) ? 'admin' : 'user'),
       isActive: true,
-      isAdmin: decoded.isAdmin || decoded.role === 'admin'
+      is_admin: decoded.is_admin || decoded.isAdmin || decoded.role === 'admin'
     };
 
     // User extracted from token
 
     // Verify admin role - check multiple conditions
     const isAdmin = user.role === 'admin' ||
-                   user.isAdmin === true ||
+                   user.is_admin === true ||
+                   decoded.is_admin === true ||
                    decoded.isAdmin === true ||
                    user.username === 'gatat123'; // Temporary admin access for gatat123
 
@@ -130,7 +131,7 @@ export async function verifyAdminAuth() {
     //   where: { id: user.id },
     //   include: { roles: true }
     // });
-    // if (!dbUser?.isAdmin && !dbUser?.roles?.some(r => r.name === 'admin')) {
+    // if (!dbUser?.is_admin && !dbUser?.roles?.some(r => r.name === 'admin')) {
     //   return { success: false, ... };
     // }
 

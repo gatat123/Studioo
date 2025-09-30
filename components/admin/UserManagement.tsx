@@ -21,6 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Search, Trash2, Shield, UserCheck, UserX } from 'lucide-react';
 import { User } from '@/types';
+import { cn } from '@/lib/utils';
 
 export default function UserManagement() {
   const [users, setUsers] = useState<User[]>([]);
@@ -142,7 +143,7 @@ export default function UserManagement() {
       filterStatus === 'all' ||
       (filterStatus === 'active' && user.is_active) ||
       (filterStatus === 'inactive' && !user.is_active) ||
-      (filterStatus === 'admin' && user.isAdmin);
+      (filterStatus === 'admin' && user.is_admin);
 
     return matchesSearch && matchesStatus;
   });
@@ -212,7 +213,7 @@ export default function UserManagement() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  {user.isAdmin ? (
+                  {user.is_admin ? (
                     <Badge variant="destructive">관리자</Badge>
                   ) : (
                     <Badge variant="outline">일반</Badge>
@@ -243,10 +244,10 @@ export default function UserManagement() {
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => handleToggleAdmin(user.id, user.isAdmin)}
-                      title={user.isAdmin ? '관리자 해제' : '관리자 설정'}
+                      onClick={() => handleToggleAdmin(user.id, user.is_admin)}
+                      title={user.is_admin ? '관리자 해제' : '관리자 설정'}
                     >
-                      <Shield className={cn('w-4 h-4', user.isAdmin && 'text-red-600')} />
+                      <Shield className={cn('w-4 h-4', user.is_admin && 'text-red-600')} />
                     </Button>
                     <Button
                       size="sm"

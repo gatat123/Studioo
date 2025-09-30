@@ -180,7 +180,7 @@ export default function StudioPage() {
                         <span>설정</span>
                       </Link>
                     </DropdownMenuItem>
-                    {user?.isAdmin && (
+                    {user?.is_admin && (
                       <>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem asChild>
