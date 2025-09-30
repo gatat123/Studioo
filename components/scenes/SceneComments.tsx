@@ -68,13 +68,26 @@ export default function SceneComments({ sceneId }: SceneCommentsProps) {
   useEffect(() => {
     if (!sceneId) return
 
+    console.log('[SceneComments] 🔌 Setting up socket listeners for scene:', sceneId)
+
     const socket = socketClient.connect()
+
+    console.log('[SceneComments] Socket connected:', socket.connected)
+    console.log('[SceneComments] Socket ID:', socket.id)
 
     // 댓글 생성 이벤트 핸들러
     const handleCommentCreated = (data: { comment: any, targetType: string, targetId: string }) => {
-      console.log(`[SceneComments] Comment created event received:`, data)
+      console.log(`[SceneComments] 🔔 comment:created event received:`, {
+        targetType: data.targetType,
+        targetId: data.targetId,
+        currentSceneId: sceneId,
+        match: data.targetType === 'scene' && data.targetId === sceneId,
+        commentId: data.comment?.id
+      })
 
       if (data.targetType === 'scene' && data.targetId === sceneId) {
+        console.log('[SceneComments] ✅ Event matches current scene, adding comment')
+
         const newComment: CommentDisplay = {
           id: data.comment.id,
           userId: data.comment.userId,
@@ -84,7 +97,12 @@ export default function SceneComments({ sceneId }: SceneCommentsProps) {
           createdAt: data.comment.createdAt
         }
 
-        setComments(prev => [newComment, ...prev])
+        setComments(prev => {
+          console.log('[SceneComments] 📝 Adding new comment to state, current count:', prev.length)
+          return [newComment, ...prev]
+        })
+      } else {
+        console.log('[SceneComments] ⏭️  Event does not match current scene, ignoring')
       }
     }
 
@@ -111,17 +129,22 @@ export default function SceneComments({ sceneId }: SceneCommentsProps) {
     }
 
     // 이벤트 리스너 등록
+    console.log('[SceneComments] 📡 Registering socket event listeners')
     socket.on('comment:created', handleCommentCreated)
     socket.on('comment:new', handleCommentCreated) // 백엔드 호환성
     socket.on('comment:updated', handleCommentUpdated)
     socket.on('comment:deleted', handleCommentDeleted)
 
+    console.log('[SceneComments] ✅ Socket event listeners registered')
+
     return () => {
+      console.log('[SceneComments] 🧹 Cleaning up socket event listeners')
       // 이벤트 리스너 제거
       socket.off('comment:created', handleCommentCreated)
       socket.off('comment:new', handleCommentCreated)
       socket.off('comment:updated', handleCommentUpdated)
       socket.off('comment:deleted', handleCommentDeleted)
+      console.log('[SceneComments] ✅ Socket event listeners removed')
     }
   }, [sceneId])
 
