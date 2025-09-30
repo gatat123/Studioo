@@ -179,14 +179,8 @@ const HeaderContent: React.FC<HeaderProps & { pathname: string }> = ({
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
                 <Link href="/profile" className="flex items-center">
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link href="/settings" className="flex items-center">
                   <Settings className="mr-2 h-4 w-4" />
-                  Settings
+                  프로필 설정
                 </Link>
               </DropdownMenuItem>
               {currentUser?.is_admin && (

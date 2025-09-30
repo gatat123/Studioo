@@ -74,13 +74,23 @@ export default function ProfilePage() {
       })
 
       if (response && response.user) {
-        setProfile(response.user)
+        // 필드명 매핑: profileImageUrl → profile_image_url
+        const updatedUser = {
+          ...response.user,
+          profile_image_url: response.user.profileImageUrl || response.user.profile_image_url
+        }
+
+        setProfile(updatedUser)
         setFormData(prev => ({
           ...prev,
-          nickname: response.user.nickname || '',
-          email: response.user.email || '',
-          bio: response.user.bio || ''
+          nickname: updatedUser.nickname || '',
+          email: updatedUser.email || '',
+          bio: updatedUser.bio || ''
         }))
+
+        // authStore 업데이트하여 Header 등 다른 컴포넌트에도 반영
+        const { setUser } = useAuthStore.getState()
+        setUser(updatedUser as any)
 
         toast({
           title: '성공',
@@ -143,7 +153,18 @@ export default function ProfilePage() {
       const response = await api.upload('/api/users/profile/image', formData)
 
       if (response && response.user) {
-        setProfile(response.user)
+        // 필드명 매핑: profileImageUrl → profile_image_url
+        const updatedUser = {
+          ...response.user,
+          profile_image_url: response.user.profileImageUrl || response.user.profile_image_url
+        }
+
+        setProfile(updatedUser)
+
+        // authStore 업데이트하여 Header 등 다른 컴포넌트에도 반영
+        const { setUser } = useAuthStore.getState()
+        setUser(updatedUser as any)
+
         toast({
           title: '성공',
           description: '프로필 사진이 업데이트되었습니다.'
@@ -151,9 +172,6 @@ export default function ProfilePage() {
 
         // Refresh profile data to get the updated image
         await fetchProfile()
-
-        // Force page refresh to update all image instances
-        window.location.reload()
       } else {
         toast({
           title: '오류',
