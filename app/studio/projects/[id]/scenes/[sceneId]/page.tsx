@@ -49,10 +49,10 @@ export default function SceneEditorPage() {
 
         // 현재 활성화된 이미지 찾기
         const lineartImage = sceneData.images?.find(
-          (img: any) => img.type === 'lineart' && (img.isCurrent || img.is_current)
+          (img: any) => img.type === 'lineart' && img.is_current
         )
         const artImage = sceneData.images?.find(
-          (img: any) => img.type === 'art' && (img.isCurrent || img.is_current)
+          (img: any) => img.type === 'art' && img.is_current
         )
 
         setCurrentScene({
@@ -60,8 +60,8 @@ export default function SceneEditorPage() {
           name: sceneData.title || `Scene ${sceneData.scene_number || sceneId}`,
           description: sceneData.description || '',
           images: {
-            lineart: lineartImage?.fileUrl || lineartImage?.file_url || null,
-            art: artImage?.fileUrl || artImage?.file_url || null
+            lineart: lineartImage?.file_url || null,
+            art: artImage?.file_url || null
           }
         })
 
