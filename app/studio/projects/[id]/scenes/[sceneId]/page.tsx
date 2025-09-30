@@ -57,7 +57,7 @@ export default function SceneEditorPage() {
 
         setCurrentScene({
           id: sceneData.id,
-          name: sceneData.title || `Scene ${sceneData.sceneNumber || sceneData.scene_number || sceneId}`,
+          name: sceneData.title || `Scene ${sceneData.scene_number || sceneId}`,
           description: sceneData.description || '',
           images: {
             lineart: lineartImage?.fileUrl || lineartImage?.file_url || null,
