@@ -49,10 +49,10 @@ export default function SceneEditorPage() {
 
         // 현재 활성화된 이미지 찾기
         const lineartImage = sceneData.images?.find(
-          (img: any) => img.type === 'lineart' && img.isCurrent
+          (img: any) => img.type === 'lineart' && img.is_current
         )
         const artImage = sceneData.images?.find(
-          (img: any) => img.type === 'art' && img.isCurrent
+          (img: any) => img.type === 'art' && img.is_current
         )
 
         setCurrentScene({
@@ -60,8 +60,8 @@ export default function SceneEditorPage() {
           name: sceneData.title || `Scene ${sceneData.scene_number || sceneId}`,
           description: sceneData.description || '',
           images: {
-            lineart: lineartImage?.fileUrl || null,
-            art: artImage?.fileUrl || null
+            lineart: lineartImage?.file_url || null,
+            art: artImage?.file_url || null
           }
         })
 
@@ -70,8 +70,8 @@ export default function SceneEditorPage() {
           title: sceneData.title,
           sceneNumber: sceneData.scene_number,
           imagesCount: sceneData.images?.length || 0,
-          lineartUrl: lineartImage?.fileUrl,
-          artUrl: artImage?.fileUrl,
+          lineartUrl: lineartImage?.file_url,
+          artUrl: artImage?.file_url,
         })
       } catch (error) {
         console.error('[SceneEditor] Error loading scene data:', error)
