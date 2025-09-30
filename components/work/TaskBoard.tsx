@@ -1046,7 +1046,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
               <span className="text-sm text-gray-600">참여자:</span>
               <div className="flex items-center gap-1">
                 {/* 생성자 표시 */}
-                {selectedWorkTask.createdBy && (
+                {selectedWorkTask.createdBy?.nickname && (
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger>
@@ -1072,7 +1072,7 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
                 {/* 참여자들 표시 */}
                 {selectedWorkTask.participants && selectedWorkTask.participants
-                  .filter(p => p.userId !== selectedWorkTask.createdById) // 생성자 제외
+                  .filter(p => p.userId !== selectedWorkTask.createdById && p.user?.nickname) // 생성자 제외 및 user 데이터 확인
                   .slice(0, 3) // 최대 3명까지 표시
                   .map((participant) => (
                     <TooltipProvider key={participant.id}>
@@ -1080,18 +1080,18 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                         <TooltipTrigger>
                           <div className="flex items-center gap-1 px-2 py-1 bg-gray-50 rounded-full">
                             <Avatar className="h-5 w-5">
-                              <AvatarImage src={participant.user.profileImageUrl} />
+                              <AvatarImage src={participant.user?.profileImageUrl} />
                               <AvatarFallback className="text-[10px]">
-                                {participant.user.nickname[0]}
+                                {participant.user?.nickname?.[0] || '?'}
                               </AvatarFallback>
                             </Avatar>
                             <span className="text-xs font-medium text-gray-700">
-                              {participant.user.nickname}
+                              {participant.user?.nickname}
                             </span>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent>
-                          <p>{participant.user.nickname} ({participant.role === 'member' ? '멤버' : participant.role})</p>
+                          <p>{participant.user?.nickname} ({participant.role === 'member' ? '멤버' : participant.role})</p>
                         </TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
@@ -1099,9 +1099,9 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
 
                 {/* 추가 참여자 수 표시 */}
                 {selectedWorkTask.participants &&
-                 selectedWorkTask.participants.filter(p => p.userId !== selectedWorkTask.createdById).length > 3 && (
+                 selectedWorkTask.participants.filter(p => p.userId !== selectedWorkTask.createdById && p.user?.nickname).length > 3 && (
                   <span className="text-xs text-gray-600 px-2 py-1 bg-gray-50 rounded-full">
-                    +{selectedWorkTask.participants.filter(p => p.userId !== selectedWorkTask.createdById).length - 3}명
+                    +{selectedWorkTask.participants.filter(p => p.userId !== selectedWorkTask.createdById && p.user?.nickname).length - 3}명
                   </span>
                 )}
               </div>
