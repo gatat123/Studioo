@@ -73,6 +73,7 @@ export default function SceneEditorPage() {
           lineartUrl: lineartImage?.file_url,
           artUrl: artImage?.file_url,
         })
+        // Railway 빌드 캐시 갱신용 주석
       } catch (error) {
         console.error('[SceneEditor] Error loading scene data:', error)
         toast({
