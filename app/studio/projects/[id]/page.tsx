@@ -305,21 +305,36 @@ export default function ProjectDetailPage() {
       }
 
       // Process scenes to separate line art and art images
-      const processedScenes = scenesData.map((scene: Scene) => ({
-        ...scene,
-        lineArtImages: scene.images?.filter((img: Image) => img.type === 'lineart')
+      const processedScenes = scenesData.map((scene: Scene) => {
+        const lineartImages = scene.images?.filter((img: Image) => img.type === 'lineart')
           .map((img: Image) => ({
             ...img,
-            url: img.file_url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-            file_url: img.file_url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
-          })) || [],
-        artImages: scene.images?.filter((img: Image) => img.type === 'art')
-          .map((img: Image) => ({
-            ...img,
-            url: img.file_url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app'),
-            file_url: img.file_url?.replace('studioo-backend-production.up.railway.app', 'courageous-spirit-production.up.railway.app')
+            url: img.file_url || img.fileUrl || '',
+            file_url: img.file_url || img.fileUrl || ''
           })) || []
-      }))
+
+        const artImages = scene.images?.filter((img: Image) => img.type === 'art')
+          .map((img: Image) => ({
+            ...img,
+            url: img.file_url || img.fileUrl || '',
+            file_url: img.file_url || img.fileUrl || ''
+          })) || []
+
+        console.log('[ProjectPage] 🖼️  Processing scene images:', {
+          sceneId: scene.id,
+          sceneNumber: scene.scene_number,
+          lineartCount: lineartImages.length,
+          artCount: artImages.length,
+          sampleLineartUrl: lineartImages[0]?.file_url,
+          sampleArtUrl: artImages[0]?.file_url
+        })
+
+        return {
+          ...scene,
+          lineArtImages: lineartImages,
+          artImages: artImages
+        }
+      })
 
 
       setProject(projectData)

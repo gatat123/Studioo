@@ -139,9 +139,17 @@ export function HistorySection({
     const handleNewComment = async (payload: CommentEventPayload) => {
       if (payload.project_id !== project_id) return
 
+      // Check if this comment belongs to the current scene
+      if (sceneId && payload.scene_id && payload.scene_id !== sceneId) {
+        console.log('[HistorySection] Ignoring comment from different scene:', payload.scene_id)
+        return
+      }
+
       // Refetch comments to ensure data consistency
       try {
-        const updatedComments = await commentsAPI.getProjectComments(project_id)
+        const updatedComments = sceneId
+          ? await commentsAPI.getSceneComments(sceneId)
+          : await commentsAPI.getProjectComments(project_id)
         setComments(updatedComments)
         onCommentsUpdate(updatedComments)
 
@@ -450,7 +458,9 @@ export function HistorySection({
           variant="ghost"
           onClick={async () => {
             try {
-              const updatedComments = await commentsAPI.getProjectComments(project_id)
+              const updatedComments = sceneId
+                ? await commentsAPI.getSceneComments(sceneId)
+                : await commentsAPI.getProjectComments(project_id)
               setComments(updatedComments)
               onCommentsUpdate(updatedComments)
               const items = convertCommentsToHistory(updatedComments)
