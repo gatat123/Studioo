@@ -215,7 +215,7 @@ export const useAuthStore = create<AuthState>()(
               updated_at: sessionUser.updated_at || new Date().toISOString(),
               is_active: sessionUser.is_active !== undefined ? sessionUser.is_active : true,
               // 임시로 특정 사용자를 관리자로 설정 (테스트용)
-              isAdmin: sessionUser.username === 'gatat123' ? true : sessionUser.isAdmin
+              is_admin: sessionUser.username === 'gatat123' ? true : sessionUser.is_admin
             };
 
             set({

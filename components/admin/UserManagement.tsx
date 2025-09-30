@@ -272,7 +272,3 @@ export default function UserManagement() {
     </div>
   );
 }
-
-function cn(...classes: (string | boolean | undefined)[]) {
-  return classes.filter(Boolean).join(' ');
-}
