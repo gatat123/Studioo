@@ -309,15 +309,15 @@ export default function ProjectDetailPage() {
         const lineartImages = scene.images?.filter((img: Image) => img.type === 'lineart')
           .map((img: Image) => ({
             ...img,
-            url: img.file_url || img.fileUrl || '',
-            file_url: img.file_url || img.fileUrl || ''
+            url: img.file_url || '',
+            file_url: img.file_url || ''
           })) || []
 
         const artImages = scene.images?.filter((img: Image) => img.type === 'art')
           .map((img: Image) => ({
             ...img,
-            url: img.file_url || img.fileUrl || '',
-            file_url: img.file_url || img.fileUrl || ''
+            url: img.file_url || '',
+            file_url: img.file_url || ''
           })) || []
 
         console.log('[ProjectPage] 🖼️  Processing scene images:', {
