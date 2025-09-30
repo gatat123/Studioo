@@ -306,18 +306,18 @@ export default function ProjectDetailPage() {
 
       // Process scenes to separate line art and art images
       const processedScenes = scenesData.map((scene: Scene) => {
-        const lineartImages = scene.images?.filter((img: Image) => img.type === 'lineart')
-          .map((img: Image) => ({
+        const lineartImages = scene.images?.filter((img: any) => img.type === 'lineart')
+          .map((img: any) => ({
             ...img,
-            url: img.file_url || '',
-            file_url: img.file_url || ''
+            url: img.fileUrl || img.file_url || '',
+            file_url: img.fileUrl || img.file_url || ''
           })) || []
 
-        const artImages = scene.images?.filter((img: Image) => img.type === 'art')
-          .map((img: Image) => ({
+        const artImages = scene.images?.filter((img: any) => img.type === 'art')
+          .map((img: any) => ({
             ...img,
-            url: img.file_url || '',
-            file_url: img.file_url || ''
+            url: img.fileUrl || img.file_url || '',
+            file_url: img.fileUrl || img.file_url || ''
           })) || []
 
         console.log('[ProjectPage] 🖼️  Processing scene images:', {
