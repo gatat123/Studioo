@@ -1277,25 +1277,70 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                               <CardTitle className="text-sm font-medium line-clamp-2 flex-1">
                                 {task.title}
                               </CardTitle>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0">
-                                    <MoreVertical className="h-3 w-3" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleEditTask(task)}>
-                                    <Edit className="h-3 w-3 mr-1" />
-                                    편집
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDeleteSubTask(task.id)}
-                                    className="text-red-600"
-                                  >
-                                    삭제
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                              <div className="flex items-center gap-1">
+                                {/* 참여자 추가 버튼 */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-6 w-6 flex-shrink-0"
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    {selectedWorkTask?.participants
+                                      ?.filter(workTaskParticipant =>
+                                        !(task.participants || []).some(p => p.userId === workTaskParticipant.userId)
+                                      )
+                                      .map((workTaskParticipant) => (
+                                        <DropdownMenuItem
+                                          key={workTaskParticipant.userId}
+                                          onClick={() => handleAddParticipant(task.id, workTaskParticipant.userId)}
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            <Avatar className="h-5 w-5">
+                                              <AvatarImage src={workTaskParticipant.user?.profileImageUrl} />
+                                              <AvatarFallback className="text-[9px]">
+                                                {workTaskParticipant.user?.nickname?.[0] || '?'}
+                                              </AvatarFallback>
+                                            </Avatar>
+                                            <span className="text-sm">{workTaskParticipant.user?.nickname || '알 수 없음'}</span>
+                                          </div>
+                                        </DropdownMenuItem>
+                                      ))}
+                                    {(!selectedWorkTask?.participants ||
+                                      selectedWorkTask.participants.filter(workTaskParticipant =>
+                                        !(task.participants || []).some(p => p.userId === workTaskParticipant.userId)
+                                      ).length === 0) && (
+                                      <DropdownMenuItem disabled>
+                                        <span className="text-sm text-gray-500">추가할 수 있는 팀원이 없습니다</span>
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                                {/* 편집/삭제 메뉴 */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0">
+                                      <MoreVertical className="h-3 w-3" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleEditTask(task)}>
+                                      <Edit className="h-3 w-3 mr-1" />
+                                      편집
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleDeleteSubTask(task.id)}
+                                      className="text-red-600"
+                                    >
+                                      삭제
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </div>
                             </>
                           )}
                         </div>
@@ -1304,19 +1349,83 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                             {task.description}
                           </CardDescription>
                         )}
-                        {/* Creator Info */}
-                        {task.createdBy && (
-                          <div className="flex items-center gap-1 mt-1 text-xs text-gray-600">
-                            <span>생성:</span>
-                            <Avatar className="h-4 w-4">
-                              <AvatarImage src={task.createdBy?.profileImageUrl} />
-                              <AvatarFallback className="text-[9px]">
-                                {task.createdBy?.nickname?.[0] || '?'}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span className="font-medium truncate max-w-[100px]">{task.createdBy?.nickname || '알 수 없음'}</span>
-                          </div>
-                        )}
+                        {/* Creator and Participants Info - 가로 배치 */}
+                        <div className="flex items-center gap-2 mt-1 text-xs text-gray-600">
+                          {/* 생성자 */}
+                          {task.createdBy && (
+                            <div className="flex items-center gap-1">
+                              <span>생성:</span>
+                              <Avatar className="h-4 w-4">
+                                <AvatarImage src={task.createdBy?.profileImageUrl} />
+                                <AvatarFallback className="text-[9px]">
+                                  {task.createdBy?.nickname?.[0] || '?'}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="font-medium truncate max-w-[60px]">{task.createdBy?.nickname || '알 수 없음'}</span>
+                            </div>
+                          )}
+                          {/* 참여자 */}
+                          {(task.participants || []).length > 0 && (
+                            <>
+                              <span className="text-gray-400">|</span>
+                              <div className="flex items-center gap-1">
+                                <span>참여:</span>
+                                <div className="flex items-center gap-0.5">
+                                  {(task.participants || []).slice(0, 2).map((participant) => (
+                                    <TooltipProvider key={participant.id}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="relative group">
+                                            <Avatar className="h-4 w-4 cursor-pointer">
+                                              <AvatarImage src={participant.user?.profileImageUrl} />
+                                              <AvatarFallback className="text-[9px]">
+                                                {participant.user?.nickname?.[0] || '?'}
+                                              </AvatarFallback>
+                                            </Avatar>
+                                            <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="absolute -top-1 -right-1 h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity p-0 bg-red-50 hover:bg-red-100 rounded-full"
+                                              onClick={(e) => {
+                                                e.stopPropagation()
+                                                handleRemoveParticipant(task.id, participant.userId)
+                                              }}
+                                            >
+                                              <X className="h-2 w-2 text-red-600" />
+                                            </Button>
+                                          </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p className="text-xs">{participant.user?.nickname || '알 수 없음'}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  ))}
+                                  {(task.participants || []).length > 2 && (
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <span className="text-[10px] text-gray-600 cursor-help">
+                                            +{(task.participants || []).length - 2}
+                                          </span>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <div className="space-y-1">
+                                            {(task.participants || []).slice(2).map((participant) => (
+                                              <p key={participant.id} className="text-xs">
+                                                {participant.user?.nickname || '알 수 없음'}
+                                              </p>
+                                            ))}
+                                          </div>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  )}
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </CardHeader>
 
                       <CardFooter className="p-2 pt-1 flex flex-col gap-1">
@@ -1329,109 +1438,6 @@ export default function TaskBoard({ searchQuery, selectedWorkTask, onTaskUpdate 
                              task.priority === 'high' ? '높음' :
                              task.priority === 'medium' ? '보통' : '낮음'}
                           </Badge>
-                        </div>
-
-                        {/* Participants with names */}
-                        <div className="flex items-start gap-1">
-                          <span className="text-xs text-gray-600 whitespace-nowrap">참여:</span>
-                          <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                            {(task.participants || []).length === 0 ? (
-                              <span className="text-xs text-gray-400">참여자 없음</span>
-                            ) : (
-                              <>
-                                {(task.participants || []).slice(0, 2).map((participant) => (
-                                  <div key={participant.id} className="flex items-center gap-1 group">
-                                    <Avatar className="h-4 w-4 flex-shrink-0">
-                                      <AvatarImage src={participant.user?.profileImageUrl} />
-                                      <AvatarFallback className="text-[9px]">
-                                        {participant.user?.nickname?.[0] || '?'}
-                                      </AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-xs text-gray-700 truncate flex-1">
-                                      {participant.user?.nickname || '알 수 없음'}
-                                    </span>
-                                    {/* 참여자 제거 버튼 (호버 시 표시) */}
-                                    <Button
-                                      size="icon"
-                                      variant="ghost"
-                                      className="h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity p-0 hover:bg-red-50"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        handleRemoveParticipant(task.id, participant.userId)
-                                      }}
-                                    >
-                                      <X className="h-2.5 w-2.5 text-red-600" />
-                                    </Button>
-                                  </div>
-                                ))}
-                                {(task.participants || []).length > 2 && (
-                                  <TooltipProvider>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <span className="text-xs text-gray-600 cursor-help">
-                                          +{(task.participants || []).length - 2}명 더 보기
-                                        </span>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <div className="space-y-1">
-                                          {(task.participants || []).slice(2).map((participant) => (
-                                            <p key={participant.id} className="text-xs">
-                                              {participant.user?.nickname || '알 수 없음'}
-                                            </p>
-                                          ))}
-                                        </div>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  </TooltipProvider>
-                                )}
-                              </>
-                            )}
-                            {/* 참여자 추가 버튼 */}
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="h-5 w-full justify-start px-1 text-xs text-gray-600 hover:text-gray-800"
-                                >
-                                  <Plus className="h-3 w-3 mr-1" />
-                                  참여자 추가
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="start">
-                                {/* 현재 업무의 참여자 중 이 SubTask에 참여하지 않은 사람들 */}
-                                {selectedWorkTask?.participants
-                                  ?.filter(workTaskParticipant =>
-                                    !(task.participants || []).some(p => p.userId === workTaskParticipant.userId)
-                                  )
-                                  .map((workTaskParticipant) => (
-                                    <DropdownMenuItem
-                                      key={workTaskParticipant.userId}
-                                      onClick={() => handleAddParticipant(task.id, workTaskParticipant.userId)}
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        <Avatar className="h-5 w-5">
-                                          <AvatarImage src={workTaskParticipant.user?.profileImageUrl} />
-                                          <AvatarFallback className="text-[9px]">
-                                            {workTaskParticipant.user?.nickname?.[0] || '?'}
-                                          </AvatarFallback>
-                                        </Avatar>
-                                        <span className="text-sm">{workTaskParticipant.user?.nickname || '알 수 없음'}</span>
-                                      </div>
-                                    </DropdownMenuItem>
-                                  ))}
-                                {/* 추가할 수 있는 사람이 없는 경우 */}
-                                {(!selectedWorkTask?.participants ||
-                                  selectedWorkTask.participants.filter(workTaskParticipant =>
-                                    !(task.participants || []).some(p => p.userId === workTaskParticipant.userId)
-                                  ).length === 0) && (
-                                  <DropdownMenuItem disabled>
-                                    <span className="text-sm text-gray-500">추가할 수 있는 팀원이 없습니다</span>
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
                         </div>
 
                         {/* Due Date */}
