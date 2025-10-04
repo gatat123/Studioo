@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { authAPI } from '@/lib/api/auth';
-import { setAuthToken, getAuthToken, removeAuthToken, hasAuthToken } from '@/lib/utils/cookies';
+import { setAuthToken, getAuthToken, removeAuthToken, hasAuthToken, isAuthTokenValid, removeRefreshToken, setRefreshToken } from '@/lib/utils/cookies';
 import type { User } from '@/types';
 
 // Auth store state interface
@@ -32,10 +32,10 @@ export const useAuthStore = create<AuthState>()(
       // Login function with actual API call
       login: async (credentials) => {
         set({ isLoading: true, error: null });
-        
+
         try {
           const response = await authAPI.login(credentials);
-          
+
           if (response.user) {
             const user: User = {
               ...response.user,
@@ -46,13 +46,18 @@ export const useAuthStore = create<AuthState>()(
               // 임시로 특정 사용자를 관리자로 설정 (테스트용)
               is_admin: response.user.username === 'gatat123' ? true : response.user.is_admin
             };
-            
+
             // Set authentication token
             const token = response.accessToken || response.token;
             if (token) {
               setAuthToken(token);
             }
-            
+
+            // Set refresh token
+            if (response.refreshToken) {
+              setRefreshToken(response.refreshToken);
+            }
+
             set({
               user,
               isAuthenticated: true,
@@ -121,7 +126,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           await authAPI.logout();
         } catch {
-          
+
         } finally {
           // Clear state first
           set({
@@ -130,8 +135,9 @@ export const useAuthStore = create<AuthState>()(
             error: null,
           });
 
-          // Remove authentication token
+          // Remove authentication tokens
           removeAuthToken();
+          removeRefreshToken();
 
           // Clear all localStorage items related to auth
           if (typeof window !== 'undefined') {
@@ -174,13 +180,6 @@ export const useAuthStore = create<AuthState>()(
       checkAuth: async () => {
         const currentState = get();
 
-        // If already authenticated with valid user, skip API call
-        // This prevents unnecessary API calls during navigation
-        if (currentState.isAuthenticated && currentState.user && hasAuthToken()) {
-          set({ isLoading: false });
-          return;
-        }
-
         // Skip check if already logged out intentionally
         if (currentState.isAuthenticated === false && !hasAuthToken()) {
           set({ isLoading: false });
@@ -202,6 +201,37 @@ export const useAuthStore = create<AuthState>()(
             });
             // Clear localStorage to ensure clean state
             localStorage.removeItem('auth-storage');
+            return;
+          }
+
+          // Check if token is valid (not expired)
+          if (!isAuthTokenValid()) {
+            console.log('[AuthStore] Token expired or expiring soon, attempting refresh...');
+
+            try {
+              // Attempt to refresh the token
+              await authAPI.refreshToken();
+              console.log('[AuthStore] Token refreshed successfully');
+            } catch (refreshError) {
+              console.error('[AuthStore] Token refresh failed:', refreshError);
+
+              // Token refresh failed - logout user
+              set({
+                user: null,
+                isAuthenticated: false,
+                isLoading: false,
+              });
+              removeAuthToken();
+              removeRefreshToken();
+              localStorage.removeItem('auth-storage');
+              return;
+            }
+          }
+
+          // If already authenticated with valid user and token is valid, skip API call
+          // This prevents unnecessary API calls during navigation
+          if (currentState.isAuthenticated && currentState.user) {
+            set({ isLoading: false });
             return;
           }
 
@@ -233,17 +263,23 @@ export const useAuthStore = create<AuthState>()(
               isAuthenticated: false,
               isLoading: false,
             });
-            // Clear token since session is invalid
+            // Clear tokens since session is invalid
             removeAuthToken();
+            removeRefreshToken();
           }
         } catch (error) {
           console.error('Auth check failed:', error);
+
+          // If it's a 401 error, the API client will handle token refresh
+          // If refresh fails, user will be logged out automatically
           set({
             user: null,
             isAuthenticated: false,
             isLoading: false,
             error: 'Failed to check authentication',
           });
+          removeAuthToken();
+          removeRefreshToken();
         }
       },
     }),

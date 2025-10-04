@@ -161,7 +161,7 @@ export default function AnnouncementEditor({ className = '' }: AnnouncementEdito
       setIsLoading(true)
       setError(null)
 
-      await announcementsAPI.deleteAnnouncement()
+      await announcementsAPI.deleteAnnouncement(announcement.id)
       setAnnouncement(null)
       setIsEditing(false)
       setEditContent('')

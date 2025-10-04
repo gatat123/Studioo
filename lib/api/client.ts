@@ -56,6 +56,7 @@ interface RequestOptions extends RequestInit {
   token?: string;
   retry?: number;
   timeout?: number;
+  skipRefresh?: boolean;
 }
 
 // Generic API response type
@@ -92,6 +93,7 @@ class APIClient {
       retry = 3,
       timeout = 30000,
       headers = {},
+      skipRefresh = false,
       ...fetchOptions
     } = options;
 
@@ -154,6 +156,31 @@ class APIClient {
               data: errorData,
               headers: Object.fromEntries(response.headers.entries())
             })
+
+            // Handle 401 Unauthorized - attempt token refresh
+            if (response.status === 401 && !skipRefresh && !endpoint.includes('/auth/refresh')) {
+              try {
+                // Dynamic import to avoid circular dependency
+                const { authAPI } = await import('./auth');
+                const newToken = await authAPI.refreshToken();
+
+                // Retry the request with new token
+                return this.request<T>(endpoint, {
+                  ...options,
+                  token: newToken,
+                  skipRefresh: true, // Prevent infinite loop
+                });
+              } catch (refreshError) {
+                // Token refresh failed - force logout
+                console.error('[API Client] Token refresh failed:', refreshError);
+
+                // Dynamic import to avoid circular dependency
+                const { authAPI } = await import('./auth');
+                await authAPI.logout();
+
+                return Promise.reject(lastError);
+              }
+            }
 
             // Don't retry on client errors (4xx)
             if (lastError instanceof APIError && lastError.status >= 400 && lastError.status < 500) {

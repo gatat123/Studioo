@@ -67,9 +67,9 @@ class AnnouncementsAPI {
   /**
    * 공지사항 삭제 (관리자만)
    */
-  async deleteAnnouncement(): Promise<void> {
+  async deleteAnnouncement(id: string): Promise<void> {
     try {
-      await api.delete('/api/announcements')
+      await api.delete(`/api/announcements/${id}`)
     } catch (error) {
       console.error('[AnnouncementsAPI] Error deleting announcement:', error)
       throw error

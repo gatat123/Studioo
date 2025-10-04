@@ -6,6 +6,7 @@ class SocketClient {
   private socket: Socket | null = null;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
+  private isAuthError = false;
 
   connect(): Socket {
     if (this.socket?.connected) {
@@ -46,14 +47,38 @@ class SocketClient {
     this.socket.on('connect', () => {
       console.log('[SocketClient] ✅ Connected to server, socket ID:', this.socket?.id);
       this.reconnectAttempts = 0;
+      this.isAuthError = false;
     });
 
     this.socket.on('disconnect', (reason) => {
       console.log('[SocketClient] ❌ Disconnected from server, reason:', reason);
+
+      // If disconnected due to auth error, stop reconnection
+      if (this.isAuthError) {
+        console.log('[SocketClient] Disconnected due to authentication error, stopping reconnection');
+        this.disconnect();
+      }
     });
 
     this.socket.on('connect_error', (error) => {
       console.error('[SocketClient] ❌ Connection error:', error);
+
+      // Check if error is authentication related
+      const errorMessage = error?.message || String(error);
+      if (errorMessage.includes('auth') || errorMessage.includes('unauthorized') || errorMessage.includes('token')) {
+        console.error('[SocketClient] Authentication error detected, stopping reconnection');
+        this.isAuthError = true;
+        this.disconnect();
+
+        // Dispatch custom event to notify the app that re-login is needed
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('socket:auth-error', {
+            detail: { error: errorMessage }
+          }));
+        }
+        return;
+      }
+
       this.reconnectAttempts++;
 
       if (this.reconnectAttempts >= this.maxReconnectAttempts) {
@@ -64,6 +89,20 @@ class SocketClient {
 
     this.socket.on('error', (error) => {
       console.error('[SocketClient] ❌ Socket error:', error);
+
+      // Check if error is authentication related
+      const errorMessage = error?.message || String(error);
+      if (errorMessage.includes('auth') || errorMessage.includes('unauthorized') || errorMessage.includes('token')) {
+        console.error('[SocketClient] Authentication error detected');
+        this.isAuthError = true;
+
+        // Dispatch custom event to notify the app that re-login is needed
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('socket:auth-error', {
+            detail: { error: errorMessage }
+          }));
+        }
+      }
     });
   }
 
@@ -72,6 +111,8 @@ class SocketClient {
       this.socket.disconnect();
       this.socket = null;
     }
+    this.reconnectAttempts = 0;
+    this.isAuthError = false;
   }
 
   // Project room management

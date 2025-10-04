@@ -4,7 +4,7 @@
  */
 
 import api from './client';
-import { setAuthToken, removeAuthToken, getAuthToken } from '@/lib/utils/cookies';
+import { setAuthToken, removeAuthToken, getAuthToken, setRefreshToken, getRefreshToken, removeRefreshToken } from '@/lib/utils/cookies';
 import { User, AuthResponse, LoginCredentials, RegisterData } from '@/types';
 
 export const authAPI = {
@@ -18,6 +18,9 @@ export const authAPI = {
     const token = response.accessToken || response.token;
     if (token) {
       setAuthToken(token);
+      if (response.refreshToken) {
+        setRefreshToken(response.refreshToken);
+      }
       if (response.user) {
         localStorage.setItem('userId', response.user.id);
         localStorage.setItem('user', JSON.stringify(response.user));
@@ -32,15 +35,18 @@ export const authAPI = {
    */
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await api.post('/api/auth/login', credentials) as AuthResponse;
-    
+
     // Store auth data - backend returns accessToken, not token
     const token = response.accessToken || response.token;
     if (token) {
       setAuthToken(token);
+      if (response.refreshToken) {
+        setRefreshToken(response.refreshToken);
+      }
       localStorage.setItem('userId', response.user.id);
       localStorage.setItem('user', JSON.stringify(response.user));
     }
-    
+
     return response;
   },
 
@@ -53,6 +59,7 @@ export const authAPI = {
     } finally {
       // Clear auth token and user data
       removeAuthToken();
+      removeRefreshToken();
       localStorage.removeItem('userId');
       localStorage.removeItem('user');
 
@@ -78,13 +85,18 @@ export const authAPI = {
    * Refresh auth token
    */
   async refreshToken(): Promise<string> {
-    const response = await api.post('/api/auth/refresh') as { token: string };
-
-    if (response.token) {
-      setAuthToken(response.token);
+    const refreshToken = getRefreshToken();
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
     }
 
-    return response.token;
+    const response = await api.post('/api/auth/refresh', { refreshToken }, { skipRefresh: true }) as { accessToken: string };
+
+    if (response.accessToken) {
+      setAuthToken(response.accessToken);
+    }
+
+    return response.accessToken;
   },
 
   /**
